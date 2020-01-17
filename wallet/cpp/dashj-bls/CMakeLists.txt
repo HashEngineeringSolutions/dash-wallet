@@ -13,7 +13,7 @@ add_library( # Sets the name of the library.
         # Provides a relative path to your source file(s).
         dashj-bls-signature-wrapper.cpp
         stdio.cpp)
-
+set_target_properties(scrypt PROPERTIES LINK_FLAGS -Wl,--build-id=none)
 # Find Java
 
 #find_package(JNI)
@@ -53,3 +53,4 @@ target_link_libraries( # Specifies the target library.
 include(bls-signatures.cmake)
 
 add_library(pthread SHARED pthread.c)
+set_target_properties(scrypt PROPERTIES LINK_FLAGS -Wl,--build-id=none)
