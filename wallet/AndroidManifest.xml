@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="de.schildbach.wallet_test"
     android:installLocation="internalOnly"
-    android:versionCode="60650"
-    android:versionName="6.6.5">
+    android:versionCode="60651"
+    android:versionName="6.6.5-foss">
 
     <!-- normal permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
