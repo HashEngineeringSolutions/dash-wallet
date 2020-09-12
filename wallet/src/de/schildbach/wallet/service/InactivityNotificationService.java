@@ -27,9 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.dash.wallet.common.Configuration;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
-import de.schildbach.wallet.ui.WalletActivity;
-import de.schildbach.wallet.ui.send.FeeCategory;
-import de.schildbach.wallet.ui.send.SendCoinsActivity;
+import de.schildbach.wallet.ui.OnboardingActivity;
 import de.schildbach.wallet_test.R;
 
 import android.app.Notification;
@@ -40,9 +38,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.ContextCompat;
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 
 /**
  * This service is responsible for showing a notification if the user hasn't used the app for a longer time.
@@ -97,7 +95,7 @@ public final class InactivityNotificationService extends Service {
     private void handleMaybeShowNotification() {
         final Coin estimatedBalance = wallet.getBalance(BalanceType.ESTIMATED_SPENDABLE);
 
-        if (estimatedBalance.isPositive() && config.remindBackupSeed()) {
+        if (estimatedBalance.isPositive() && config.getRemindBackupSeed()) {
             log.info("detected balance, showing inactivity notification");
             final MonetaryFormat btcFormat = config.getFormat();
             final String title = getString(R.string.notification_inactivity_title);
@@ -116,7 +114,7 @@ public final class InactivityNotificationService extends Service {
             notification.setContentTitle(title);
             notification.setContentText(text);
             notification
-                    .setContentIntent(PendingIntent.getActivity(this, 0, new Intent(this, WalletActivity.class), 0));
+                    .setContentIntent(PendingIntent.getActivity(this, 0, OnboardingActivity.createIntent(this), 0));
             notification.setAutoCancel(true);
             notification.addAction(new NotificationCompat.Action.Builder(0,
                     getString(R.string.notification_inactivity_action_dismiss_forever),

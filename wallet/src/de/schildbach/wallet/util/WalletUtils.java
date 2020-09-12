@@ -29,6 +29,7 @@ import java.io.InputStreamReader;
 import java.io.Writer;
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,14 +42,11 @@ import org.bitcoinj.core.CoinDefinition;
 import org.bitcoinj.core.DumpedPrivateKey;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.ScriptException;
+import org.bitcoinj.script.ScriptException;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutput;
-import org.bitcoinj.crypto.ChildNumber;
-import org.bitcoinj.crypto.MnemonicCode;
-import org.bitcoinj.crypto.MnemonicException;
 import org.bitcoinj.script.Script;
 import org.bitcoinj.wallet.DeterministicKeyChain;
 import org.bitcoinj.wallet.DeterministicSeed;
@@ -60,12 +58,15 @@ import org.bitcoinj.wallet.WalletProtobufSerializer;
 import com.google.common.base.Charsets;
 
 import de.schildbach.wallet.Constants;
+import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet_test.R;
 
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.text.Editable;
-import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.format.DateUtils;
-import android.text.style.TypefaceSpan;
 
 import static org.dash.wallet.common.Constants.CHAR_THIN_SPACE;
 
@@ -74,12 +75,12 @@ import static org.dash.wallet.common.Constants.CHAR_THIN_SPACE;
  */
 public class WalletUtils {
     public static Editable formatAddress(final Address address, final int groupSize, final int lineSize) {
-        return formatHash(address.toBase58(), groupSize, lineSize);
+        return formatHash(address.toString(), groupSize, lineSize);
     }
 
     public static Editable formatAddress(@Nullable final String prefix, final Address address, final int groupSize,
             final int lineSize) {
-        return formatHash(prefix, address.toBase58(), groupSize, lineSize, CHAR_THIN_SPACE);
+        return formatHash(prefix, address.toString(), groupSize, lineSize, CHAR_THIN_SPACE);
     }
 
     public static Editable formatHash(final String address, final int groupSize, final int lineSize) {
@@ -115,22 +116,6 @@ public class WalletUtils {
     }
 
     @Nullable
-    public static Address getToAddressOfSent(final Transaction tx, final Wallet wallet) {
-        for (final TransactionOutput output : tx.getOutputs()) {
-            try {
-                if (!output.isMine(wallet)) {
-                    final Script script = output.getScriptPubKey();
-                    return script.getToAddress(Constants.NETWORK_PARAMETERS, true);
-                }
-            } catch (final ScriptException x) {
-                // swallow
-            }
-        }
-
-        return null;
-    }
-
-    @Nullable
     public static Address getWalletAddressOfReceived(final Transaction tx, final Wallet wallet) {
         for (final TransactionOutput output : tx.getOutputs()) {
             try {
@@ -145,6 +130,60 @@ public class WalletUtils {
 
         return null;
     }
+
+    public static List<Address> getFromAddressOfSent(final Transaction tx, final Wallet wallet) {
+        List<Address> result = new ArrayList<>();
+
+        for (final TransactionInput input : tx.getInputs()) {
+            try {
+                Transaction connectedTransaction = input.getConnectedTransaction();
+                if (connectedTransaction != null) {
+                    TransactionOutput output = connectedTransaction.getOutput(input.getOutpoint().getIndex());
+                    final Script script = output.getScriptPubKey();
+                    result.add(script.getToAddress(Constants.NETWORK_PARAMETERS, true));
+                }
+            } catch (final ScriptException x) {
+                // swallow
+            }
+        }
+
+        return result;
+    }
+
+    public static List<Address> getToAddressOfReceived(final Transaction tx, final  Wallet wallet) {
+        List<Address> result = new ArrayList<>();
+
+        for (TransactionOutput output : tx.getOutputs()) {
+            try {
+                if (output.isMine(wallet)) {
+                    final Script script = output.getScriptPubKey();
+                    result.add(script.getToAddress(Constants.NETWORK_PARAMETERS, true));
+                }
+            } catch (final ScriptException x) {
+                // swallow
+            }
+        }
+
+        return result;
+    }
+
+    public static List<Address> getToAddressOfSent(final Transaction tx, final Wallet wallet) {
+        List<Address> result = new ArrayList<>();
+
+        for (TransactionOutput output : tx.getOutputs()) {
+            try {
+                if (!output.isMine(wallet)) {
+                    final Script script = output.getScriptPubKey();
+                    result.add(script.getToAddress(Constants.NETWORK_PARAMETERS, true));
+                }
+            } catch (final ScriptException x) {
+                // swallow
+            }
+        }
+
+        return result;
+    }
+
 
     public static boolean isEntirelySelf(final Transaction tx, final Wallet wallet) {
         for (final TransactionInput input : tx.getInputs()) {
@@ -200,9 +239,13 @@ public class WalletUtils {
                                                    final NetworkParameters expectedNetworkParameters) throws IOException {
         try {
             DeterministicSeed seed =  new DeterministicSeed(words, null,"", Constants.EARLIEST_HD_SEED_CREATION_TIME);
-            KeyChainGroup group = new KeyChainGroup(Constants.NETWORK_PARAMETERS, seed);
-
-            group.addAndActivateHDChain(new DeterministicKeyChain(seed, Constants.BIP44_PATH));
+            KeyChainGroup group = KeyChainGroup.builder(Constants.NETWORK_PARAMETERS)
+                    .fromSeed(seed, Script.ScriptType.P2PKH)
+                    .addChain(DeterministicKeyChain.builder()
+                            .seed(seed)
+                            .accountPath(Constants.BIP44_PATH)
+                            .build())
+                    .build();
 
             final Wallet wallet = new Wallet(Constants.NETWORK_PARAMETERS, group);
 
@@ -212,8 +255,7 @@ public class WalletUtils {
                 throw new IOException("inconsistent wallet backup");
 
             return wallet;
-        }
-        finally {
+        } finally {
 
         }
 
@@ -224,7 +266,7 @@ public class WalletUtils {
         final BufferedReader keyReader = new BufferedReader(new InputStreamReader(is, Charsets.UTF_8));
 
         // create non-HD wallet
-        final KeyChainGroup group = new KeyChainGroup(expectedNetworkParameters);
+        final KeyChainGroup group = KeyChainGroup.builder(expectedNetworkParameters).build();
 
         group.importKeys(WalletUtils.readKeys(keyReader, expectedNetworkParameters));
         return new Wallet(expectedNetworkParameters, group);
@@ -236,7 +278,7 @@ public class WalletUtils {
         out.write("# KEEP YOUR PRIVATE KEYS SAFE! Anyone who can read this can spend your "+ CoinDefinition.coinName+"s.\n");
 
         for (final ECKey key : keys) {
-            out.write(key.getPrivateKeyEncoded(Constants.NETWORK_PARAMETERS).toBase58());
+            out.write(key.getPrivateKeyEncoded(Constants.NETWORK_PARAMETERS).toString());
             if (key.getCreationTimeSeconds() != 0) {
                 out.write(' ');
                 out.write(format.format(new Date(key.getCreationTimeSeconds() * DateUtils.SECOND_IN_MILLIS)));
@@ -353,4 +395,29 @@ public class WalletUtils {
     public static boolean isPayToManyTransaction(final Transaction transaction) {
         return transaction.getOutputs().size() > 20;
     }
+
+    public static String buildShortAddress(String longAddress) {
+        StringBuilder addressBuilder = new StringBuilder(longAddress.substring(0,
+                Constants.ADDRESS_FORMAT_FIRST_SECTION_SIZE));
+        addressBuilder.append(Constants.ADDRESS_FORMAT_SECTION_SEPARATOR);
+        int lastSectionStart = longAddress.length() - Constants.ADDRESS_FORMAT_LAST_SECTION_SIZE;
+        addressBuilder.append(longAddress.substring(lastSectionStart));
+        return addressBuilder.toString();
+    }
+
+    public static void viewOnBlockExplorer(Context context, Transaction.Purpose txPurpose,
+                                           String txHash) {
+        Uri blockExplorer = WalletApplication.getInstance()
+                .getConfiguration()
+                .getBlockExplorer(R.array.preferences_block_explorer_values);
+        Uri keyRotationUri = Uri.parse("https://bitcoin.org/en/alert/2013-08-11-android");
+        boolean txRotation = txPurpose == Transaction.Purpose.KEY_ROTATION;
+        if (!txRotation) {
+            context.startActivity(new Intent(Intent.ACTION_VIEW,
+                    Uri.withAppendedPath(blockExplorer, "tx/" + txHash)));
+        } else {
+            context.startActivity(new Intent(Intent.ACTION_VIEW, keyRotationUri));
+        }
+    }
+
 }

@@ -21,9 +21,11 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v7.app.AlertDialog;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.appcompat.app.AlertDialog;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.Spanned;
@@ -54,8 +56,11 @@ import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.util.Crypto;
 import de.schildbach.wallet.util.KeyboardUtil;
+import de.schildbach.wallet.util.MnemonicCodeExt;
 import de.schildbach.wallet.util.WalletUtils;
 import de.schildbach.wallet_test.R;
+import android.annotation.SuppressLint;
+
 
 public class RestoreWalletFromSeedDialogFragment extends DialogFragment {
 
@@ -74,14 +79,14 @@ public class RestoreWalletFromSeedDialogFragment extends DialogFragment {
     private TextView invalidWordView;
 
 
-    private WalletActivity activity;
+    private AppCompatActivity activity;
     private Wallet wallet;
 
     @Override
     public void onAttach(final Activity activity) {
         super.onAttach(activity);
 
-        this.activity = (WalletActivity) activity;
+        this.activity = (AppCompatActivity) activity;
         WalletApplication application = (WalletApplication) activity.getApplication();
         this.wallet = application.getWallet();
     }
@@ -118,7 +123,6 @@ public class RestoreWalletFromSeedDialogFragment extends DialogFragment {
         final TextView messageView = (TextView) view.findViewById(R.id.restore_wallet_dialog_message);
         messageView.setText(getString(R.string.import_keys_from_seed_dialog_message));
         replaceWarningView = view.findViewById(R.id.restore_wallet_from_storage_dialog_replace_warning);
-        //final Spinner fileView = (Spinner) view.findViewById(R.id.import_keys_from_storage_file);
         passwordView = (EditText) view.findViewById(R.id.import_seed_recovery_phrase);
         setupPasswordView();
         invalidWordView = (TextView)view.findViewById(R.id.restore_wallet_from_invalid_seed_warning);
@@ -126,18 +130,11 @@ public class RestoreWalletFromSeedDialogFragment extends DialogFragment {
         builder.setPositiveButton(R.string.import_keys_dialog_button_import, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(final DialogInterface dialog, final int which) {
-                //final File file = (File) fileView.getSelectedItem();
                 final String password = passwordView.getText().toString().trim();
                 clearPasswordView();
 
                 List<String> words = new ArrayList<>(Arrays.asList(password.split(" ")));
 
-                //if (WalletUtils.BACKUP_FILE_FILTER.accept(file))
-                //    restoreWalletFromProtobuf(file);
-                //else if (WalletUtils.KEYS_FILE_FILTER.accept(file))
-                //    restorePrivateKeysFromBase58(file);
-                //else if (Crypto.OPENSSL_FILE_FILTER.accept(file))
-                //    restoreWalletFromEncrypted(file, password);
                 restoreWalletFromSeed(words);
             }
         });
@@ -148,16 +145,6 @@ public class RestoreWalletFromSeedDialogFragment extends DialogFragment {
             }
         });
 
-        /*final String path;
-        final String backupPath = Constants.Files.EXTERNAL_WALLET_BACKUP_DIR.getAbsolutePath();
-        final String storagePath = Constants.Files.EXTERNAL_STORAGE_DIR.getAbsolutePath();
-        if (backupPath.startsWith(storagePath))
-            path = backupPath.substring(storagePath.length());
-        else
-            path = backupPath;
-            */
-
-        //fileView.setAdapter(adapter);
         return builder.create();
     }
 
@@ -201,9 +188,11 @@ public class RestoreWalletFromSeedDialogFragment extends DialogFragment {
         });
     }
 
+    @SuppressLint("StringFormatInvalid")
     private void restoreWalletFromSeed(final List<String> words) {
+        final WalletActivity activity = (WalletActivity) this.activity;
         try {
-            MnemonicCode.INSTANCE.check(words);
+            MnemonicCodeExt.getInstance().check(activity, words);
             activity.restoreWallet(WalletUtils.restoreWalletFromSeed(words, Constants.NETWORK_PARAMETERS));
 
             log.info("successfully restored wallet from seed: {}", words.size());
@@ -245,14 +234,11 @@ public class RestoreWalletFromSeedDialogFragment extends DialogFragment {
             }
         });
 
-        final boolean hasCoins = wallet.getBalance(Wallet.BalanceType.ESTIMATED).signum() > 0;
+        boolean hasCoins = (wallet != null) && wallet.getBalance(Wallet.BalanceType.ESTIMATED).signum() > 0;
         replaceWarningView.setVisibility(hasCoins ? View.VISIBLE : View.GONE);
+
         clearPasswordView();
         setupRestoreButtonState();
-        //fileView.setOnItemSelectedListener(dialogButtonEnabler);
-
-        //final CheckBox showView = (CheckBox) alertDialog.findViewById(R.id.import_keys_from_storage_show);
-        //showView.setOnCheckedChangeListener(new ShowPasswordCheckListener(passwordView));
     }
 
     private void setupRestoreButtonState() {
@@ -291,7 +277,7 @@ public class RestoreWalletFromSeedDialogFragment extends DialogFragment {
             return null;
         } else {
             String [] words = password.split(" ");
-            List<String> wordList = MnemonicCode.INSTANCE.getWordList();
+            List<String> wordList = MnemonicCodeExt.getInstance().getWordList();
 
             for(int i = 0; i < words.length; ++i)
                 if(!wordList.contains(words[i]))

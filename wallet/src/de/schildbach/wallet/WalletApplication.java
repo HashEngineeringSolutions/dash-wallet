@@ -17,47 +17,19 @@
 
 package de.schildbach.wallet;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.concurrent.TimeUnit;
-
-import org.bitcoinj.core.CoinDefinition;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.VerificationException;
-import org.bitcoinj.core.VersionMessage;
-import org.bitcoinj.crypto.LinuxSecureRandom;
-import org.bitcoinj.crypto.MnemonicCode;
-import org.bitcoinj.utils.Threading;
-import org.bitcoinj.wallet.Protos;
-import org.bitcoinj.wallet.UnreadableWalletException;
-import org.bitcoinj.wallet.Wallet;
-import org.bitcoinj.wallet.WalletProtobufSerializer;
-import org.dash.wallet.common.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Stopwatch;
-
-import de.schildbach.wallet.data.WalletLock;
-import de.schildbach.wallet.service.BlockchainService;
-import de.schildbach.wallet.service.BlockchainServiceImpl;
-import de.schildbach.wallet.ui.AbstractWalletActivity;
-import de.schildbach.wallet.util.CrashReporter;
-import de.schildbach.wallet_test.BuildConfig;
-import de.schildbach.wallet_test.R;
-
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
-import android.app.Application;
+import android.app.KeyguardManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -67,13 +39,45 @@ import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.StrictMode;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
-import android.support.annotation.StringRes;
-import android.support.multidex.MultiDexApplication;
-import android.support.v4.content.LocalBroadcastManager;
 import android.text.format.DateUtils;
 import android.widget.Toast;
+
+import androidx.annotation.StringRes;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.multidex.MultiDexApplication;
+
+import com.google.common.base.Stopwatch;
+import com.jakewharton.processphoenix.ProcessPhoenix;
+
+import org.bitcoinj.core.CoinDefinition;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.VerificationException;
+import org.bitcoinj.core.VersionMessage;
+import org.bitcoinj.crypto.LinuxSecureRandom;
+import org.bitcoinj.utils.Threading;
+import org.bitcoinj.wallet.Protos;
+import org.bitcoinj.wallet.UnreadableWalletException;
+import org.bitcoinj.wallet.Wallet;
+import org.bitcoinj.wallet.WalletProtobufSerializer;
+import org.dash.wallet.common.Configuration;
+import org.dash.wallet.common.ResetAutoLogoutTimerHandler;
+import org.dash.wallet.integration.uphold.data.UpholdClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.GeneralSecurityException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.android.LogcatAppender;
@@ -81,24 +85,38 @@ import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.rolling.RollingFileAppender;
 import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
+import de.schildbach.wallet.data.BlockchainState;
+import de.schildbach.wallet.service.BlockchainService;
+import de.schildbach.wallet.service.BlockchainServiceImpl;
+import de.schildbach.wallet.service.BlockchainSyncJobService;
+import de.schildbach.wallet.ui.LockScreenActivity;
+import de.schildbach.wallet.ui.OnboardingActivity;
+import de.schildbach.wallet.ui.ShortcutComponentActivity;
+import de.schildbach.wallet.ui.WalletUriHandlerActivity;
+import de.schildbach.wallet.ui.preference.PinRetryController;
+import de.schildbach.wallet.ui.scan.ScanActivity;
+import de.schildbach.wallet.ui.security.SecurityGuard;
+import de.schildbach.wallet.ui.send.SendCoinsActivity;
+import de.schildbach.wallet.util.CrashReporter;
+import de.schildbach.wallet.util.MnemonicCodeExt;
+import de.schildbach.wallet_test.BuildConfig;
+import de.schildbach.wallet_test.R;
 
 /**
  * @author Andreas Schildbach
  */
-public class WalletApplication extends MultiDexApplication {
+public class WalletApplication extends MultiDexApplication implements ResetAutoLogoutTimerHandler {
     private static WalletApplication instance;
     private Configuration config;
     private ActivityManager activityManager;
 
+    private boolean basicWalletInitalizationFinished = false;
+
     private Intent blockchainServiceIntent;
-    private Intent blockchainServiceCancelCoinsReceivedIntent;
-    private Intent blockchainServiceResetBlockchainIntent;
 
     private File walletFile;
     private Wallet wallet;
     private PackageInfo packageInfo;
-
-    private boolean backupDisclaimerDismissed = false;
 
     public static final String ACTION_WALLET_REFERENCE_CHANGED = WalletApplication.class.getPackage().getName()
             + ".wallet_reference_changed";
@@ -109,34 +127,95 @@ public class WalletApplication extends MultiDexApplication {
 
     private static final Logger log = LoggerFactory.getLogger(WalletApplication.class);
 
+    private static final int BLOCKCHAIN_SYNC_JOB_ID = 1;
+
+    private boolean deviceWasLocked = false;
+
+    public boolean myPackageReplaced = false;
+
+    private AutoLogout autoLogout;
+
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         instance = this;
     }
 
+    public boolean walletFileExists() {
+        return walletFile.exists();
+    }
+
+    private boolean isSpecialActivity(Activity activity) {
+        return (activity instanceof OnboardingActivity)
+                || (activity instanceof SendCoinsActivity)
+                || (activity instanceof WalletUriHandlerActivity)
+                || (activity instanceof ScanActivity)
+                || (activity instanceof ShortcutComponentActivity);
+    }
+
     @Override
     public void onCreate() {
+        super.onCreate();
+        AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
+        log.info("WalletApplication.onCreate()");
+        config = new Configuration(PreferenceManager.getDefaultSharedPreferences(this), getResources());
+        autoLogout = new AutoLogout(config);
         registerActivityLifecycleCallbacks(new ActivitiesTracker() {
+
             @Override
-            public void onStartedAny(boolean isTheFirstOne) {
-                if (isTheFirstOne) {
-                    lockWalletIfNeeded();
-                } else {
-                    WalletLock walletLock = WalletLock.getInstance();
-                    if (!walletLock.isWalletLocked(wallet)) {
-                        config.setLastUnlockTime(System.currentTimeMillis());
+            protected void onStartedFirst(Activity activity) {
+                autoLogout.setAppInBackground(false);
+                if (wallet != null && config.getAutoLogoutEnabled() && (deviceWasLocked || autoLogout.shouldLogout())) {
+                    lockTheApp(WalletApplication.this, activity);
+                    if (autoLogout.isTimerActive()) {
+                        autoLogout.stopTimer();
                     }
                 }
             }
+
+            @Override
+            protected void onStartedAny(boolean isTheFirstOne) {
+                super.onStartedAny(isTheFirstOne);
+                // force restart if the app was updated
+                if (!BuildConfig.DEBUG && myPackageReplaced) {
+                    myPackageReplaced = false;
+                    ProcessPhoenix.triggerRebirth(WalletApplication.this);
+                }
+            }
+
+            @Override
+            protected void onStoppedLast() {
+                autoLogout.setAppInBackground(true);
+            }
         });
+        walletFile = getFileStreamPath(Constants.Files.WALLET_FILENAME_PROTOBUF);
+        if (walletFileExists()) {
+            fullInitialization();
+        }
+        registerDeviceInteractiveReceiver();
+    }
+
+    public void fullInitialization() {
+        initEnvironment();
+        loadWalletFromProtobuf();
+    }
+
+    public void initEnvironmentIfNeeded() {
+        if (!basicWalletInitalizationFinished) {
+            initEnvironment();
+        }
+    }
+
+    private void initEnvironment() {
+        basicWalletInitalizationFinished = true;
 
         new LinuxSecureRandom(); // init proper random number generator
-
         initLogging();
 
-        StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectAll().permitDiskReads()
-                .permitDiskWrites().penaltyLog().build());
+        if (!Constants.IS_PROD_BUILD) {
+            StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectAll().permitDiskReads()
+                    .permitDiskWrites().penaltyLog().build());
+        }
 
         Threading.throwOnLockCycles();
         org.bitcoinj.core.Context.enableStrictMode();
@@ -144,8 +223,6 @@ public class WalletApplication extends MultiDexApplication {
 
         log.info("=== starting app using configuration: {}, {}", BuildConfig.FLAVOR,
                 Constants.NETWORK_PARAMETERS.getId());
-
-        super.onCreate();
 
         packageInfo = packageInfoFromContext(this);
 
@@ -159,24 +236,31 @@ public class WalletApplication extends MultiDexApplication {
             }
         };
 
-        initMnemonicCode();
+        MnemonicCodeExt.initMnemonicCode(this);
 
-        config = new Configuration(PreferenceManager.getDefaultSharedPreferences(this), getResources());
         activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
 
         blockchainServiceIntent = new Intent(this, BlockchainServiceImpl.class);
-        blockchainServiceCancelCoinsReceivedIntent = new Intent(BlockchainService.ACTION_CANCEL_COINS_RECEIVED, null,
-                this, BlockchainServiceImpl.class);
-        blockchainServiceResetBlockchainIntent = new Intent(BlockchainService.ACTION_RESET_BLOCKCHAIN, null, this,
-                BlockchainServiceImpl.class);
+    }
 
-        walletFile = getFileStreamPath(Constants.Files.WALLET_FILENAME_PROTOBUF);
+    public void setWallet(Wallet newWallet) {
+        this.wallet = newWallet;
+        if (!wallet.hasKeyChain(Constants.BIP44_PATH)) {
+            wallet.addKeyChain(Constants.BIP44_PATH);
+        }
+    }
 
-        loadWalletFromProtobuf();
+    public void saveWalletAndFinalizeInitialization() {
+        saveWallet();
+        backupWallet();
 
-		org.bitcoinj.core.Context context = wallet.getContext();
+        config.armBackupReminder();
 
-		wallet.getContext().initDash(true, true);
+        finalizeInitialization();
+    }
+
+    public void finalizeInitialization() {
+        wallet.getContext().initDash(true, true);
 
         if (config.versionCodeCrossed(packageInfo.versionCode, VERSION_CODE_SHOW_BACKUP_REMINDER)
                 && !wallet.getImportedKeys().isEmpty()) {
@@ -190,25 +274,37 @@ public class WalletApplication extends MultiDexApplication {
 
         cleanupFiles();
 
-        registerScreenOffReceiver();
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannels();
         }
-        WalletLock.getInstance().setConfiguration(config);
+
+        autoLogout.setOnLogoutListener(new AutoLogout.OnLogoutListener() {
+            @Override
+            public void onLogout(boolean isAppInBackground) {
+                if (!isAppInBackground) {
+                    lockTheApp(WalletApplication.this, null);
+                }
+            }
+        });
+        initUphold();
     }
 
-    private void registerScreenOffReceiver() {
-        IntentFilter screenStateFilter = new IntentFilter();
-        screenStateFilter.addAction(Intent.ACTION_SCREEN_OFF);
-        registerReceiver(new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                // immediately reset the lock timer in order to make the
-                // wallet after turning screen off.
-                config.setLastUnlockTime(0);
-            }
-        }, screenStateFilter);
+    private void initUphold() {
+        //Uses Sha256 hash of excerpt of xpub as Uphold authentication salt
+        String xpub = wallet.getWatchingKey().serializePubB58(Constants.NETWORK_PARAMETERS);
+        byte[] xpubExcerptHash = Sha256Hash.hash(xpub.substring(4, 15).getBytes());
+        String authenticationHash = Sha256Hash.wrap(xpubExcerptHash).toString();
+
+        UpholdClient.init(getApplicationContext(), authenticationHash);
+    }
+
+    public void maybeStartAutoLogoutTimer() {
+        autoLogout.setup();
+    }
+
+    @Override
+    public void resetAutoLogoutTimer() {
+        autoLogout.resetTimerIfActive();
     }
 
     @TargetApi(Build.VERSION_CODES.O)
@@ -257,17 +353,14 @@ public class WalletApplication extends MultiDexApplication {
         // clean up spam
         try {
             wallet.cleanup();
-        }
-        catch(IllegalStateException x) {
+        } catch (IllegalStateException x) {
             //Catch an inconsistent exception here and reset the blockchain.  This is for loading older wallets that had
             //txes with fees that were too low or dust that were stuck and could not be sent.  In a later version
             //the fees were fixed, then those stuck transactions became inconsistant and the exception is thrown.
-        	if(x.getMessage().contains("Inconsistent spent tx:"))
-            {
-             	File blockChainFile = new File(getDir("blockstore", Context.MODE_PRIVATE), Constants.Files.BLOCKCHAIN_FILENAME);
-            	blockChainFile.delete();
-            }
-            else throw x;
+            if (x.getMessage().contains("Inconsistent spent tx:")) {
+                File blockChainFile = new File(getDir("blockstore", Context.MODE_PRIVATE), Constants.Files.BLOCKCHAIN_FILENAME);
+                blockChainFile.delete();
+            } else throw x;
         }
 
         // make sure there is at least one recent backup
@@ -310,7 +403,7 @@ public class WalletApplication extends MultiDexApplication {
         rollingPolicy.start();
 
 
-		PreferenceManager.setDefaultValues(this, R.xml.preference_settings, false);
+        PreferenceManager.setDefaultValues(this, R.xml.preference_settings, false);
         fileAppender.setEncoder(filePattern);
         fileAppender.setRollingPolicy(rollingPolicy);
         fileAppender.start();
@@ -337,19 +430,6 @@ public class WalletApplication extends MultiDexApplication {
         log.setLevel(Level.INFO);
     }
 
-    private static final String BIP39_WORDLIST_FILENAME = "bip39-wordlist.txt";
-
-    private void initMnemonicCode() {
-        try {
-            final Stopwatch watch = Stopwatch.createStarted();
-            MnemonicCode.INSTANCE = new MnemonicCode(getAssets().open(BIP39_WORDLIST_FILENAME), null);
-            watch.stop();
-            log.info("BIP39 wordlist loaded from: '{}', took {}", BIP39_WORDLIST_FILENAME, watch);
-        } catch (final IOException x) {
-            throw new Error(x);
-        }
-    }
-
     public Configuration getConfiguration() {
         return config;
     }
@@ -359,59 +439,49 @@ public class WalletApplication extends MultiDexApplication {
     }
 
     private void loadWalletFromProtobuf() {
-        if (walletFile.exists()) {
-            FileInputStream walletStream = null;
+        FileInputStream walletStream = null;
 
-            try {
-                final Stopwatch watch = Stopwatch.createStarted();
-                walletStream = new FileInputStream(walletFile);
-                wallet = new WalletProtobufSerializer().readWallet(walletStream);
-
-                if (!wallet.getParams().equals(Constants.NETWORK_PARAMETERS))
-                    throw new UnreadableWalletException("bad wallet network parameters: " + wallet.getParams().getId());
-
-                log.info("wallet loaded from: '{}', took {}", walletFile, watch);
-            } catch (final FileNotFoundException x) {
-                log.error("problem loading wallet", x);
-
-                Toast.makeText(WalletApplication.this, x.getClass().getName(), Toast.LENGTH_LONG).show();
-
-                wallet = restoreWalletFromBackup();
-            } catch (final UnreadableWalletException x) {
-                log.error("problem loading wallet", x);
-
-                Toast.makeText(WalletApplication.this, x.getClass().getName(), Toast.LENGTH_LONG).show();
-
-                wallet = restoreWalletFromBackup();
-            } finally {
-                if (walletStream != null) {
-                    try {
-                        walletStream.close();
-                    } catch (final IOException x) {
-                        // swallow
-                    }
-                }
-            }
-
-            if (!wallet.isConsistent()) {
-                Toast.makeText(this, "inconsistent wallet: " + walletFile, Toast.LENGTH_LONG).show();
-
-                wallet = restoreWalletFromBackup();
-            }
+        try {
+            final Stopwatch watch = Stopwatch.createStarted();
+            walletStream = new FileInputStream(walletFile);
+            wallet = new WalletProtobufSerializer().readWallet(walletStream);
 
             if (!wallet.getParams().equals(Constants.NETWORK_PARAMETERS))
-                throw new Error("bad wallet network parameters: " + wallet.getParams().getId());
-        } else {
-            wallet = new Wallet(Constants.NETWORK_PARAMETERS);
-            wallet.addKeyChain(Constants.BIP44_PATH);
+                throw new UnreadableWalletException("bad wallet network parameters: " + wallet.getParams().getId());
 
-            saveWallet();
-            backupWallet();
+            log.info("wallet loaded from: '{}', took {}", walletFile, watch);
+        } catch (final FileNotFoundException x) {
+            log.error("problem loading wallet", x);
 
-            config.armBackupReminder();
+            Toast.makeText(WalletApplication.this, x.getClass().getName(), Toast.LENGTH_LONG).show();
 
-            log.info("new wallet created");
+            wallet = restoreWalletFromBackup();
+        } catch (final UnreadableWalletException x) {
+            log.error("problem loading wallet", x);
+
+            Toast.makeText(WalletApplication.this, x.getClass().getName(), Toast.LENGTH_LONG).show();
+
+            wallet = restoreWalletFromBackup();
+        } finally {
+            if (walletStream != null) {
+                try {
+                    walletStream.close();
+                } catch (final IOException x) {
+                    // swallow
+                }
+            }
         }
+
+        if (!wallet.isConsistent()) {
+            Toast.makeText(this, "inconsistent wallet: " + walletFile, Toast.LENGTH_LONG).show();
+
+            wallet = restoreWalletFromBackup();
+        }
+
+        if (!wallet.getParams().equals(Constants.NETWORK_PARAMETERS))
+            throw new Error("bad wallet network parameters: " + wallet.getParams().getId());
+
+        finalizeInitialization();
     }
 
     private Wallet restoreWalletFromBackup() {
@@ -505,24 +575,41 @@ public class WalletApplication extends MultiDexApplication {
     }
 
     public void startBlockchainService(final boolean cancelCoinsReceived) {
-        if (cancelCoinsReceived)
+        if (cancelCoinsReceived) {
+            Intent blockchainServiceCancelCoinsReceivedIntent = new Intent(BlockchainService.ACTION_CANCEL_COINS_RECEIVED, null,
+                    this, BlockchainServiceImpl.class);
             startService(blockchainServiceCancelCoinsReceivedIntent);
-        else
+        } else {
             startService(blockchainServiceIntent);
+        }
     }
 
     public void stopBlockchainService() {
         stopService(blockchainServiceIntent);
     }
 
+    public void resetBlockchainState() {
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                AppDatabase.getAppDatabase().blockchainStateDao().save(new BlockchainState(true));
+            }
+        });
+    }
+
     public void resetBlockchain() {
         // implicitly stops blockchain service
+        resetBlockchainState();
+        Intent blockchainServiceResetBlockchainIntent = new Intent(BlockchainService.ACTION_RESET_BLOCKCHAIN, null, this,
+                BlockchainServiceImpl.class);
         startService(blockchainServiceResetBlockchainIntent);
     }
 
     public void replaceWallet(final Wallet newWallet) {
         resetBlockchain();
-        wallet.shutdownAutosaveAndWait();
+        if (wallet != null) {
+            wallet.shutdownAutosaveAndWait();
+        }
 
         wallet = newWallet;
         config.maybeIncrementBestChainHeightEver(newWallet.getLastBlockSeenHeight());
@@ -590,10 +677,18 @@ public class WalletApplication extends MultiDexApplication {
         return isLowRamDevice() ? 4 : 6;
     }
 
+    /**
+     * Low memory devices (currently 1GB or less) and 32 bit devices will require
+     * fewer scrypt hashes on the PIN+salt (handled by dashj)
+     *
+     * @return The number of scrypt interations
+     */
     public int scryptIterationsTarget() {
-        return isLowRamDevice() ? Constants.SCRYPT_ITERATIONS_TARGET_LOWRAM : Constants.SCRYPT_ITERATIONS_TARGET;
+        boolean is64bitABI = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP ? Build.SUPPORTED_64_BIT_ABIS.length != 0 : false;
+        return (isLowRamDevice() || !is64bitABI) ? Constants.SCRYPT_ITERATIONS_TARGET_LOWRAM : Constants.SCRYPT_ITERATIONS_TARGET;
     }
 
+    @SuppressLint("NewApi")
     public static void scheduleStartBlockchainService(final Context context) {
         final Configuration config = new Configuration(PreferenceManager.getDefaultSharedPreferences(context),
                 context.getResources());
@@ -607,6 +702,8 @@ public class WalletApplication extends MultiDexApplication {
             alarmInterval = AlarmManager.INTERVAL_HALF_DAY;
         else
             alarmInterval = AlarmManager.INTERVAL_DAY;
+
+        final long alarmIntervalMinutes = TimeUnit.MILLISECONDS.toMinutes(alarmInterval);
 
         log.info("last used {} minutes ago, rescheduling blockchain sync in roughly {} minutes",
                 lastUsedAgo / DateUtils.MINUTE_IN_MILLIS, alarmInterval / DateUtils.MINUTE_IN_MILLIS);
@@ -625,57 +722,91 @@ public class WalletApplication extends MultiDexApplication {
         }
         alarmManager.cancel(alarmIntent);
 
-        // workaround for no inexact set() before KitKat
-        final long now = System.currentTimeMillis();
-        alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, now + alarmInterval, AlarmManager.INTERVAL_DAY,
-                alarmIntent);
-    }
-
-    public void lockWalletIfNeeded() {
-        WalletLock walletLock = WalletLock.getInstance();
-        boolean recentReboot = SystemClock.elapsedRealtime() < WalletLock.DEFAULT_LOCK_TIMER_MILLIS &&
-                config.getLastUnlockTime() < (System.currentTimeMillis() - SystemClock.elapsedRealtime());
-        if (walletLock.isWalletLocked(wallet) || recentReboot) {
-            walletLock.setWalletLocked(true);
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.O || Build.VERSION.SDK_INT == Build.VERSION_CODES.O_MR1) {
+            log.info("custom sync scheduling with JobScheduler for Android 8 and 8.1");
+            JobScheduler jobScheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+            JobInfo pendingJob = jobScheduler.getPendingJob(BLOCKCHAIN_SYNC_JOB_ID);
+            if (pendingJob == null || pendingJob.getIntervalMillis() != alarmInterval) {
+                ComponentName jobService = new ComponentName(context, BlockchainSyncJobService.class);
+                JobInfo jobInfo = new JobInfo.Builder(BLOCKCHAIN_SYNC_JOB_ID, jobService)
+                        .setPeriodic(alarmInterval)
+                        .setPersisted(true)
+                        .build();
+                int scheduleResult = jobScheduler.schedule(jobInfo);
+                log.info("scheduling blockchain sync job with interval of {} minutes, result: {}", alarmIntervalMinutes, scheduleResult);
+            } else {
+                log.info("blockchain sync job already scheduled with interval of {} minutes", alarmIntervalMinutes);
+            }
+        } else {
+            // workaround for no inexact set() before KitKat
+            final long now = System.currentTimeMillis();
+            alarmManager.setInexactRepeating(AlarmManager.RTC_WAKEUP, now + alarmInterval, AlarmManager.INTERVAL_DAY,
+                    alarmIntent);
         }
     }
 
     /**
-      Replace the wallet with an new wallet as part of a wallet wipe
+     * Removes all the data and restarts the app showing onboarding screen.
      */
-    public void eraseAndCreateNewWallet() {
-        Wallet newWallet = new Wallet(Constants.NETWORK_PARAMETERS);
-        newWallet.addKeyChain(Constants.BIP44_PATH);
+    public void triggerWipe(final Context context) {
+        log.info("Removing all the data and restarting the app.");
 
-        log.info("creating new wallet after wallet wipe");
+        startService(new Intent(BlockchainService.ACTION_WIPE_WALLET, null, this, BlockchainServiceImpl.class));
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public void shutdownAndDeleteWallet() {
+        if (walletFile.exists()) {
+            wallet.shutdownAutosaveAndWait();
+            walletFile.delete();
+        }
+    }
+
+    public void finalizeWipe() {
+        shutdownAndDeleteWallet();
+        cleanupFiles();
+        config.clear();
+        PinRetryController.getInstance().clearPinFailPrefs();
+        MnemonicCodeExt.clearWordlistPath(this);
+        try {
+            new SecurityGuard().removeKeys();
+        } catch (GeneralSecurityException | IOException e) {
+            e.printStackTrace();
+            log.warn("error occurred when removing security keys", e);
+        }
 
         File walletBackupFile = getFileStreamPath(Constants.Files.WALLET_KEY_BACKUP_PROTOBUF);
-        if(walletBackupFile.exists())
+        if (walletBackupFile.exists()) {
             walletBackupFile.delete();
-
-        replaceWallet(newWallet);
-        saveWallet();
-        config.armBackupReminder();
-        config.armBackupSeedReminder();
-        log.info("New wallet created to replace the wiped locked wallet");
-    }
-
-
-
-    public boolean isBackupDisclaimerDismissed() {
-        return backupDisclaimerDismissed;
-    }
-
-    public void setBackupDisclaimerDismissed(boolean backupDisclaimerDismissed) {
-        this.backupDisclaimerDismissed = backupDisclaimerDismissed;
+        }
+        ProcessPhoenix.triggerRebirth(this);
     }
 
     public static WalletApplication getInstance() {
         return instance;
     }
 
-    public void killAllActivities() {
-        AbstractWalletActivity.finishAll(this);
+    private void registerDeviceInteractiveReceiver() {
+
+        final IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
+
+        registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                KeyguardManager myKM = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
+                deviceWasLocked |= Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1 ? myKM.isDeviceLocked() : myKM.inKeyguardRestrictedInputMode();
+            }
+        }, filter);
     }
 
+    private void lockTheApp(Context context, Activity activity) {
+        if (!isSpecialActivity(activity)) {
+            context = context.getApplicationContext();
+            Intent lockScreenIntent = LockScreenActivity.createIntentAsNewTask(context);
+            context.startActivity(lockScreenIntent);
+        }
+        deviceWasLocked = false;
+    }
 }

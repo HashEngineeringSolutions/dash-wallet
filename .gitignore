@@ -3,6 +3,8 @@ gradlew
 gradlew.bat
 build/
 local.properties
+local.properties.windows
+local.properties.osx
 .classpath
 .project
 .settings/
@@ -19,5 +21,7 @@ out/
 *.so
 .DS_Store
 .externalNativeBuild/
+.cxx/
 gradle-wrapper.jar
 wallet/prod
+wallet/.cxx

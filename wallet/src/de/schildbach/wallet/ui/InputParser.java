@@ -39,7 +39,7 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.ProtocolException;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.VerificationException;
-import org.bitcoinj.core.VersionedChecksummedBytes;
+import org.bitcoinj.core.PrefixedChecksummedBytes;
 import org.bitcoinj.crypto.BIP38PrivateKey;
 import org.bitcoinj.crypto.TrustStoreLoader;
 import org.bitcoinj.protocols.payments.PaymentProtocol;
@@ -58,6 +58,7 @@ import com.google.protobuf.UninitializedMessageException;
 
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.data.PaymentIntent;
+import de.schildbach.wallet.ui.send.SendCoinsActivity;
 import de.schildbach.wallet.util.AddressUtil;
 import de.schildbach.wallet.util.Io;
 import de.schildbach.wallet.util.Qr;
@@ -76,7 +77,15 @@ public abstract class InputParser {
     public abstract static class StringInputParser extends InputParser {
         private final String input;
 
-        public StringInputParser(final String input) {
+        public StringInputParser(final String input, boolean supportAnypayUrls) {
+            if (supportAnypayUrls) {
+                // replaces Anypay scheme with the Dash one
+                // ie "pay:?r=https://(...)" become "dash:?r=https://(...)"
+                if (input.startsWith(SendCoinsActivity.ANYPAY_SCHEME + ":")) {
+                    this.input = input.replaceFirst(SendCoinsActivity.ANYPAY_SCHEME, CoinDefinition.coinURIScheme);
+                    return;
+                }
+            }
             this.input = input;
         }
 
@@ -90,15 +99,15 @@ public abstract class InputParser {
                 } catch (final IOException x) {
                     log.info("i/o error while fetching payment request", x);
 
-                    error(R.string.input_parser_io_error, x.getMessage());
+                    error(x, R.string.input_parser_io_error, x.getMessage());
                 } catch (final PaymentProtocolException.PkiVerificationException x) {
                     log.info("got unverifyable payment request", x);
 
-                    error(R.string.input_parser_unverifyable_paymentrequest, x.getMessage());
+                    error(x, R.string.input_parser_unverifyable_paymentrequest, x.getMessage());
                 } catch (final PaymentProtocolException x) {
                     log.info("got invalid payment request", x);
 
-                    error(R.string.input_parser_invalid_paymentrequest, x.getMessage());
+                    error(x, R.string.input_parser_invalid_paymentrequest, x.getMessage());
                 }
             } else if (input.startsWith(CoinDefinition.coinURIScheme + ":")) {
                 try {
@@ -111,40 +120,40 @@ public abstract class InputParser {
                 } catch (final BitcoinURIParseException x) {
                     log.info("got invalid bitcoin uri: '" + input + "'", x);
 
-                    error(R.string.input_parser_invalid_bitcoin_uri, input);
+                    error(x, R.string.input_parser_invalid_bitcoin_uri, input);
                 }
             } else if (PATTERN_BITCOIN_ADDRESS.matcher(input).matches()) {
                 try {
-                    final Address address = Address.fromBase58(Constants.NETWORK_PARAMETERS, input);
+                    final Address address = Address.fromString(Constants.NETWORK_PARAMETERS, input);
 
                     handlePaymentIntent(PaymentIntent.fromAddress(address, null));
                 } catch (final AddressFormatException x) {
                     log.info("got invalid address", x);
 
-                    error(R.string.input_parser_invalid_address);
+                    error(x, R.string.input_parser_invalid_address);
                 }
             } else if (PATTERN_DUMPED_PRIVATE_KEY_UNCOMPRESSED.matcher(input).matches()
                     || PATTERN_DUMPED_PRIVATE_KEY_COMPRESSED.matcher(input).matches()) {
                 try {
-                    final VersionedChecksummedBytes key = DumpedPrivateKey.fromBase58(Constants.NETWORK_PARAMETERS,
+                    final PrefixedChecksummedBytes key = DumpedPrivateKey.fromBase58(Constants.NETWORK_PARAMETERS,
                             input);
 
                     handlePrivateKey(key);
                 } catch (final AddressFormatException x) {
                     log.info("got invalid address", x);
 
-                    error(R.string.input_parser_invalid_address);
+                    error(x, R.string.input_parser_invalid_address);
                 }
             } else if (PATTERN_BIP38_PRIVATE_KEY.matcher(input).matches()) {
                 try {
-                    final VersionedChecksummedBytes key = BIP38PrivateKey.fromBase58(Constants.NETWORK_PARAMETERS,
+                    final PrefixedChecksummedBytes key = BIP38PrivateKey.fromBase58(Constants.NETWORK_PARAMETERS,
                             input);
 
                     handlePrivateKey(key);
                 } catch (final AddressFormatException x) {
                     log.info("got invalid address", x);
 
-                    error(R.string.input_parser_invalid_address);
+                    error(x, R.string.input_parser_invalid_address);
                 }
             } else if (PATTERN_TRANSACTION.matcher(input).matches()) {
                 try {
@@ -155,20 +164,20 @@ public abstract class InputParser {
                 } catch (final IOException x) {
                     log.info("i/o error while fetching transaction", x);
 
-                    error(R.string.input_parser_invalid_transaction, x.getMessage());
+                    error(x, R.string.input_parser_invalid_transaction, x.getMessage());
                 } catch (final ProtocolException x) {
                     log.info("got invalid transaction", x);
 
-                    error(R.string.input_parser_invalid_transaction, x.getMessage());
+                    error(x, R.string.input_parser_invalid_transaction, x.getMessage());
                 }
             } else {
                 cannotClassify(input);
             }
         }
 
-        protected void handlePrivateKey(final VersionedChecksummedBytes key) {
-            final Address address = new Address(Constants.NETWORK_PARAMETERS,
-                    ((DumpedPrivateKey) key).getKey().getPubKeyHash());
+        protected void handlePrivateKey(final PrefixedChecksummedBytes key) {
+            final Address address = Address.fromKey(Constants.NETWORK_PARAMETERS,
+                    ((DumpedPrivateKey) key).getKey());
 
             handlePaymentIntent(PaymentIntent.fromAddress(address, null));
         }
@@ -193,7 +202,7 @@ public abstract class InputParser {
                 } catch (final VerificationException x) {
                     log.info("got invalid transaction", x);
 
-                    error(R.string.input_parser_invalid_transaction, x.getMessage());
+                    error(x, R.string.input_parser_invalid_transaction, x.getMessage());
                 }
             } else if (PaymentProtocol.MIMETYPE_PAYMENTREQUEST.equals(inputType)) {
                 try {
@@ -201,11 +210,11 @@ public abstract class InputParser {
                 } catch (final PaymentProtocolException.PkiVerificationException x) {
                     log.info("got unverifyable payment request", x);
 
-                    error(R.string.input_parser_unverifyable_paymentrequest, x.getMessage());
+                    error(x, R.string.input_parser_unverifyable_paymentrequest, x.getMessage());
                 } catch (final PaymentProtocolException x) {
                     log.info("got invalid payment request", x);
 
-                    error(R.string.input_parser_invalid_paymentrequest, x.getMessage());
+                    error(x, R.string.input_parser_invalid_paymentrequest, x.getMessage());
                 }
             } else {
                 cannotClassify(inputType);
@@ -239,15 +248,15 @@ public abstract class InputParser {
                 } catch (final IOException x) {
                     log.info("i/o error while fetching payment request", x);
 
-                    error(R.string.input_parser_io_error, x.getMessage());
+                    error(x, R.string.input_parser_io_error, x.getMessage());
                 } catch (final PaymentProtocolException.PkiVerificationException x) {
                     log.info("got unverifyable payment request", x);
 
-                    error(R.string.input_parser_unverifyable_paymentrequest, x.getMessage());
+                    error(x, R.string.input_parser_unverifyable_paymentrequest, x.getMessage());
                 } catch (final PaymentProtocolException x) {
                     log.info("got invalid payment request", x);
 
-                    error(R.string.input_parser_invalid_paymentrequest, x.getMessage());
+                    error(x, R.string.input_parser_invalid_paymentrequest, x.getMessage());
                 } finally {
                     try {
                         if (baos != null)
@@ -288,7 +297,7 @@ public abstract class InputParser {
             } catch (BitcoinURIParseException x) {
                 log.info("got invalid dashwallet uri: '" + input + "'", x);
 
-                error(R.string.input_parser_invalid_bitcoin_uri, input);
+                error(x, R.string.input_parser_invalid_bitcoin_uri, input);
                 return;
             }
 
@@ -300,7 +309,7 @@ public abstract class InputParser {
                 } catch (BitcoinURIParseException x) {
                     log.info("got invalid dashwallet uri: '" + input + "'", x);
 
-                    error(R.string.input_parser_invalid_bitcoin_uri, input);
+                    error(x, R.string.input_parser_invalid_bitcoin_uri, input);
                 }
             } else if (walletUri.isMasterPublicKeyRequest()) {
                 handleMasterPublicKeyRequest(walletUri.getSender());
@@ -403,20 +412,25 @@ public abstract class InputParser {
 
     protected abstract void handleDirectTransaction(Transaction transaction) throws VerificationException;
 
-    protected abstract void error(int messageResId, Object... messageArgs);
+    protected abstract void error(Exception x, int messageResId, Object... messageArgs);
 
     protected void cannotClassify(final String input) {
         log.info("cannot classify: '{}'", input);
 
-        error(R.string.input_parser_cannot_classify, input);
+        error(null, R.string.input_parser_cannot_classify, input);
     }
 
-    protected void dialog(final Context context, @Nullable final OnClickListener dismissListener, final int titleResId,
-            final int messageResId, final Object... messageArgs) {
+    public static void dialog(final Context context, @Nullable final OnClickListener dismissListener, final int titleResId,
+                              final int messageResId, final Object... messageArgs) {
+        dialog(context, dismissListener, titleResId, context.getString(messageResId, messageArgs));
+    }
+
+    public static void dialog(final Context context, @Nullable final OnClickListener dismissListener, final int titleResId,
+                              String message) {
         final DialogBuilder dialog = new DialogBuilder(context);
         if (titleResId != 0)
             dialog.setTitle(titleResId);
-        dialog.setMessage(context.getString(messageResId, messageArgs));
+        dialog.setMessage(message);
         dialog.singleDismissButton(dismissListener);
         dialog.show();
     }

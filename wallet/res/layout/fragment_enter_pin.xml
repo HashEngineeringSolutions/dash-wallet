@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
+    android:background="@android:color/transparent"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:background="@color/dash_white">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/title"
+                        style="@style/MontserratMedium.BodyTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:text="@string/authenticate_fingerprint_title" />
+
+                    <TextView
+                        android:id="@+id/message"
+                        style="@style/MontserratMedium.BodyText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:text="@string/authenticate_pin_message"
+                        android:textColor="@color/dash_gray" />
+
+                    <ViewSwitcher
+                        android:id="@+id/pin_progress_switcher"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+
+                            <de.schildbach.wallet.ui.widget.PinPreviewView
+                                android:id="@+id/pin_preview"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="start"
+                                android:layout_marginStart="12dp"
+                                app:pp_item_size="35dp" />
+
+                            <de.schildbach.wallet.ui.widget.FingerprintView
+                                android:id="@+id/fingerprint_view"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:visibility="gone"
+                                tools:visibility="visible" />
+
+                        </LinearLayout>
+
+                        <ProgressBar
+                            android:id="@+id/progress"
+                            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_gravity="center"
+                            android:layout_marginStart="16dp"
+                            android:layout_marginEnd="16dp"
+                            android:indeterminate="true" />
+
+                    </ViewSwitcher>
+
+                </LinearLayout>
+
+                <include
+                    android:id="@+id/button_bar"
+                    layout="@layout/alert_dialog_button_bar" />
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+    </FrameLayout>
+
+    <de.schildbach.wallet.ui.widget.NumericKeyboardView
+        android:id="@+id/numeric_keyboard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/dash_white"
+        android:padding="16dp"
+        android:stretchColumns="*" />
+
+</LinearLayout>

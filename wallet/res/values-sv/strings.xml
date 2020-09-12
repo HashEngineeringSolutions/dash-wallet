@@ -29,7 +29,6 @@
 	<string name="wallet_transactions_fragment_empty_text_sent">Inga Dash har hittills skickats</string>
 	<string name="wallet_transactions_fragment_empty_text_howto">Hur får man tag i Dash?\n\nKöp för svenska kronor,\nsälj varor eller tjänster eller\ntjäna genom att arbeta.</string>
 	<string name="wallet_transactions_row_warning_backup">Grattis, fick du din första betalning! Har du redan &lt;u&gt;säkerhetskopierat din plånbok&lt;/u&gt;, för att skydda mot förlust?</string>
-	<string name="wallet_transactions_row_warning_storage_encryption">Tips: för att öka säkerheten till din plånbok, du kan &lt;u&gt;kryptera din maskin&lt;/u&gt;. Detta skulle också skydda din data i andra appar.</string>
 	<string name="wallet_transactions_fragment_coinbase">genererade</string>
 	<string name="wallet_transactions_fragment_internal">intern</string>
 	<string name="wallet_transactions_options_filter">Filter</string>
@@ -54,7 +53,6 @@
 	<string name="send_coins_fragment_request_payment_request_progress">Hämtar signatur från %s</string>
 	<string name="send_coins_fragment_request_payment_request_failed_title">Hämtning av signatur misslyckades</string>
 	<string name="send_coins_fragment_request_payment_request_wrong_signature">Felaktig signatur!</string>
-	<string name="send_coins_fragment_payee_verified_by">Verifierad av: %s</string>
 	<string name="send_coins_fragment_payee_verified_by_unknown">okänd</string>
 	<string name="send_coins_fragment_receiving_address_label">Skicka till</string>
 	<string name="send_coins_fragment_receiving_address_hint">skriv adress eller namn</string>

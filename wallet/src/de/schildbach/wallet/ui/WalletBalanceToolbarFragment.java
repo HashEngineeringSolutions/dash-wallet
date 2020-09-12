@@ -18,15 +18,14 @@
 package de.schildbach.wallet.ui;
 
 import android.app.Activity;
-import android.arch.lifecycle.Observer;
-import android.arch.lifecycle.ViewModelProviders;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
 
-import android.os.Handler;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.Loader;
+import androidx.fragment.app.Fragment;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.Loader;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -49,18 +48,15 @@ import javax.annotation.Nullable;
 import org.dash.wallet.common.Configuration;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
-import de.schildbach.wallet.data.WalletLock;
 import de.schildbach.wallet.rates.ExchangeRate;
 import de.schildbach.wallet.rates.ExchangeRatesViewModel;
-import de.schildbach.wallet.service.BlockchainState;
-import de.schildbach.wallet.service.BlockchainStateLoader;
 import de.schildbach.wallet.util.BlockchainStateUtils;
 import de.schildbach.wallet_test.R;
 
 /**
  * @author Andreas Schildbach
  */
-public final class WalletBalanceToolbarFragment extends Fragment implements WalletLock.OnLockChangeListener {
+public final class WalletBalanceToolbarFragment extends Fragment {
 	private WalletApplication application;
 	private AbstractBindServiceActivity activity;
 	private Configuration config;
@@ -86,20 +82,15 @@ public final class WalletBalanceToolbarFragment extends Fragment implements Wall
 	@Nullable
 	private ExchangeRate exchangeRate = null;
 	@Nullable
-	private BlockchainState blockchainState = null;
-	@Nullable
 	private int masternodeSyncStatus = MasternodeSync.MASTERNODE_SYNC_FINISHED;
 
 	private static final int ID_BALANCE_LOADER = 0;
-	private static final int ID_BLOCKCHAIN_STATE_LOADER = 1;
 	private static final int ID_MASTERNODE_SYNC_LOADER = 2;
 
 	private static final long BLOCKCHAIN_UPTODATE_THRESHOLD_MS = DateUtils.HOUR_IN_MILLIS;
 	private static final Coin TOO_MUCH_BALANCE_THRESHOLD = Coin.COIN.multiply(30);
 
 	private boolean initComplete = false;
-
-	private Handler autoLockHandler = new Handler();
 
 	@Override
 	public void onCreate(Bundle savedInstanceState)
@@ -111,11 +102,6 @@ public final class WalletBalanceToolbarFragment extends Fragment implements Wall
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         MenuItem walletLockMenuItem = menu.findItem(R.id.wallet_options_lock);
-        if (walletLockMenuItem != null) {
-            boolean isWalletLocked = WalletLock.getInstance().isWalletLocked(wallet);
-            walletLockMenuItem.setVisible(isWalletLocked);
-            viewBalance.setVisibility(isWalletLocked ? View.GONE : View.VISIBLE);
-        }
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -134,7 +120,7 @@ public final class WalletBalanceToolbarFragment extends Fragment implements Wall
 	}
 
 	@Override
-	public void onActivityCreated(@android.support.annotation.Nullable Bundle savedInstanceState)
+	public void onActivityCreated(@androidx.annotation.Nullable Bundle savedInstanceState)
 	{
 		super.onActivityCreated(savedInstanceState);
 		appBarMessageView = activity.findViewById(R.id.toolbar_message);
@@ -174,6 +160,8 @@ public final class WalletBalanceToolbarFragment extends Fragment implements Wall
 					showExchangeRatesActivity();
 			}
 		});
+
+
 	}
 
 	@Override
@@ -181,11 +169,6 @@ public final class WalletBalanceToolbarFragment extends Fragment implements Wall
 		super.onResume();
 
 		loaderManager.initLoader(ID_BALANCE_LOADER, null, balanceLoaderCallbacks);
-		if(!initComplete) {
-			loaderManager.initLoader(ID_BLOCKCHAIN_STATE_LOADER, null, blockchainStateLoaderCallbacks);
-			initComplete = true;
-		}
-		else loaderManager.restartLoader(ID_BLOCKCHAIN_STATE_LOADER, null, blockchainStateLoaderCallbacks);
 
 		exchangeRatesViewModel.getRate(config.getExchangeCurrencyCode()).observe(this,
 				new Observer<de.schildbach.wallet.rates.ExchangeRate>() {
@@ -199,31 +182,14 @@ public final class WalletBalanceToolbarFragment extends Fragment implements Wall
 		});
 
 		updateView();
-
-		WalletLock.getInstance().addListener(this);
-		scheduleAutoLock();
-	}
-
-	private void scheduleAutoLock() {
-		autoLockHandler.removeCallbacksAndMessages(null);
-        autoLockHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                application.lockWalletIfNeeded();
-                scheduleAutoLock();
-            }
-        }, WalletLock.DEFAULT_LOCK_TIMER_MILLIS);
 	}
 
 	@Override
 	public void onPause()
 	{
-		loaderManager.destroyLoader(ID_BLOCKCHAIN_STATE_LOADER);
 		loaderManager.destroyLoader(ID_BALANCE_LOADER);
 		//loaderManager.destroyLoader(ID_MASTERNODE_SYNC_LOADER);
 
-		WalletLock.getInstance().removeListener(this);
-		autoLockHandler.removeCallbacksAndMessages(null);
 		super.onPause();
 	}
 
@@ -232,17 +198,8 @@ public final class WalletBalanceToolbarFragment extends Fragment implements Wall
 		if (!isAdded())
 			return;
 
-		final boolean showProgress;
-
-		if (blockchainState != null && blockchainState.bestChainDate != null)
-		{
-			progressMessage = BlockchainStateUtils.getSyncStateString(blockchainState, getActivity());
-			showProgress = progressMessage != null;
-		}
-		else
-		{
-			showProgress = false;
-		}
+		//TODO: this class will be removed in a future PR, it's not being used anymore.
+		final boolean showProgress = false;
 
 		if (!showProgress)
 		{
@@ -350,28 +307,6 @@ public final class WalletBalanceToolbarFragment extends Fragment implements Wall
 		getActivity().startActivity(intent);
 	}
 
-	private final LoaderManager.LoaderCallbacks<BlockchainState> blockchainStateLoaderCallbacks = new LoaderManager.LoaderCallbacks<BlockchainState>()
-	{
-		@Override
-		public Loader<BlockchainState> onCreateLoader(final int id, final Bundle args)
-		{
-			return new BlockchainStateLoader(activity);
-		}
-
-		@Override
-		public void onLoadFinished(final Loader<BlockchainState> loader, final BlockchainState blockchainState)
-		{
-			WalletBalanceToolbarFragment.this.blockchainState = blockchainState;
-
-			updateView();
-		}
-
-		@Override
-		public void onLoaderReset(final Loader<BlockchainState> loader)
-		{
-		}
-	};
-
 	private final LoaderManager.LoaderCallbacks<Coin> balanceLoaderCallbacks = new LoaderManager.LoaderCallbacks<Coin>()
 	{
 		@Override
@@ -393,35 +328,4 @@ public final class WalletBalanceToolbarFragment extends Fragment implements Wall
 		{
 		}
 	};
-
-	@Override
-	public void onLockChanged(boolean locked) {
-		updateView();
-		if (!locked) {
-			scheduleAutoLock();
-		}
-	}
-
-	/*private final LoaderManager.LoaderCallbacks<Integer> masternodeSyncLoaderCallbacks = new LoaderManager.LoaderCallbacks<Integer>()
-	{
-		@Override
-		public Loader<Integer> onCreateLoader(final int id, final Bundle args)
-		{
-			return new MasternodeSyncLoader(activity, wallet);
-		}
-
-		@Override
-		public void onLoadFinished(final Loader<Integer> loader, final Integer newStatus)
-		{
-			WalletBalanceToolbarFragment.this.masternodeSyncStatus = newStatus;
-
-			updateView();
-
-		}
-
-		@Override
-		public void onLoaderReset(final Loader<Integer> loader)
-		{
-		}
-	};*/
 }

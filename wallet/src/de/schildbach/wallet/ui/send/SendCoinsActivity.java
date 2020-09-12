@@ -1,101 +1,168 @@
 /*
- * Copyright 2011-2015 the original author or authors.
+ * Copyright 2020 Dash Core Group
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package de.schildbach.wallet.ui.send;
 
-import javax.annotation.Nullable;
-
-import org.bitcoinj.core.Coin;
-
-import de.schildbach.wallet.Constants;
-import de.schildbach.wallet.data.PaymentIntent;
-import de.schildbach.wallet.ui.AbstractBindServiceActivity;
-import de.schildbach.wallet.ui.HelpDialogFragment;
-import de.schildbach.wallet_test.R;
-
-import android.app.Activity;
-import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
+import android.nfc.NdefMessage;
+import android.nfc.NfcAdapter;
 import android.os.Bundle;
-import android.view.Menu;
 import android.view.MenuItem;
 
-/**
- * @author Andreas Schildbach
- */
-public final class SendCoinsActivity extends AbstractBindServiceActivity {
-	public static final String INTENT_EXTRA_PAYMENT_INTENT = "payment_intent";
-	public static final String INTENT_EXTRA_FEE_CATEGORY = "fee_category";
-	public static final String INTENT_EXTRA_FORCE_INSTANT_SEND = "force_instant_send";
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProviders;
 
-	public static final String ACTION_SEND_FROM_WALLET_URI = "de.schildbach.wallet.action.SEND_FROM_WALLET_URI";
+import org.bitcoinj.core.CoinDefinition;
+import org.bitcoinj.protocols.payments.PaymentProtocol;
+import org.dash.wallet.common.ui.DialogBuilder;
 
-	public static void start(final Context context, final PaymentIntent paymentIntent,
-							 final @Nullable FeeCategory feeCategory, final int intentFlags) {
-		final Intent intent = new Intent(context, SendCoinsActivity.class);
-		intent.putExtra(INTENT_EXTRA_PAYMENT_INTENT, paymentIntent);
-		if (feeCategory != null)
-			intent.putExtra(INTENT_EXTRA_FEE_CATEGORY, feeCategory);
-		if (intentFlags != 0)
-			intent.setFlags(intentFlags);
-		context.startActivity(intent);
-	}
+import de.schildbach.wallet.data.PaymentIntent;
+import de.schildbach.wallet.integration.android.BitcoinIntegration;
+import de.schildbach.wallet.livedata.Resource;
+import de.schildbach.wallet.ui.AbstractBindServiceActivity;
+import de.schildbach.wallet.util.Nfc;
+import de.schildbach.wallet_test.R;
 
-	public static void start(final Context context, final PaymentIntent paymentIntent) {
-		start(context, paymentIntent, null, 0);
-	}
+public class SendCoinsActivity extends AbstractBindServiceActivity {
 
-	public static void sendFromWalletUri(final Activity callingActivity, int requestCode,
-									  final PaymentIntent paymentIntent, boolean forceInstantSend) {
-		final Intent intent = new Intent(callingActivity, SendCoinsActivity.class);
-		intent.setAction(ACTION_SEND_FROM_WALLET_URI);
-		intent.putExtra(INTENT_EXTRA_PAYMENT_INTENT, paymentIntent);
-		intent.putExtra(INTENT_EXTRA_FORCE_INSTANT_SEND, forceInstantSend);
-		callingActivity.startActivityForResult(intent, requestCode);
-	}
+    public static final String ANYPAY_SCHEME = "pay";
 
-	@Override
-	protected void onCreate(final Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+    public static final String INTENT_EXTRA_PAYMENT_INTENT = "payment_intent";
 
-		setContentView(R.layout.send_coins_content);
+    @Override
+    protected void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-		getWalletApplication().startBlockchainService(false);
-	}
+        SendCoinsActivityViewModel viewModel = ViewModelProviders.of(this).get(SendCoinsActivityViewModel.class);
+        viewModel.getBasePaymentIntent().observe(this, new Observer<Resource<PaymentIntent>>() {
+            @Override
+            public void onChanged(Resource<PaymentIntent> paymentIntentResource) {
+                switch (paymentIntentResource.getStatus()) {
+                    case LOADING: {
 
-	@Override
-	public boolean onCreateOptionsMenu(final Menu menu) {
-		getMenuInflater().inflate(R.menu.send_coins_activity_options, menu);
+                        break;
+                    }
+                    case ERROR: {
+                        String message = paymentIntentResource.getMessage();
+                        if (message != null) {
+                            final DialogBuilder dialog = new DialogBuilder(SendCoinsActivity.this);
+                            dialog.setMessage(message);
+                            dialog.singleDismissButton(activityDismissListener);
+                            dialog.show();
+                        }
+                        break;
+                    }
+                    case SUCCESS: {
+                        if (paymentIntentResource.getData() != null) {
+                            initStateFromPaymentIntent(paymentIntentResource.getData());
+                        }
+                        break;
+                    }
+                }
+            }
+        });
 
-		return super.onCreateOptionsMenu(menu);
-	}
+        if (savedInstanceState == null) {
+            final Intent intent = getIntent();
+            final String action = intent.getAction();
+            final Uri intentUri = intent.getData();
+            final String scheme = intentUri != null ? intentUri.getScheme() : null;
+            final String mimeType = intent.getType();
 
-	@Override
-	public boolean onOptionsItemSelected(final MenuItem item) {
-		switch (item.getItemId()) {
-			case android.R.id.home:
-				finish();
-				return true;
+            if ((Intent.ACTION_VIEW.equals(action) || NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action))
+                    && intentUri != null && (CoinDefinition.coinURIScheme.equals(scheme) || ANYPAY_SCHEME.equals(scheme))) {
+                viewModel.initStateFromDashUri(intentUri);
 
-			case R.id.send_coins_options_help:
-				HelpDialogFragment.page(getSupportFragmentManager(), R.string.help_send_coins);
-				return true;
-		}
+            } else if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action) && PaymentProtocol.MIMETYPE_PAYMENTREQUEST.equals(mimeType)) {
 
-		return super.onOptionsItemSelected(item);
-	}
+                final NdefMessage ndefMessage = (NdefMessage) intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)[0];
+                final byte[] ndefMessagePayload = Nfc.extractMimePayload(PaymentProtocol.MIMETYPE_PAYMENTREQUEST, ndefMessage);
+
+                viewModel.initStateFromPaymentRequest(mimeType, ndefMessagePayload);
+
+            } else if (Intent.ACTION_VIEW.equals(action) && PaymentProtocol.MIMETYPE_PAYMENTREQUEST.equals(mimeType)) {
+
+                final byte[] paymentRequest = BitcoinIntegration.paymentRequestFromIntent(intent);
+                if (intentUri != null) {
+
+                    viewModel.initStateFromIntentUri(mimeType, intentUri);
+
+                } else if (paymentRequest != null) {
+
+                    viewModel.initStateFromPaymentRequest(mimeType, paymentRequest);
+
+                } else {
+
+                    throw new IllegalArgumentException();
+                }
+
+            } else if (intent.hasExtra(SendCoinsActivity.INTENT_EXTRA_PAYMENT_INTENT)) {
+
+                final PaymentIntent paymentIntent = intent.getParcelableExtra(SendCoinsActivity.INTENT_EXTRA_PAYMENT_INTENT);
+                initStateFromPaymentIntent(paymentIntent);
+
+            } else {
+
+                throw new IllegalStateException();
+            }
+        }
+
+        getWalletApplication().startBlockchainService(false);
+    }
+
+    private void initStateFromPaymentIntent(PaymentIntent paymentIntent) {
+        if (paymentIntent.hasPaymentRequestUrl()) {
+            showSendPaymentProtocol(paymentIntent);
+        } else {
+            showSendFragment(paymentIntent);
+        }
+    }
+
+    private void showSendFragment(PaymentIntent paymentIntent) {
+        getIntent().putExtra(SendCoinsActivity.INTENT_EXTRA_PAYMENT_INTENT, paymentIntent);
+        setContentView(R.layout.send_coins_content);
+    }
+
+    private void showSendPaymentProtocol(PaymentIntent paymentIntent) {
+        setContentView(R.layout.activity_payment_protocol);
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.container, PaymentProtocolFragment.newInstance(paymentIntent))
+                .commitNow();
+    }
+
+    private final DialogInterface.OnClickListener activityDismissListener = new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(final DialogInterface dialog, final int which) {
+            finish();
+        }
+    };
+
+    public boolean isUserAuthorized() {
+        return false;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(final MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
 }

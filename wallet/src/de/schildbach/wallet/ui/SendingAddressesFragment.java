@@ -37,7 +37,8 @@ import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.data.AddressBookProvider;
 import de.schildbach.wallet.data.PaymentIntent;
 import de.schildbach.wallet.ui.InputParser.StringInputParser;
-import de.schildbach.wallet.ui.send.SendCoinsActivity;
+import de.schildbach.wallet.ui.scan.ScanActivity;
+import de.schildbach.wallet.ui.send.SendCoinsInternalActivity;
 import de.schildbach.wallet.util.BitmapFragment;
 import de.schildbach.wallet.util.Qr;
 import de.schildbach.wallet.util.Toast;
@@ -57,9 +58,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -152,7 +153,7 @@ public final class SendingAddressesFragment extends FancyListFragment
         if (requestCode == REQUEST_CODE_SCAN && resultCode == Activity.RESULT_OK) {
             final String input = intent.getStringExtra(ScanActivity.INTENT_EXTRA_RESULT);
 
-            new StringInputParser(input) {
+            new StringInputParser(input, false) {
                 @Override
                 protected void handlePaymentIntent(final PaymentIntent paymentIntent) {
                     // workaround for "IllegalStateException: Can not perform this action after
@@ -181,7 +182,7 @@ public final class SendingAddressesFragment extends FancyListFragment
                 }
 
                 @Override
-                protected void error(final int messageResId, final Object... messageArgs) {
+                protected void error(Exception x, final int messageResId, final Object... messageArgs) {
                     dialog(activity, null, R.string.address_book_options_scan_title, messageResId, messageArgs);
                 }
             }.parse();
@@ -317,7 +318,7 @@ public final class SendingAddressesFragment extends FancyListFragment
     }
 
     private void handleSend(final String address) {
-        SendCoinsActivity.start(activity, PaymentIntent.fromAddress(address, null));
+        SendCoinsInternalActivity.start(activity, PaymentIntent.fromAddress(address, null));
     }
 
     private void handleRemove(final String address) {
@@ -360,7 +361,7 @@ public final class SendingAddressesFragment extends FancyListFragment
     public void setWalletAddresses(@Nonnull final ArrayList<Address> addresses) {
         final StringBuilder builder = new StringBuilder();
         for (final Address address : addresses)
-            builder.append(address.toBase58()).append(",");
+            builder.append(address.toString()).append(",");
         if (addresses.size() > 0)
             builder.setLength(builder.length() - 1);
 
@@ -380,7 +381,7 @@ public final class SendingAddressesFragment extends FancyListFragment
                 return null;
 
             try {
-                return Address.fromBase58(Constants.NETWORK_PARAMETERS, clipText.toString().trim());
+                return Address.fromString(Constants.NETWORK_PARAMETERS, clipText.toString().trim());
             } catch (final AddressFormatException x) {
                 return null;
             }

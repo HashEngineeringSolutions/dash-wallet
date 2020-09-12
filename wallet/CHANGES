@@ -1,4 +1,74 @@
 Dash Wallet
+v7.0.9
+* Fix crash on Address Book Screen on Android 4.4
+* Add back button to Verify Recovery Phrase Screens
+* Hide contents on recent app list
+* Fix RemoteServiceException crashes on Android 8.1
+* Update translations (sk, nl)
+* Update checkpoints
+
+v7.0.8
+* Support restoration from non-english recovery phrases
+* Fix app start crash on new installs
+* Support better Uphold error handling (show more detailed messages).  The most common failure on transferring Dash is due to a required 24 hour delay after purchasing using a bank transfer
+
+v7.0.7
+* Fix layout issues on More and Settings Screens for other languages with longer text
+* Fix Android 4.4 crashes on Transaction Details screens
+* Fix another long PIN issue related to upgrading to v7
+* Fix blockchain service crashes on Android 8.1
+
+v7.0.6
+* Handle Dash payment requests and addresses in HTML clipboard format
+* Properly format authentication dialog
+* Center Dash Logo on Home Screen
+* Add contact support to More menu
+* BIP70: add support for pay: uri's
+* Fix crash when importing private key
+* Fix crashes related to the Lock Screen
+* Fix background service crashes
+* Update Translations
+
+v7.0.5
+* Fix crash on Local Currency Screen (Android 5, 6, Chinese locale)
+* Clicking Notification goes to the Lock Screen instead of Home Screen
+* Fix crash on Android 6 when fingerprint hardware is not available
+* Fix various Uphold crashes
+* Prevent Notifications from keeping the app open
+* Fix Network Monitor that would not update as blocks were downloaded
+* Add complete BIP70 support
+* Fix crashes related to InstantSend and Chainlocks with dashj 0.17.1
+* Update gradle components
+
+v7.0.4
+* Fix clipboard issues with Android 10
+* Payments/Send screen updates with changes in clipboard
+* Fix upgrade crash from v6 apps without a PIN
+* Fix upgrade crash from when PIN is entered incorrectly 3 times and app goes to background
+
+v7.0.3
+* Fix start up crash in Blockchain Service
+
+v7.0.2
+* Fix Uphold send crash
+* Fix Uphold logout timer
+* Fix Local Currency Screen Crash
+* Fix various UI issues
+* Update translations
+* Fix UI issue with hide balance on Home Screen
+* Prevent sending while syncing
+* Support Android 4.4 (fixed related crashes)
+
+
+v7.0.1
+* Disable old navigation menu access
+* Reset auto logout  timer on any UI action
+
+v7.0.0
+* Beta Release
+* Complete app redesign
+* includes fixes from 6.6.5 (fix delayed sending and fallback price source #2)
+
 v6.6.4
 * Revert: Large numbers have separators (e.g. 1,999.00 instead of 1999.00).
   This caused many bugs on the Send and Request screens
