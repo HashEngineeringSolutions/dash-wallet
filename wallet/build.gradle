@@ -9,10 +9,6 @@ ext {
 repositories {
     mavenLocal()
     maven {
-        url 'http://oss.jfrog.org/artifactory/oss-snapshot-local'
-        name 'OJO snapshots'
-    }
-    maven {
         url 'https://maven.google.com/'
         name 'Google'
     }
@@ -64,8 +60,6 @@ dependencies {
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'androidx.core:core-ktx:1.1.0'
-
-    implementation 'com.google.firebase:firebase-analytics:17.2.0'
 
     implementation "androidx.lifecycle:lifecycle-extensions:$lifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion"
