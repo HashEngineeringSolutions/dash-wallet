@@ -27,6 +27,8 @@ import android.view.ViewTreeObserver
 import android.widget.LinearLayout
 import androidx.core.view.children
 import de.schildbach.wallet_test.R
+import org.dash.wallet.integration.liquid.data.LiquidConstants
+import org.dash.wallet.integration.uphold.data.UpholdConstants
 
 class ShortcutsPane(context: Context, attrs: AttributeSet) : LinearLayout(context, attrs), View.OnClickListener {
 
@@ -112,7 +114,11 @@ class ShortcutsPane(context: Context, attrs: AttributeSet) : LinearLayout(contex
             secondaryItems.add(receiveButton)
         }
         secondaryItems.add(payToAddressButton)
-        secondaryItems.add(buySellButton)
+        if (UpholdConstants.hasValidCredentials() || !LiquidConstants.PUBLIC_API_KEY.contains("PUBLIC")) {
+            secondaryItems.add(buySellButton)
+        } else {
+            secondaryItems.add(importPrivateKey)
+        }
         secondaryItems.forEach {
             addShortcut(it)
         }

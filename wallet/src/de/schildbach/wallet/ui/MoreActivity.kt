@@ -20,6 +20,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.appcompat.widget.Toolbar
+import androidx.core.view.isVisible
 import androidx.lifecycle.Observer
 import de.schildbach.wallet.AppDatabase
 import de.schildbach.wallet.WalletApplication
@@ -30,7 +31,9 @@ import kotlinx.android.synthetic.main.activity_more.*
 import org.dash.wallet.common.Constants.REQUEST_CODE_BUY_SELL
 import org.dash.wallet.common.Constants.RESULT_CODE_GO_HOME
 import org.dash.wallet.common.UserInteractionAwareCallback
-
+import org.dash.wallet.integration.liquid.data.LiquidClient
+import org.dash.wallet.integration.liquid.data.LiquidConstants
+import org.dash.wallet.integration.uphold.data.UpholdConstants
 
 
 class MoreActivity : GlobalFooterActivity() {
@@ -69,6 +72,8 @@ class MoreActivity : GlobalFooterActivity() {
                 startBuyAndSellActivity()
             }
         }
+        buy_and_sell.isVisible = UpholdConstants.hasValidCredentials() || !LiquidConstants.PUBLIC_API_KEY.contains("PUBLIC")
+
         security.setOnClickListener {
             startActivity(Intent(this, SecurityActivity::class.java))
         }
