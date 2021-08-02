@@ -16,8 +16,6 @@
     <string name="set_pin_verifying_pin">PIN 인증 중</string>
     <string name="set_pin_message">당신이 어플을 잠금 해제하실 때마다 이 PIN이 필요합니다.</string>
 
-    <string name="home_pay">보내기</string>
-    <string name="home_receive">받기</string>
     <string name="home_available_balance">이용 가능한 잔고</string>
     <string name="home_balance_hidden">숨긴 잔고</string>
     <string name="home_balance_show_hint">잔고를 확인하시려면 탭하세요</string>
@@ -25,21 +23,24 @@
 
     <string name="dialog_confirm_confirm">승인</string>
     <string name="dialog_confirm_pay_to">다음으로 전송합니다</string>
+    <string name="dialog_confirm_secured_by">다음이 보증합니다</string>
     <string name="dialog_confirm_fee">네트워크 비용</string>
     <string name="dialog_confirm_total">총계</string>
 
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_secure_now">현재 지갑이 안전합니다</string>
+    <string name="shortcut_secure_now">현재 지갑이 안전합니다</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_scan_to_pay">전송을 위해 스캔합니다</string>
+    <string name="shortcut_scan_to_pay">지불을 위해 스캔합니다</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_pay_to_address">주소로 전송합니다</string>
+    <string name="shortcut_pay_to_address">주소로 전송합니다</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_buy_sell">대시 매수 / 매도</string>
+    <string name="shortcut_buy_sell">대시 매수 / 매도</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_import_key">개인 키 불러오기</string>
+    <string name="shortcut_receive">받기</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_add_shortcut">단축키 추가</string>
+    <string name="shortcut_import_key">프라이빗 키 불러오기</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_add_shortcut">단축키 추가</string>
 
     <!-- Lock Screen: Button: 2 lines, 9 characters across -->
     <string name="lock_action_quick_receive">빠른 송금 수령</string>
@@ -80,10 +81,8 @@
     <string name="payments_tab_receive_label">받기</string>
     <string name="payments_pay_by_qr_title">다음에서 전송하였습니다</string>
     <string name="payments_pay_by_qr_sub_title">QR 코드를 스캔합니다</string>
-    <string name="payments_pay_by_qr_button">스캔</string>
     <string name="payments_pay_to_clipboard_title">복사된 주소로 전송합니다</string>
     <string name="payments_pay_to_clipboard_sub_title">복사된 주소가 없습니다</string>
-    <string name="payments_pay_to_clipboard_button">보내기</string>
 
     <string name="forgot_pin_title">PIN을 잊어버리셨나요?</string>
     <string name="forgot_pin_message">당신의 복원 문구를 통해 새 PIN을 설정할 수 있습니다.</string>
@@ -91,6 +90,8 @@
     <string name="forgot_pin_instruction_2">새 PIN 설정하기</string>
     <string name="forgot_pin_instruction_3">새로운 PIN으로 로그인하셔서 당신의 지갑에 접근하세요</string>
     <string name="forgot_pin_warning">당신의 PIN과 복원 문구를 잊어버리시면 당신의 지갑과 자금에 접근할 수 없게 됩니다.</string>
+    <string name="forgot_pin_recover">복구 문구를 입력하세요</string>
+    <string name="forgot_pin_passphrase_doesnt_match">이 복구 문구는 지갑이 설정된 문구와 일치하지 않습니다.</string>
 
     <string name="send_coins_auto_lock_feasible">이 거래는 추가 수수료 없이 곧바로 완료됩니다.</string>
     <string name="send_coins_auto_lock_not_feasible">이 거래가 처리되는 데에는 수 분이 걸릴 수 있습니다. 즉시 처리하는 데에는 %1$s%2$s가 필요합니다.</string>
@@ -186,8 +187,8 @@
     <string name="touch_fingerprint_sensor">지문 센서를 터치하세요</string>
     <string name="touch_fingerprint_to_enable">지문으로 잠금 해제하기 위해서는 지문 센서를 터치하세요.</string>
     <string name="fingerprint_changed_title">지문 데이터가 변경됨</string>
-	<string name="fingerprint_changed_message">당신의 지문 인증 데이터에서 변경을 감지하였습니다. 이번에는 PIN을 사용하셔야 합니다.</string>
-	<string name="exchange_rate_missing">이 지불은 너무 오래되어 고정 가치를 확인할 수 없습니다.</string>
+    <string name="fingerprint_changed_message">당신의 지문 인증 데이터에서 변경을 감지하였습니다. 이번에는 PIN을 사용하셔야 합니다.</string>
+    <string name="exchange_rate_missing">이 지불은 너무 오래되어 고정 가치를 확인할 수 없습니다.</string>
 
     <string name="preferences_enable_payment_request_summary">QR 코드를 통한 지불을 위해서는 지불 프로토콜을 사용하십시오.</string>
     <string name="preferences_enable_payment_request_title">\'스캔하여 지불하기\'를 위한 BIP70</string>
@@ -212,13 +213,13 @@
     <string name="verify_seed_success_message">이제 당신의 지갑은 안전합니다. 언제든 당신의 복원 문구를 사용하셔서 당신의 계정을 다른 기기에서 복원하실 수 있습니다.</string>
     <string name="view_seed_done">완료</string>
     <string name="view_seed_title">복원 문구</string>
-	<string name="transaction_result_view_on_explorer">블록 탐색기에서 보기</string>
-	<string name="transaction_result_paid_successfully">성공적으로 전송되었습니다</string>
-	<string name="transaction_result_sent_to">다음에 전송하였습니다</string>
-	<string name="transaction_date_and_time">날짜</string>
-	<string name="transaction_close">닫기</string>
-	<string name="transaction_details_amount_received">받은 금액</string>
-	<string name="transaction_details_amount_sent">보낸 금액</string>
+    <string name="transaction_result_view_on_explorer">블록 탐색기에서 보기</string>
+    <string name="transaction_result_paid_successfully">성공적으로 전송되었습니다</string>
+    <string name="transaction_result_sent_to">다음에 전송하였습니다</string>
+    <string name="transaction_date_and_time">날짜</string>
+    <string name="transaction_close">닫기</string>
+    <string name="transaction_details_amount_received">받은 금액</string>
+    <string name="transaction_details_amount_sent">보낸 금액</string>
     <string name="transaction_details_sent_from">다음으로부터 전송되었습니다</string>
     <string name="transaction_details_sent_to">다음에 전송하였습니다</string>
     <string name="transaction_details_received_at">다음에서 수신하였습니다</string>
@@ -299,14 +300,8 @@
     <string name="welcome_screen_title_3">보다 확실한 통제</string>
     <string name="welcome_screen_subtitle_3">지갑에 대한 완전한 통제를 행사하고 당신의 필요에 따라 지갑을 커스터마이징 하세요</string>
 
-    <string-array name="history_filter">
-        <item>모두</item>
-        <item>받음</item>
-        <item>보냄</item>
-    </string-array>
-
     <string name="sync_status_wait">동기화가 완료될 때까지 기다려주세요</string>
-    <string name="sync_status_syncing_title">동기화 중</string>
+    <string name="sync_status_syncing_title">%1$d 동기화 중</string>
     <string name="sync_status_syncing_sub_title">대시 블록체인을 통해</string>
     <string name="sync_status_unable_to_connect">연결할 수 없습니다</string>
     <string name="sync_status_check_connection">연결을 확인하세요</string>
@@ -322,9 +317,22 @@
     <string name="payment_request_please_try_again">다시 시도하세요</string>
     <string name="payment_request_try_again">다시 시도하세요</string>
     <string name="payment_request_problem_title">지불이 인식되지 않았습니다</string>
-    <string name="payment_request_problem_message">당신의 지불이 처리되었으나 서버에서 인식하지 못하였습니다</string>
+    <string name="payment_request_problem_message">서버가 귀하의 지불을 처리하지 못했습니다. 판매자에게 문의해주십시오.</string>
     <string name="payment_request_expired_title">지불 요청이 만료되었습니다</string>
     <string name="payment_request_close">닫기</string>
     <string name="payment_request_skip">건너뛰기</string>
     <string name="payment_request_paid_to">다음에 지불하였습니다</string>
+
+    <string name="import_image_not_valid_qr_code">유효한 QR 코드가 아닙니다</string>
+    <string name="import_image_please_use_valid_qr_code">유효한 대시 QR 코드를 사용해주십시오</string>
+    <string name="import_image_no_private_key_copied">복사된 개인 키가 없습니다</string>
+    <string name="import_image_import_valid_private_key">대시를 가져올 유효한 개인 키를 복사해주십시오</string>
+    <string name="import_image_invalid_private">유효하지 않은 개인 키</string>
+
+    <string name="syncing">동기화 중</string>
+    <string name="syncing_balance">잔고 동기화 중</string>
+
+    <string name="all_transactions">모두</string>
+    <string name="received_transactions">받음</string>
+    <string name="sent_transactions">전송 완료</string>
 </resources>

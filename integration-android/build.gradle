@@ -1,7 +1,7 @@
 apply plugin: 'java'
 
 dependencies {
-    compile('com.google.android:android:4.0.1.2') {
+    implementation('com.google.android:android:4.0.1.2') {
         transitive false
     }
 }
@@ -17,7 +17,3 @@ sourceSets {
     }
 }
 
-compileJava {
-    sourceCompatibility '1.7'
-    targetCompatibility '1.7'
-}

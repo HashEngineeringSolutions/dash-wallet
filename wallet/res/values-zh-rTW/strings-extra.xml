@@ -16,8 +16,6 @@
     <string name="set_pin_verifying_pin">驗證密碼</string>
     <string name="set_pin_message">每次使用時，都需要使用此密碼來解鎖您的應用程式。</string>
 
-    <string name="home_pay">付款</string>
-    <string name="home_receive">接收</string>
     <string name="home_available_balance">可用餘額</string>
     <string name="home_balance_hidden">餘額已隱藏</string>
     <string name="home_balance_show_hint">點按即可取消隱藏餘額</string>
@@ -25,21 +23,24 @@
 
     <string name="dialog_confirm_confirm">確認:</string>
     <string name="dialog_confirm_pay_to">發給</string>
+    <string name="dialog_confirm_secured_by">由擔保</string>
     <string name="dialog_confirm_fee">網絡費用</string>
     <string name="dialog_confirm_total">總共</string>
 
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_secure_now">立即確保錢包安全</string>
+    <string name="shortcut_secure_now">立即確保錢包安全</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_scan_to_pay">掃描發送</string>
+    <string name="shortcut_scan_to_pay">掃描支付</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_pay_to_address">發送到位址</string>
+    <string name="shortcut_pay_to_address">發送到位址</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_buy_sell">買 / 賣 達世幣</string>
+    <string name="shortcut_buy_sell">買 / 賣 達世幣</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_import_key">導入私鑰</string>
+    <string name="shortcut_receive">接收</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_add_shortcut">添加捷徑</string>
+    <string name="shortcut_import_key">導入私鑰</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_add_shortcut">添加捷徑</string>
 
     <!-- Lock Screen: Button: 2 lines, 9 characters across -->
     <string name="lock_action_quick_receive">快速接收</string>
@@ -80,10 +81,8 @@
     <string name="payments_tab_receive_label">接收</string>
     <string name="payments_pay_by_qr_title">發送者</string>
     <string name="payments_pay_by_qr_sub_title">掃描二維碼</string>
-    <string name="payments_pay_by_qr_button">掃描</string>
     <string name="payments_pay_to_clipboard_title">發送到復制的位址</string>
     <string name="payments_pay_to_clipboard_sub_title">未能復制位址</string>
-    <string name="payments_pay_to_clipboard_button">付款</string>
 
     <string name="forgot_pin_title">忘記密碼了嗎?</string>
     <string name="forgot_pin_message">您可以在恢復詞組的幫助下設置新的密碼。</string>
@@ -91,6 +90,8 @@
     <string name="forgot_pin_instruction_2">設置一個新的密碼</string>
     <string name="forgot_pin_instruction_3">使用新的密碼來登錄並訪問您的錢包</string>
     <string name="forgot_pin_warning">如果您忘記了密碼並丟失了恢復詞組，則無法找回錢包和資金。</string>
+    <string name="forgot_pin_recover">輸入恢復詞組</string>
+    <string name="forgot_pin_passphrase_doesnt_match">此恢復詞組與這個錢包所設定的詞組不符。</string>
 
     <string name="send_coins_auto_lock_feasible">此交易應立即被結算，無需支付額外費用</string>
     <string name="send_coins_auto_lock_not_feasible">此交易可能需要幾分鐘才能結算。 支付額外的 %1$s%2$s費用來立即完成該交易嗎?</string>
@@ -186,8 +187,8 @@
     <string name="touch_fingerprint_sensor">觸控指紋感應器</string>
     <string name="touch_fingerprint_to_enable">觸摸指紋傳感器以啟用指紋解鎖。</string>
     <string name="fingerprint_changed_title">指紋數據已更改</string>
-	<string name="fingerprint_changed_message">我們檢測到您的指紋身份驗證數據發生了變化。 您這次需要使用密碼。</string>
-	<string name="exchange_rate_missing">這筆付款太舊，無法獲得它的法定價值。</string>
+    <string name="fingerprint_changed_message">我們檢測到您的指紋身份驗證數據發生了變化。 您這次需要使用密碼。</string>
+    <string name="exchange_rate_missing">這筆付款太舊，無法獲得它的法定價值。</string>
 
     <string name="preferences_enable_payment_request_summary">使用支付協議來進行二維碼啟動的付款</string>
     <string name="preferences_enable_payment_request_title">BIP70 用於掃描付費</string>
@@ -212,13 +213,13 @@
     <string name="verify_seed_success_message">您的錢包現在已經安全了。 您可以隨時使用恢復詞組在另一台設備上恢復帳戶。</string>
     <string name="view_seed_done">完成</string>
     <string name="view_seed_title">恢復詞組</string>
-	<string name="transaction_result_view_on_explorer">在區塊瀏覽器中查看</string>
-	<string name="transaction_result_paid_successfully">發送成功</string>
-	<string name="transaction_result_sent_to">發給</string>
-	<string name="transaction_date_and_time">日期</string>
-	<string name="transaction_close">關閉</string>
-	<string name="transaction_details_amount_received">收到的金額</string>
-	<string name="transaction_details_amount_sent">發送金額</string>
+    <string name="transaction_result_view_on_explorer">在區塊瀏覽器中查看</string>
+    <string name="transaction_result_paid_successfully">發送成功</string>
+    <string name="transaction_result_sent_to">發給</string>
+    <string name="transaction_date_and_time">日期</string>
+    <string name="transaction_close">關閉</string>
+    <string name="transaction_details_amount_received">收到的金額</string>
+    <string name="transaction_details_amount_sent">發送金額</string>
     <string name="transaction_details_sent_from">來自</string>
     <string name="transaction_details_sent_to">發給</string>
     <string name="transaction_details_received_at">在......收到</string>
@@ -299,14 +300,8 @@
     <string name="welcome_screen_title_3">更多控制選項</string>
     <string name="welcome_screen_subtitle_3">能夠讓您完全控制並根據您的個人需要自定義錢包</string>
 
-    <string-array name="history_filter">
-        <item>所有</item>
-        <item>己收到</item>
-        <item>發送</item>
-    </string-array>
-
     <string name="sync_status_wait">請等待同步完成</string>
-    <string name="sync_status_syncing_title">同步中</string>
+    <string name="sync_status_syncing_title">同步中%1$d</string>
     <string name="sync_status_syncing_sub_title">與達世幣區塊鏈</string>
     <string name="sync_status_unable_to_connect">無法連接</string>
     <string name="sync_status_check_connection">Check your connection</string>
@@ -322,9 +317,22 @@
     <string name="payment_request_please_try_again">請再試一遍</string>
     <string name="payment_request_try_again">再試一次</string>
     <string name="payment_request_problem_title">付款未得到確認</string>
-    <string name="payment_request_problem_message">您的付款已處理，但服務器無法確認</string>
+    <string name="payment_request_problem_message">服務器無法處理您的付款，請向商家查詢</string>
     <string name="payment_request_expired_title">付款請求已過期</string>
     <string name="payment_request_close">關閉</string>
     <string name="payment_request_skip">略過</string>
     <string name="payment_request_paid_to">付給</string>
+
+    <string name="import_image_not_valid_qr_code">無效的二維碼</string>
+    <string name="import_image_please_use_valid_qr_code">請使用有效的達世幣二維碼</string>
+    <string name="import_image_no_private_key_copied">沒有複製到私鑰</string>
+    <string name="import_image_import_valid_private_key">複製一個有效的私鑰並從中導入達世幣</string>
+    <string name="import_image_invalid_private">無效的私鑰</string>
+
+    <string name="syncing">同步中</string>
+    <string name="syncing_balance">正在同步餘額</string>
+
+    <string name="all_transactions">所有</string>
+    <string name="received_transactions">己收到</string>
+    <string name="sent_transactions">發送</string>
 </resources>

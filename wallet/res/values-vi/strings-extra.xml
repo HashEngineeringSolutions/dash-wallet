@@ -16,8 +16,6 @@
     <string name="set_pin_verifying_pin">Đang kiểm tra mã PIN</string>
     <string name="set_pin_message">Mã PIN này sẽ được hỏi để mở ứng dụng của bạn mỗi khi bạn sử dụng nó.</string>
 
-    <string name="home_pay">Gửi</string>
-    <string name="home_receive">Nhận</string>
     <string name="home_available_balance">Số dư hiện có</string>
     <string name="home_balance_hidden">Số dư ẩn</string>
     <string name="home_balance_show_hint">Bấm để hiện số dư</string>
@@ -30,17 +28,19 @@
     <string name="dialog_confirm_total">Tổng số</string>
 
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_secure_now">Bảo mật ví ngay</string>
+    <string name="shortcut_secure_now">Bảo mật ví ngay</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_scan_to_pay">Quét để gửi</string>
+    <string name="shortcut_scan_to_pay">Quét để thanh toán</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_pay_to_address">Gửi đến địa chỉ</string>
+    <string name="shortcut_pay_to_address">Gửi đến địa chỉ</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_buy_sell">Mua &amp; Bán Dash</string>
+    <string name="shortcut_buy_sell">Mua &amp; Bán Dash</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_import_key">Nhập khoá riêng</string>
+    <string name="shortcut_receive">Nhận</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_add_shortcut">Thêm shortcut</string>
+    <string name="shortcut_import_key">Nhập khoá riêng</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_add_shortcut">Thêm shortcut</string>
 
     <!-- Lock Screen: Button: 2 lines, 9 characters across -->
     <string name="lock_action_quick_receive">Nhận nhanh</string>
@@ -81,10 +81,8 @@
     <string name="payments_tab_receive_label">Nhận</string>
     <string name="payments_pay_by_qr_title">Gửi bởi</string>
     <string name="payments_pay_by_qr_sub_title">Quét mã QR</string>
-    <string name="payments_pay_by_qr_button">Quét</string>
     <string name="payments_pay_to_clipboard_title">Gửi đến địa chỉ đã được copy</string>
     <string name="payments_pay_to_clipboard_sub_title">Không có địa chỉ nào được copy</string>
-    <string name="payments_pay_to_clipboard_button">Gửi</string>
 
     <string name="forgot_pin_title">Quên mã PIN</string>
     <string name="forgot_pin_message">Bạn có thể thiết lập mã PIN mới với sự giúp đỡ của câu phục hồi.</string>
@@ -92,7 +90,6 @@
     <string name="forgot_pin_instruction_2">Thiết lập mã PIN mới</string>
     <string name="forgot_pin_instruction_3">Đăng nhập với mã PIN mới để truy cập ví của bạn</string>
     <string name="forgot_pin_warning">Nếu bạn quên mã PIN của mình và mất câu phục hồi, thì bạn không thể nào truy cập vào ví và tiền của bạn nữa.</string>
-
     <string name="send_coins_auto_lock_feasible">Giao dịch này sẽ được hoàn tất mà không mất thêm phí bổ sung</string>
     <string name="send_coins_auto_lock_not_feasible">Giao dịch này phải mất vài phút để thực hiện. Hoàn thành trọn vẹn cho %1$s%2$s?</string>
     <string name="send_coins_instant_send_not_feasible">Giao dịch này có thể mất vài phút để thực hiện.</string>
@@ -187,8 +184,8 @@
     <string name="touch_fingerprint_sensor">Hãy chạm tay vào cảm biến vân tay</string>
     <string name="touch_fingerprint_to_enable">Hãy chạm vào cảm biến vân tay để bật tính năng mở khoá vằng vân tay.</string>
     <string name="fingerprint_changed_title">Dữ liệu vân tay đã bị thay đổi</string>
-	<string name="fingerprint_changed_message">Chúng tôi phát hiện thấy có một thay đổi trong dữ liệu xác thực vân tay của bạn. Bạn cần sử dụng mã PIN lần này.</string>
-	<string name="exchange_rate_missing">Giao dịch này đã quá lâu để có thể tìm được giá quy đổi ra tiền thông thường.</string>
+    <string name="fingerprint_changed_message">Chúng tôi phát hiện thấy có một thay đổi trong dữ liệu xác thực vân tay của bạn. Bạn cần sử dụng mã PIN lần này.</string>
+    <string name="exchange_rate_missing">Giao dịch này đã quá lâu để có thể tìm được giá quy đổi ra tiền thông thường.</string>
 
     <string name="preferences_enable_payment_request_summary">Sử dụng giao thức thanh toán cho việc khởi tạo giao dịch bằng mã QR.</string>
     <string name="preferences_enable_payment_request_title">BIP70 dùng cho việc quét-mã-để-thanh-toán</string>
@@ -213,13 +210,13 @@
     <string name="verify_seed_success_message">Ví của bạn bây giờ đã được bảo mật. Bạn có thể sử dụng câu phục hồi của mình bất cứ khi nào để khôi phục lại tiền của mình trên một thiết bị khác.</string>
     <string name="view_seed_done">Xong</string>
     <string name="view_seed_title">Cụm từ phục hồi</string>
-	<string name="transaction_result_view_on_explorer">Xem trên công cụ khám phá khối</string>
-	<string name="transaction_result_paid_successfully">Đã gửi thành công</string>
-	<string name="transaction_result_sent_to">Gửi đến</string>
-	<string name="transaction_date_and_time">Ngày</string>
-	<string name="transaction_close">Đóng</string>
-	<string name="transaction_details_amount_received">Số tiền nhận được</string>
-	<string name="transaction_details_amount_sent">Số tiền đã gửi</string>
+    <string name="transaction_result_view_on_explorer">Xem trên công cụ khám phá khối</string>
+    <string name="transaction_result_paid_successfully">Đã gửi thành công</string>
+    <string name="transaction_result_sent_to">Gửi đến</string>
+    <string name="transaction_date_and_time">Ngày</string>
+    <string name="transaction_close">Đóng</string>
+    <string name="transaction_details_amount_received">Số tiền nhận được</string>
+    <string name="transaction_details_amount_sent">Số tiền đã gửi</string>
     <string name="transaction_details_sent_from">Gửi đến từ</string>
     <string name="transaction_details_sent_to">Gửi đến</string>
     <string name="transaction_details_received_at">Nhận được tại</string>
@@ -300,14 +297,7 @@
     <string name="welcome_screen_title_3">Kiểm soát nhiều hơn</string>
     <string name="welcome_screen_subtitle_3">Bạn có toàn quyền kiểm soát và tuỳ chỉnh ví dựa trên nhu cầu của mình</string>
 
-    <string-array name="history_filter">
-        <item>Tất cả</item>
-        <item>Đã nhận</item>
-        <item>Đã gửi</item>
-    </string-array>
-
     <string name="sync_status_wait">Vui lòng đợi quá trình đồng bộ hoàn thành</string>
-    <string name="sync_status_syncing_title">Đang đồng bộ</string>
     <string name="sync_status_syncing_sub_title">với blockchain của Dash</string>
     <string name="sync_status_unable_to_connect">Không thể kết nối</string>
     <string name="sync_status_check_connection">Kiểm tra kết nối của bạn</string>
@@ -323,9 +313,13 @@
     <string name="payment_request_please_try_again">Hãy thử lại</string>
     <string name="payment_request_try_again">Hãy thử lại</string>
     <string name="payment_request_problem_title">Giao dịch không được thừa nhận</string>
-    <string name="payment_request_problem_message">Giao dịch của bạn đã được xử lý nhưng máy chủ không thể ghi nhận nó</string>
     <string name="payment_request_expired_title">Yêu cầu giao dịch đã hết hạn</string>
     <string name="payment_request_close">Đóng</string>
     <string name="payment_request_skip">Bỏ qua</string>
     <string name="payment_request_paid_to">Được trả cho</string>
+
+    <string name="syncing">Đang đồng bộ</string>
+    <string name="all_transactions">Tất cả</string>
+    <string name="received_transactions">Đã nhận</string>
+    <string name="sent_transactions">Đã gửi</string>
 </resources>

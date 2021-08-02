@@ -16,20 +16,28 @@
 
 package de.schildbach.wallet.ui
 
-import android.app.ActivityManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.telephony.TelephonyManager
+import android.view.KeyCharacterMap
+import android.view.KeyEvent
 import android.view.View
+import android.view.ViewConfiguration
+import android.view.WindowManager
 import android.view.animation.AnimationUtils
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.os.CancellationSignal
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
+import de.schildbach.wallet.AutoLogout
 import de.schildbach.wallet.WalletApplication
 import de.schildbach.wallet.livedata.Status
 import de.schildbach.wallet.ui.preference.PinRetryController
@@ -38,42 +46,39 @@ import de.schildbach.wallet.ui.widget.PinPreviewView
 import de.schildbach.wallet.util.FingerprintHelper
 import de.schildbach.wallet_test.R
 import kotlinx.android.synthetic.main.activity_lock_screen.*
+import kotlinx.android.synthetic.main.activity_lock_screen_root.*
 import org.bitcoinj.wallet.Wallet.BalanceType
 import org.dash.wallet.common.ui.DialogBuilder
+import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 
 
-class LockScreenActivity : SendCoinsQrActivity() {
+open class LockScreenActivity : AppCompatActivity() {
 
     companion object {
-        @JvmStatic
-        fun createIntent(context: Context): Intent {
-            return Intent(context, LockScreenActivity::class.java)
-        }
-
-        @JvmStatic
-        fun createIntentAsNewTask(context: Context): Intent {
-            return createIntent(context)
-                    .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                            or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                            or Intent.FLAG_ACTIVITY_NO_ANIMATION)
-        }
+        const val INTENT_EXTRA_KEEP_UNLOCKED = "LockScreenActivity.keep_unlocked"
+        private val log = LoggerFactory.getLogger(LockScreenActivity::class.java)
     }
 
-    private val walletApplication = WalletApplication.getInstance()
+    val walletApplication: WalletApplication = WalletApplication.getInstance()
     private val configuration = walletApplication.configuration
+    private val autoLogout: AutoLogout = walletApplication.autoLogout
+
     private lateinit var viewModel: LockScreenViewModel
     private lateinit var checkPinViewModel: CheckPinViewModel
-    private lateinit var enableFingerprintViewModel: CheckPinSharedModel
+    private lateinit var enableFingerprintViewModel: EnableFingerprintDialog.SharedViewModel
     private var pinLength = configuration.pinLength
+
+    private val lockScreenDisplayed: Boolean
+        get() = root_view_switcher.displayedChild == 0
 
     private val temporaryLockCheckHandler = Handler()
     private val temporaryLockCheckInterval = TimeUnit.SECONDS.toMillis(10)
     private val temporaryLockCheckRunnable = Runnable {
         if (pinRetryController.isLocked) {
-            setState(State.LOCKED)
+            setLockState(State.LOCKED)
         } else {
-            setState(State.ENTER_PIN)
+            setLockState(State.ENTER_PIN)
         }
     }
 
@@ -83,15 +88,26 @@ class LockScreenActivity : SendCoinsQrActivity() {
         INVALID_PIN,
         LOCKED,
         USE_FINGERPRINT,
+        USE_DEFAULT // defaults to fingerprint if available and enabled
     }
 
     private var fingerprintHelper: FingerprintHelper? = null
     private lateinit var fingerprintCancellationSignal: CancellationSignal
     private lateinit var pinRetryController: PinRetryController
 
+    private val keepUnlocked by lazy {
+        intent.getBooleanExtra(INTENT_EXTRA_KEEP_UNLOCKED, false)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_lock_screen)
+
+        if (walletApplication.wallet == null) {
+            finish()
+            return
+        }
+
+        super.setContentView(R.layout.activity_lock_screen_root)
         setupKeyboardBottomMargin()
 
         pinRetryController = PinRetryController.getInstance()
@@ -99,6 +115,32 @@ class LockScreenActivity : SendCoinsQrActivity() {
         initViewModel()
 
         setupBackupSeedReminder()
+    }
+
+    override fun setContentView(contentViewResId: Int) {
+        setContentView(layoutInflater.inflate(contentViewResId, null))
+    }
+
+    override fun setContentView(contentView: View?) {
+        regular_content.removeAllViews()
+        regular_content.addView(contentView)
+    }
+
+    private val onLogoutListener = AutoLogout.OnLogoutListener {
+        viewModel.activatingLockScreen.call()
+        setLockState(State.USE_DEFAULT)
+    }
+
+    override fun onUserInteraction() {
+        super.onUserInteraction()
+
+        if (!lockScreenDisplayed) {
+            resetAutoLogoutTimer()
+        }
+    }
+
+    private fun resetAutoLogoutTimer() {
+        autoLogout.resetTimerIfActive()
     }
 
     private fun setupBackupSeedReminder() {
@@ -120,38 +162,67 @@ class LockScreenActivity : SendCoinsQrActivity() {
     }
 
     private fun hasNavBar(): Boolean {
+        val tm: TelephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+        // emulator
+        if ("Android" == tm.networkOperatorName || Build.FINGERPRINT.startsWith("generic")) {
+            return true
+        }
         val id: Int = resources.getIdentifier("config_showNavigationBar", "bool", "android")
-        return id > 0 && resources.getBoolean(id)
+
+        // Krip devices seem to incorrectly report config_showNavigationBar
+        val isKripDeviceWithoutNavBar = Build.BRAND == "KRIP" && when (Build.MODEL) {
+            "K5", "K5c", "K5b", "K4m", "KRIP_K4" -> true
+            else -> false
+        }
+        return if (id > 0 && !isKripDeviceWithoutNavBar) {
+            id > 0 && resources.getBoolean(id)
+        } else {
+            // Check for keys
+            val hasMenuKey = ViewConfiguration.get(this).hasPermanentMenuKey();
+            val hasBackKey = KeyCharacterMap.deviceHasKey(KeyEvent.KEYCODE_BACK);
+            !hasMenuKey && !hasBackKey;
+        }
     }
 
     override fun onStart() {
         super.onStart()
         setupInitState()
+        autoLogout.setOnLogoutListener(onLogoutListener)
+
+        if (!keepUnlocked && configuration.autoLogoutEnabled && (autoLogout.keepLockedUntilPinEntered || autoLogout.shouldLogout())) {
+            viewModel.activatingLockScreen.call()
+            setLockState(State.USE_DEFAULT)
+            autoLogout.setAppWentBackground(false)
+            if (autoLogout.isTimerActive) {
+                autoLogout.stopTimer()
+            }
+        } else {
+            root_view_switcher.displayedChild = 1
+            if (!keepUnlocked)
+                autoLogout.maybeStartAutoLogoutTimer()
+        }
+
         startBlockchainService()
     }
 
     private fun startBlockchainService() {
-        // hack for Android P bug https://issuetracker.google.com/issues/113122354
-        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        val runningAppProcesses: List<ActivityManager.RunningAppProcessInfo> = activityManager.runningAppProcesses
-        val importance: Int = runningAppProcesses[0].importance
-        if (importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND){
-            walletApplication.startBlockchainService(false)
-        }
+        walletApplication.startBlockchainService(false)
     }
 
     private fun initView() {
         action_login_with_pin.setOnClickListener {
-            setState(State.ENTER_PIN)
+            setLockState(State.ENTER_PIN)
         }
         action_login_with_fingerprint.setOnClickListener {
-            setState(State.USE_FINGERPRINT)
+            setLockState(State.USE_FINGERPRINT)
         }
         action_receive.setOnClickListener {
             startActivity(QuickReceiveActivity.createIntent(this))
+            autoLogout.keepLockedUntilPinEntered = true
         }
         action_scan_to_pay.setOnClickListener {
-            performScanning(it)
+            startActivity(SendCoinsQrActivity.createIntent(this, true))
+            autoLogout.keepLockedUntilPinEntered = true
         }
         numeric_keyboard.setFunctionEnabled(false)
         numeric_keyboard.onKeyboardActionListener = object : NumericKeyboardView.OnKeyboardActionListener {
@@ -186,20 +257,20 @@ class LockScreenActivity : SendCoinsQrActivity() {
     }
 
     private fun initViewModel() {
-        viewModel = ViewModelProviders.of(this).get(LockScreenViewModel::class.java)
-        checkPinViewModel = ViewModelProviders.of(this).get(CheckPinViewModel::class.java)
+        viewModel = ViewModelProvider(this)[LockScreenViewModel::class.java]
+        checkPinViewModel = ViewModelProvider(this)[CheckPinViewModel::class.java]
         checkPinViewModel.checkPinLiveData.observe(this, Observer {
             when (it.status) {
                 Status.ERROR -> {
                     pinRetryController.failedAttempt(it.data!!)
                     if (pinRetryController.isLocked) {
-                        setState(State.LOCKED)
+                        setLockState(State.LOCKED)
                     } else {
-                        setState(State.INVALID_PIN)
+                        setLockState(State.INVALID_PIN)
                     }
                 }
                 Status.LOADING -> {
-                    setState(State.DECRYPTING)
+                    setLockState(State.DECRYPTING)
                 }
                 Status.SUCCESS -> {
                     if (EnableFingerprintDialog.shouldBeShown(this)) {
@@ -210,7 +281,7 @@ class LockScreenActivity : SendCoinsQrActivity() {
                 }
             }
         })
-        enableFingerprintViewModel = ViewModelProviders.of(this)[CheckPinSharedModel::class.java]
+        enableFingerprintViewModel = ViewModelProvider(this)[EnableFingerprintDialog.SharedViewModel::class.java]
         enableFingerprintViewModel.onCorrectPinCallback.observe(this, Observer {
             val pin = it.second
             onCorrectPin(pin)
@@ -219,22 +290,32 @@ class LockScreenActivity : SendCoinsQrActivity() {
 
     private fun onCorrectPin(pin: String) {
         pinRetryController.clearPinFailPrefs()
-        walletApplication.maybeStartAutoLogoutTimer()
-        val intent: Intent
+        autoLogout.keepLockedUntilPinEntered = false
+        autoLogout.deviceWasLocked = false
+        autoLogout.maybeStartAutoLogoutTimer()
         if (shouldShowBackupReminder) {
-            intent = VerifySeedActivity.createIntent(this, pin)
+            val intent = VerifySeedActivity.createIntent(this, pin)
             configuration.resetBackupSeedReminderTimer()
+            startActivity(intent)
+            finish()
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         } else {
-            intent = WalletActivity.createIntent(this)
+            root_view_switcher.displayedChild = 1
         }
-        startActivity(intent)
-        finish()
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
     }
 
-    private fun setState(state: State) {
-
+    private fun setLockState(state: State) {
+        log.info("LockState = $state")
         action_scan_to_pay.isEnabled = true
+
+        val fingerPrintEnabled = initFingerprint(false)
+        if (state == State.USE_DEFAULT) {
+            return if (fingerPrintEnabled) {
+                setLockState(State.USE_FINGERPRINT)
+            } else {
+                setLockState(State.ENTER_PIN)
+            }
+        }
 
         when (state) {
             State.ENTER_PIN, State.INVALID_PIN -> {
@@ -249,7 +330,6 @@ class LockScreenActivity : SendCoinsQrActivity() {
                 action_login_with_fingerprint.visibility = View.VISIBLE
 
                 numeric_keyboard.visibility = View.VISIBLE
-                numeric_keyboard.isEnabled = true
 
                 if (state == State.INVALID_PIN) {
                     checkPinViewModel.pin.clear()
@@ -257,7 +337,13 @@ class LockScreenActivity : SendCoinsQrActivity() {
                     Handler().postDelayed({
                         pin_preview.clear()
                     }, 200)
+                } else {
+                    numeric_keyboard.isEnabled = true
+                    pin_preview.clear()
+                    checkPinViewModel.pin.clear()
+                    pin_preview.clearBadPin()
                 }
+
                 if (pinRetryController.failCount() > 0) {
                     pin_preview.badPin(pinRetryController.getRemainingAttemptsMessage(this))
                 }
@@ -292,51 +378,89 @@ class LockScreenActivity : SendCoinsQrActivity() {
                 action_scan_to_pay.isEnabled = false
                 numeric_keyboard.visibility = View.GONE
             }
+            State.USE_DEFAULT -> {
+                // we should never reach this since default means we use
+                // ENTER_PIN or USE_FINGERPRINT
+            }
+        }
+
+        if (!lockScreenDisplayed) {
+            root_view_switcher.displayedChild = 0
         }
     }
 
     private fun setupInitState() {
         if (pinRetryController.isLocked) {
-            setState(State.LOCKED)
+            setLockState(State.LOCKED)
             return
         }
+    }
+
+    /**
+     * @param forceInit force initialize the fingerprint listener
+     * @return true if fingerprints are initialized, false if not
+     */
+    private fun initFingerprint(forceInit: Boolean): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            fingerprintHelper = FingerprintHelper(this)
+            log.info("initializing finger print on Android M and above(force: $forceInit)")
+            if (fingerprintHelper == null) {
+                fingerprintHelper = FingerprintHelper(this)
+            }
+            var result = false
             fingerprintHelper?.run {
+                if (::fingerprintCancellationSignal.isInitialized && !fingerprintCancellationSignal.isCanceled) {
+                    // we already initialized the fingerprint listener
+                    log.info("fingerprint already initialized: $fingerprintCancellationSignal")
+                    fingerprintCancellationSignal.cancel()
+                }
+
                 if (init() && isFingerprintEnabled) {
-                    setState(State.USE_FINGERPRINT)
                     startFingerprintListener()
-                    return
+                    result = true
                 } else {
+                    log.info("fingerprint was disabled")
                     fingerprintHelper = null
                     action_login_with_fingerprint.isEnabled = false
                     action_login_with_fingerprint.alpha = 0f
                 }
             }
+            return result
         }
-        setState(State.ENTER_PIN)
+        return false
     }
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private fun startFingerprintListener() {
+
         fingerprintCancellationSignal = CancellationSignal()
+        fingerprintCancellationSignal.setOnCancelListener {
+            log.info("fingerprint cancellation signal listener triggered: $fingerprintCancellationSignal")
+        }
+
+        log.info("start fingerprint listener: $fingerprintCancellationSignal")
+        //fingerprintListening = true
         fingerprintHelper!!.getPassword(fingerprintCancellationSignal, object : FingerprintHelper.Callback {
             override fun onSuccess(savedPass: String) {
+                log.info("fingerprint scan successful")
+                fingerprint_view.hideError()
                 onCorrectPin(savedPass)
             }
 
             override fun onFailure(message: String, canceled: Boolean, exceededMaxAttempts: Boolean) {
+                log.info("fingerprint scan failure (canceled: $canceled, max attempts: $exceededMaxAttempts): $message")
                 if (!canceled) {
                     if (fingerprintHelper!!.hasFingerprintKeyChanged()) {
                         showFingerprintKeyChangedDialog()
                         action_login_with_fingerprint.isEnabled = false
                     } else {
                         fingerprint_view.showError(exceededMaxAttempts)
+                        initFingerprint(false)
                     }
                 }
             }
 
             override fun onHelp(helpCode: Int, helpString: String) {
+                log.info("fingerprint help (helpCode: $helpCode, helpString: $helpString")
                 fingerprint_view.showError(false)
             }
         })
@@ -357,11 +481,27 @@ class LockScreenActivity : SendCoinsQrActivity() {
         dialogBuilder.setMessage(R.string.fingerprint_changed_message)
         dialogBuilder.setPositiveButton(android.R.string.ok) { _, _ ->
             fingerprintHelper!!.resetFingerprintKeyChanged()
-            setState(State.ENTER_PIN)
+            setLockState(State.ENTER_PIN)
         }
         dialogBuilder.show()
     }
 
-    private val shouldShowBackupReminder = configuration.getRemindBackupSeed()
+    private val shouldShowBackupReminder = configuration.remindBackupSeed
             && configuration.lastBackupSeedReminderMoreThan24hAgo()
+
+    override fun onPause() {
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        super.onPause()
+    }
+
+    override fun onResume() {
+        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        super.onResume()
+    }
+
+    override fun onBackPressed() {
+        if (!lockScreenDisplayed) {
+            super.onBackPressed()
+        }
+    }
 }

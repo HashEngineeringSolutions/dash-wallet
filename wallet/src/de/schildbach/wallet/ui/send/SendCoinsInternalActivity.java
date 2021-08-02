@@ -20,8 +20,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.nfc.NfcAdapter;
+import android.os.Bundle;
 
 import de.schildbach.wallet.data.PaymentIntent;
+import de.schildbach.wallet.ui.LockScreenActivity;
 
 public class SendCoinsInternalActivity extends SendCoinsActivity {
 
@@ -34,16 +36,17 @@ public class SendCoinsInternalActivity extends SendCoinsActivity {
     }
 
     public static void start(final Context context, final PaymentIntent paymentIntent, boolean userAuthorized) {
-        start(context, null, paymentIntent, userAuthorized);
+        start(context, null, paymentIntent, userAuthorized, false);
     }
 
-    public static void start(final Context context, final String action, final PaymentIntent paymentIntent, boolean userAuthorized) {
+    public static void start(final Context context, final String action, final PaymentIntent paymentIntent, boolean userAuthorized, boolean keepUnlocked) {
         final Intent intent = new Intent(context, SendCoinsInternalActivity.class);
         if (action != null) {
             intent.setAction(action);
         }
         intent.putExtra(INTENT_EXTRA_PAYMENT_INTENT, paymentIntent);
         intent.putExtra(INTENT_EXTRA_USER_AUTHORIZED, userAuthorized);
+        intent.putExtra(INTENT_EXTRA_KEEP_UNLOCKED, keepUnlocked);
         context.startActivity(intent);
     }
 
@@ -67,4 +70,9 @@ public class SendCoinsInternalActivity extends SendCoinsActivity {
         return getIntent().getBooleanExtra(INTENT_EXTRA_USER_AUTHORIZED, false);
     }
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getIntent().putExtra(LockScreenActivity.INTENT_EXTRA_KEEP_UNLOCKED, false);
+    }
 }

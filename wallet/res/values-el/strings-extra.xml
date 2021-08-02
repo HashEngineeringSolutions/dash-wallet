@@ -16,8 +16,6 @@
     <string name="set_pin_verifying_pin">Επαλήθευση PIN</string>
     <string name="set_pin_message">Αυτός ο κωδικός PIN θα χρειαστεί να ξεκλειδώσετε την εφαρμογή σας κάθε φορά που την χρησιμοποιείτε.</string>
 
-    <string name="home_pay">Αποστολή</string>
-    <string name="home_receive">Λήψη</string>
     <string name="home_available_balance">Διαθέσιμο υπόλοιπο</string>
     <string name="home_balance_hidden">Το υπόλοιπο αποκρύφτηκε</string>
     <string name="home_balance_show_hint">Πατήστε για να αποκαλύψετε το υπόλοιπο</string>
@@ -25,21 +23,24 @@
 
     <string name="dialog_confirm_confirm">Επιβεβαίωση</string>
     <string name="dialog_confirm_pay_to">Αποστολή στο</string>
+    <string name="dialog_confirm_secured_by">Ασφαλισμένo από</string>
     <string name="dialog_confirm_fee">Τέλος δικτύου</string>
     <string name="dialog_confirm_total">Σύνολο</string>
 
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_secure_now">Ασφαλίστε το πορτοφόλι τώρα</string>
+    <string name="shortcut_secure_now">Ασφαλίστε το πορτοφόλι τώρα</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_scan_to_pay">Σαρώστε για να στείλετε</string>
+    <string name="shortcut_scan_to_pay">Σαρώστε για να πληρώσετε</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_pay_to_address">Αποστολή στη διεύθυνση</string>
+    <string name="shortcut_pay_to_address">Αποστολή στη διεύθυνση</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_buy_sell">Αγορά / Πώληση Dash</string>
+    <string name="shortcut_buy_sell">Αγορά / Πώληση Dash</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_import_key">Εισάγετε το ιδιωτικό κλειδί</string>
+    <string name="shortcut_receive">Λήψη</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_add_shortcut">Προσθήκη Συντόμευσης</string>
+    <string name="shortcut_import_key">Εισάγετε το ιδιωτικό κλειδί</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_add_shortcut">Προσθήκη Συντόμευσης</string>
 
     <!-- Lock Screen: Button: 2 lines, 9 characters across -->
     <string name="lock_action_quick_receive">Γρήγορη Λήψη</string>
@@ -80,10 +81,8 @@
     <string name="payments_tab_receive_label">Λήψη</string>
     <string name="payments_pay_by_qr_title">Αποστολή με</string>
     <string name="payments_pay_by_qr_sub_title">Σάρωση QR κωδικού</string>
-    <string name="payments_pay_by_qr_button">Σάρωση</string>
     <string name="payments_pay_to_clipboard_title">Αποστολή στη αντιγραμμένη διεύθυνση</string>
     <string name="payments_pay_to_clipboard_sub_title">Δεν αντιγράφηκε καμία διεύθυνση</string>
-    <string name="payments_pay_to_clipboard_button">Αποστολή</string>
 
     <string name="forgot_pin_title">Ξεχάσατε το PIN;</string>
     <string name="forgot_pin_message">Μπορείτε να ορίσετε ένα νέο PIN με τη βοήθεια της φράσης ανάκτησης σας.</string>
@@ -91,6 +90,8 @@
     <string name="forgot_pin_instruction_2">Ορίστε ένα νέο PIN</string>
     <string name="forgot_pin_instruction_3">Συνδεθείτε με το νέο σας PIN για να αποκτήσετε πρόσβαση στο πορτοφόλι σας</string>
     <string name="forgot_pin_warning">Αν έχετε ξεχάσει το PIN και χάσατε τη φράση ανάκτησης, δεν μπορείτε να πάρετε πίσω την πρόσβαση στο πορτοφόλι και στα χρήματα σας.</string>
+    <string name="forgot_pin_recover">Εισάγετε την φράσης ανάκτησης</string>
+    <string name="forgot_pin_passphrase_doesnt_match">Η φράση ανάκτησης δεν ταιριάζει με αυτή που δημιουργήθηκε για το συγκεκριμένο πορτοφόλι.</string>
 
     <string name="send_coins_auto_lock_feasible">Αυτή η συναλλαγή θα πρέπει να διευθετηθεί άμεσα χωρίς πρόσθετη χρέωση</string>
     <string name="send_coins_auto_lock_not_feasible">Αυτή η συναλλαγή μπορεί να διαρκέσει αρκετά λεπτά για να διευθετηθεί. Να ολοκληρωθεί άμεσα για %1$s%2$s;</string>
@@ -189,8 +190,8 @@
     <string name="touch_fingerprint_sensor">Αγγίξτε τον αισθητήρα δακτυλικών αποτυπωμάτων.</string>
     <string name="touch_fingerprint_to_enable">Αγγίξτε τον αισθητήρα δακτυλικών αποτυπωμάτων για να ενεργοποιήσετε το ξεκλείδωμα μέσω αποτυπώματος.</string>
     <string name="fingerprint_changed_title">Τα δεδομένα δακτυλικών αποτυπωμάτων άλλαξαν</string>
-	<string name="fingerprint_changed_message">Εντοπίσαμε μια αλλαγή στα δεδομένα ταυτοποίησης των δακτυλικών αποτυπωμάτων. Πρέπει να χρησιμοποιήσετε το PIN αυτή τη φορά.</string>
-	<string name="exchange_rate_missing">Αυτή η πληρωμή είναι πολύ παλιά για να δοθεί η χρηματική του τιμή.</string>
+    <string name="fingerprint_changed_message">Εντοπίσαμε μια αλλαγή στα δεδομένα ταυτοποίησης των δακτυλικών αποτυπωμάτων. Πρέπει να χρησιμοποιήσετε το PIN αυτή τη φορά.</string>
+    <string name="exchange_rate_missing">Αυτή η πληρωμή είναι πολύ παλιά για να δοθεί η χρηματική του τιμή.</string>
 
     <string name="preferences_enable_payment_request_summary">Χρησιμοποιήστε το πρωτόκολλο πληρωμών για QR τύπου πληρωμές.</string>
     <string name="preferences_enable_payment_request_title">BIP70 για scan-to-pay</string>
@@ -215,13 +216,13 @@
     <string name="verify_seed_success_message">Το πορτοφόλι σας είναι ασφαλές τώρα. Μπορείτε να χρησιμοποιήσετε τη φράση ανάκτησης ανά πάσα στιγμή για να ανακτήσετε το λογαριασμό σας σε άλλη συσκευή.</string>
     <string name="view_seed_done">Έγινε</string>
     <string name="view_seed_title">Φράση Ανάκτησης</string>
-	<string name="transaction_result_view_on_explorer">Προβολή στον Explorer των Block</string>
-	<string name="transaction_result_paid_successfully">Εστάλη με επιτυχία</string>
-	<string name="transaction_result_sent_to">Αποστόλη στο</string>
-	<string name="transaction_date_and_time">Ημερομηνία</string>
-	<string name="transaction_close">κλείσιμο</string>
-	<string name="transaction_details_amount_received">Ποσοστό Ληφθέντων</string>
-	<string name="transaction_details_amount_sent">Ποσοστό Απεσταλμένων</string>
+    <string name="transaction_result_view_on_explorer">Προβολή στον Explorer των Block</string>
+    <string name="transaction_result_paid_successfully">Εστάλη με επιτυχία</string>
+    <string name="transaction_result_sent_to">Αποστόλη στο</string>
+    <string name="transaction_date_and_time">Ημερομηνία</string>
+    <string name="transaction_close">κλείσιμο</string>
+    <string name="transaction_details_amount_received">Ποσοστό Ληφθέντων</string>
+    <string name="transaction_details_amount_sent">Ποσοστό Απεσταλμένων</string>
     <string name="transaction_details_sent_from">Αποστολή από</string>
     <string name="transaction_details_sent_to">Αποστόλη στο</string>
     <string name="transaction_details_received_at">Ελήφθησαν στο</string>
@@ -245,7 +246,7 @@
     <string name="menu_local_currency">Τοπικό νόμισμα</string>
     <string name="menu_rescan_blockchain">Επανασάρωση του blockchain</string>
     <string name="menu_contact_support_title">Επικοινωνήστε με την υποστήριξη</string>
-    <string name="menu_contact_support_subtitle">Αναφέρετε το πρόβλημα</string>
+    <string name="menu_contact_support_subtitle">Αναφέρετε ένα πρόβλημα</string>
 
     <string name="tools_address_book">Βιβλίο Διευθύνσεων</string>
     <string name="tools_import_private_key">Εισάγετε το ιδιωτικό κλειδί</string>
@@ -302,14 +303,8 @@
     <string name="welcome_screen_title_3">Περισσότερος Έλεγχος</string>
     <string name="welcome_screen_subtitle_3">Έχετε τον πλήρη έλεγχο να προσαρμόσετε το πορτοφόλι σας ανάλογα με τις ανάγκες σας</string>
 
-    <string-array name="history_filter">
-        <item>Όλα</item>
-        <item>Ελήφθησαν</item>
-        <item>Εστάλη</item>
-    </string-array>
-
     <string name="sync_status_wait">Περιμένετε να ολοκληρωθεί ο συγχρονισμός</string>
-    <string name="sync_status_syncing_title">Συγχρονισμός</string>
+    <string name="sync_status_syncing_title">Συγχρονισμός %1$d</string>
     <string name="sync_status_syncing_sub_title">Μεσώ του Dash blockchain</string>
     <string name="sync_status_unable_to_connect">Δεν είναι δυνατή η σύνδεση</string>
     <string name="sync_status_check_connection">Ελέγξτε την σύνδεση σας</string>
@@ -325,9 +320,22 @@
     <string name="payment_request_please_try_again">Παρακαλώ προσπαθήστε ξανά</string>
     <string name="payment_request_try_again">Προσπαθήστε ξανά</string>
     <string name="payment_request_problem_title">Η πληρωμή δεν αναγνωρίστηκε</string>
-    <string name="payment_request_problem_message">Η πληρωμή σας διεκπεραιώθηκε, αλλά ο διακομιστής δεν μπόρεσε να την αναγνωρίσει</string>
+    <string name="payment_request_problem_message">Δεν ήταν δυνατή η επεξεργασία της πληρωμής σας από τον διακομιστή, παρακαλώ ρωτήστε τον έμπορο</string>
     <string name="payment_request_expired_title">Το αίτημα πληρωμής Έληξε</string>
     <string name="payment_request_close">κλείσιμο</string>
     <string name="payment_request_skip">Παράλειψη</string>
     <string name="payment_request_paid_to">Πληρώθηκε σε</string>
+
+    <string name="import_image_not_valid_qr_code">Μη έγκυρος κωδικός QR</string>
+    <string name="import_image_please_use_valid_qr_code">Παρακαλώ χρησιμοποιήστε έναν έγκυρο Dash QR κωδικό </string>
+    <string name="import_image_no_private_key_copied">Δεν αντιγράφηκε κανένα ιδιωτικό κλειδί</string>
+    <string name="import_image_import_valid_private_key">Αντιγράψτε ένα έγκυρο ιδιωτικό κλειδί για να εισάγετε Dash από αυτό</string>
+    <string name="import_image_invalid_private">Μη έγκυρο ιδιωτικό κλειδί</string>
+
+    <string name="syncing">Συγχρονισμός</string>
+    <string name="syncing_balance">Συγχρονισμός Υπολοίπου</string>
+
+    <string name="all_transactions">Όλα</string>
+    <string name="received_transactions">Ελήφθησαν</string>
+    <string name="sent_transactions">Εστάλη</string>
 </resources>

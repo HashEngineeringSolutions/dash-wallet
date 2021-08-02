@@ -5,8 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:animateLayoutChanges="false"
-    android:fitsSystemWindows="false"
-    tools:background="@color/dash_deep_blue">
+    android:background="@drawable/splash_activity_background">
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/logo_guideline"
@@ -129,7 +128,7 @@
 
     </LinearLayout>
 
-    <org.dash.wallet.ui.widget.LockScreenButton
+    <org.dash.wallet.common.ui.LockScreenButton
         android:id="@+id/action_receive"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -144,7 +143,7 @@
         app:layout_constraintWidth_percent="0.24"
         app:text="@string/lock_action_quick_receive" />
 
-    <org.dash.wallet.ui.widget.LockScreenButton
+    <org.dash.wallet.common.ui.LockScreenButton
         android:id="@+id/action_login_with_pin"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -159,7 +158,7 @@
         app:layout_constraintWidth_percent="0.24"
         app:text="@string/lock_action_login_with_pin" />
 
-    <org.dash.wallet.ui.widget.LockScreenButton
+    <org.dash.wallet.common.ui.LockScreenButton
         android:id="@+id/action_login_with_fingerprint"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -174,7 +173,7 @@
         app:layout_constraintWidth_percent="0.24"
         app:text="@string/lock_action_login_with_fingerprint" />
 
-    <org.dash.wallet.ui.widget.LockScreenButton
+    <org.dash.wallet.common.ui.LockScreenButton
         android:id="@+id/action_scan_to_pay"
         android:layout_width="0dp"
         android:layout_height="0dp"

@@ -76,8 +76,6 @@ public final class AboutFragment extends PreferenceFragment {
         if (Constants.IS_PROD_BUILD) {
             PreferenceScreen screen = getPreferenceScreen();
             screen.removePreference(firebaseIdLabel);
-        } else {
-            firebaseIdLabel.setSummary("Not installed");
         }
     }
 }

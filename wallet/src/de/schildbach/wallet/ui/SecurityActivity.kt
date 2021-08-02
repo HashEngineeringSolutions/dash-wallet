@@ -16,25 +16,23 @@
 
 package de.schildbach.wallet.ui
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
 import android.widget.CompoundButton
-import android.widget.Switch
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
+import androidx.appcompat.widget.SwitchCompat
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
 import de.schildbach.wallet.WalletApplication
+import de.schildbach.wallet.ui.backup.BackupWalletActivity
 import de.schildbach.wallet.util.FingerprintHelper
 import de.schildbach.wallet_test.R
 import kotlinx.android.synthetic.main.activity_security.*
 import org.bitcoinj.wallet.DeterministicSeed
 import org.bitcoinj.wallet.Wallet
+import org.dash.wallet.common.BuildConfig
 
 class SecurityActivity : BaseMenuActivity(), AbstractPINDialogFragment.WalletProvider {
 
@@ -57,22 +55,17 @@ class SecurityActivity : BaseMenuActivity(), AbstractPINDialogFragment.WalletPro
         super.onCreate(savedInstanceState)
 
         setTitle(R.string.security_title)
-        val hideBalanceOnLaunch = findViewById<Switch>(R.id.hide_balance_switch)
+        val hideBalanceOnLaunch = findViewById<SwitchCompat>(R.id.hide_balance_switch)
         hideBalanceOnLaunch.isChecked = configuration.hideBalance
         hideBalanceOnLaunch.setOnCheckedChangeListener { _, hideBalanceOnLaunch ->
             configuration.hideBalance = hideBalanceOnLaunch
         }
 
-        val checkPinSharedModel: CheckPinSharedModel = ViewModelProviders.of(this).get(CheckPinSharedModel::class.java)
+        val checkPinSharedModel: CheckPinSharedModel = ViewModelProvider(this)[CheckPinSharedModel::class.java]
         checkPinSharedModel.onCorrectPinCallback.observe(this, Observer<Pair<Int?, String?>> { (requestCode, pin) ->
             when (requestCode) {
                 AUTH_REQUEST_CODE_BACKUP -> {
-                    val permission = Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
-                        BackupWalletDialogFragment.show(supportFragmentManager)
-                    } else {
-                        ActivityCompat.requestPermissions(this, arrayOf(permission), AUTH_REQUEST_CODE_BACKUP)
-                    }
+                    BackupWalletActivity.start(this)
                 }
                 ENABLE_FINGERPRINT_REQUEST_CODE -> {
                     if (pin != null) {
@@ -90,7 +83,7 @@ class SecurityActivity : BaseMenuActivity(), AbstractPINDialogFragment.WalletPro
             }
         })
 
-        val decryptSeedSharedModel : DecryptSeedSharedModel = ViewModelProviders.of(this).get(DecryptSeedSharedModel::class.java)
+        val decryptSeedSharedModel : DecryptSeedSharedModel = ViewModelProvider(this)[DecryptSeedSharedModel::class.java]
         decryptSeedSharedModel.onDecryptSeedCallback.observe(this, Observer<Pair<Int?, DeterministicSeed?>> { (requestCode, seed) ->
             when (requestCode) {
                 AUTH_REQUEST_CODE_VIEW_RECOVERYPHRASE -> {
@@ -106,8 +99,12 @@ class SecurityActivity : BaseMenuActivity(), AbstractPINDialogFragment.WalletPro
             fingerprint_auth_switch.isChecked = fingerprintHelper.isFingerprintEnabled
             fingerprint_auth_switch.setOnCheckedChangeListener(fingerprintSwitchListener)
             configuration.enableFingerprint = fingerprintHelper.isFingerprintEnabled
-    } else {
+        } else {
             fingerprint_auth_group.visibility = GONE
+        }
+
+        if (BuildConfig.DEBUG) {
+            backup_wallet.visibility = VISIBLE
         }
     }
 
@@ -161,14 +158,5 @@ class SecurityActivity : BaseMenuActivity(), AbstractPINDialogFragment.WalletPro
         var seedArray = mnemonicCode!!.toTypedArray()
         val intent = ViewSeedActivity.createIntent(this, seedArray)
         startActivity(intent)
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>,
-                                            grantResults: IntArray) {
-        if (requestCode == AUTH_REQUEST_CODE_BACKUP) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                BackupWalletDialogFragment.show(supportFragmentManager)
-
-        }
     }
 }

@@ -25,3 +25,7 @@ out/
 gradle-wrapper.jar
 wallet/prod
 wallet/.cxx
+wallet/cpp
+google-services.json
+output-metadata.json
+service.properties

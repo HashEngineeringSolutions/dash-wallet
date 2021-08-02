@@ -27,7 +27,11 @@ import de.schildbach.wallet.data.BlockchainState
 import de.schildbach.wallet.util.showBlockchainSyncingMessage
 import de.schildbach.wallet_test.R
 import kotlinx.android.synthetic.main.activity_more.*
-import org.dash.wallet.integration.uphold.ui.UpholdAccountActivity
+import org.dash.wallet.common.Constants.REQUEST_CODE_BUY_SELL
+import org.dash.wallet.common.Constants.RESULT_CODE_GO_HOME
+import org.dash.wallet.common.UserInteractionAwareCallback
+
+
 
 class MoreActivity : GlobalFooterActivity() {
 
@@ -35,6 +39,12 @@ class MoreActivity : GlobalFooterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (walletApplication.wallet == null) {
+            finish()
+            return
+        }
+
         setContentViewWithFooter(R.layout.activity_more)
         activateMoreButton()
 
@@ -69,8 +79,10 @@ class MoreActivity : GlobalFooterActivity() {
             startActivity(Intent(this, ToolsActivity::class.java))
         }
         contact_support.setOnClickListener {
-            ReportIssueDialogBuilder.createReportIssueDialog(this,
+            val dialog = ReportIssueDialogBuilder.createReportIssueDialog(this,
                     WalletApplication.getInstance()).show()
+            dialog.window!!.callback = UserInteractionAwareCallback(dialog.window!!.callback, this)
+
         }
     }
 
@@ -80,8 +92,7 @@ class MoreActivity : GlobalFooterActivity() {
     }
 
     private fun startBuyAndSellActivity() {
-        val wallet = WalletApplication.getInstance().wallet
-        startActivity(UpholdAccountActivity.createIntent(this, wallet))
+        startActivityForResult(BuyAndSellLiquidUpholdActivity.createIntent(this), REQUEST_CODE_BUY_SELL);
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -94,4 +105,10 @@ class MoreActivity : GlobalFooterActivity() {
         return super.onOptionsItemSelected(item)
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == RESULT_CODE_GO_HOME) {
+            onBackPressed()
+        }
+    }
 }

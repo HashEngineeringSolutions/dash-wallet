@@ -16,8 +16,6 @@
     <string name="set_pin_verifying_pin">Memverifikasi PIN</string>
     <string name="set_pin_message">PIN ini akan diperlukan untuk membuka kunci aplikasi Anda setiap kali saat Anda menggunakannya.</string>
 
-    <string name="home_pay">Kirim</string>
-    <string name="home_receive">Terima</string>
     <string name="home_available_balance">Saldo tersedia</string>
     <string name="home_balance_hidden">Saldo disembunyikan</string>
     <string name="home_balance_show_hint">Ketuk untuk melihat saldo</string>
@@ -30,17 +28,19 @@
     <string name="dialog_confirm_total">Total</string>
 
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_secure_now">Amankan Dompet Sekarang</string>
+    <string name="shortcut_secure_now">Amankan Dompet Sekarang</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_scan_to_pay">Pindai untuk mengirim</string>
+    <string name="shortcut_scan_to_pay">Pindai untuk membayar</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_pay_to_address">Kirim ke alamat</string>
+    <string name="shortcut_pay_to_address">Kirim ke alamat</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_buy_sell">Beli / Jual Dash</string>
+    <string name="shortcut_buy_sell">Beli / Jual Dash</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_import_key">Impor kunci pribadi</string>
+    <string name="shortcut_receive">Terima</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_add_shortcut">Tambah Pintasan</string>
+    <string name="shortcut_import_key">Impor kunci pribadi</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_add_shortcut">Tambah Pintasan</string>
 
     <!-- Lock Screen: Button: 2 lines, 9 characters across -->
     <string name="lock_action_quick_receive">Terima Cepat</string>
@@ -81,10 +81,8 @@
     <string name="payments_tab_receive_label">Terima</string>
     <string name="payments_pay_by_qr_title">Dikirim oleh</string>
     <string name="payments_pay_by_qr_sub_title">Memindai kode QR</string>
-    <string name="payments_pay_by_qr_button">Pindai</string>
     <string name="payments_pay_to_clipboard_title">Kirim ke alamat yang disalin</string>
     <string name="payments_pay_to_clipboard_sub_title">Tak ada alamat tersalin</string>
-    <string name="payments_pay_to_clipboard_button">Kirim</string>
 
     <string name="forgot_pin_title">Lupa PIN?</string>
     <string name="forgot_pin_message">Anda dapat mengatur PIN baru dengan bantuan frasa pemulihan Anda.</string>
@@ -92,6 +90,8 @@
     <string name="forgot_pin_instruction_2">Siapkan PIN baru</string>
     <string name="forgot_pin_instruction_3">Masuk dengan PIN baru Anda untuk mengakses dompet Anda</string>
     <string name="forgot_pin_warning">Jika Anda lupa PIN dan kehilangan frasa pemulihan, Anda tidak bisa mendapatkan kembali akses ke dompet dan dana Anda.</string>
+    <string name="forgot_pin_recover">Masukkan Frasa pemulihan</string>
+    <string name="forgot_pin_passphrase_doesnt_match">Frasa pemulihan tidak cocok dengan apa yang telah disiapkan untuk dompet ini.</string>
 
     <string name="send_coins_auto_lock_feasible">Transaksi ini harus diselesaikan secara instan tanpa biaya tambahan</string>
     <string name="send_coins_auto_lock_not_feasible">Transaksi ini mungkin perlu beberapa menit untuk diselesaikan. Selesaikan instan untuk %1$s%2$s?</string>
@@ -187,8 +187,8 @@
     <string name="touch_fingerprint_sensor">Sentuh sensor sidik jari</string>
     <string name="touch_fingerprint_to_enable">Sentuh sensor sidik jari untuk mengaktifkan membuka kunci dengan sidik jari.</string>
     <string name="fingerprint_changed_title">Data sidik jari berubah</string>
-	<string name="fingerprint_changed_message">Kami mendeteksi perubahan dalam data otentikasi sidik jari Anda. Anda perlu menggunakan PIN saat ini.</string>
-	<string name="exchange_rate_missing">Pembayaran ini terlalu lama untuk mendapatkan nilai fiat.</string>
+    <string name="fingerprint_changed_message">Kami mendeteksi perubahan dalam data otentikasi sidik jari Anda. Anda perlu menggunakan PIN saat ini.</string>
+    <string name="exchange_rate_missing">Pembayaran ini terlalu lama untuk mendapatkan nilai fiat.</string>
 
     <string name="preferences_enable_payment_request_summary">Gunakan protokol pembayaran untuk pembayaran yang dimulai dengan kode-QR</string>
     <string name="preferences_enable_payment_request_title">BIP70 untuk pindai-untuk-bayar</string>
@@ -213,13 +213,13 @@
     <string name="verify_seed_success_message">Dompet Anda aman sekarang. Anda dapat menggunakan frasa pemulihan kapan saja untuk memulihkan akun di perangkat lain.</string>
     <string name="view_seed_done">Selesai</string>
     <string name="view_seed_title">Frasa pemulihan</string>
-	<string name="transaction_result_view_on_explorer">Lihat di Blok Explorer</string>
-	<string name="transaction_result_paid_successfully">Pengiriman berhasil</string>
-	<string name="transaction_result_sent_to">Terkirim ke</string>
-	<string name="transaction_date_and_time">Tanggal</string>
-	<string name="transaction_close">Tutup</string>
-	<string name="transaction_details_amount_received">Jumlah Diterima</string>
-	<string name="transaction_details_amount_sent">Jumlah Dikirim</string>
+    <string name="transaction_result_view_on_explorer">Lihat di Blok Explorer</string>
+    <string name="transaction_result_paid_successfully">Pengiriman berhasil</string>
+    <string name="transaction_result_sent_to">Terkirim ke</string>
+    <string name="transaction_date_and_time">Tanggal</string>
+    <string name="transaction_close">Tutup</string>
+    <string name="transaction_details_amount_received">Jumlah Diterima</string>
+    <string name="transaction_details_amount_sent">Jumlah Dikirim</string>
     <string name="transaction_details_sent_from">Terkirim dari</string>
     <string name="transaction_details_sent_to">Terkirim ke</string>
     <string name="transaction_details_received_at">Diterima di</string>
@@ -300,14 +300,8 @@
     <string name="welcome_screen_title_3">Kontrol lebih lanjut</string>
     <string name="welcome_screen_subtitle_3">Memiliki kendali penuh dan sesuaikan dompet Anda berdasarkan kebutuhan Anda</string>
 
-    <string-array name="history_filter">
-        <item>Semua</item>
-        <item>Diterima</item>
-        <item>Terkirim</item>
-    </string-array>
-
     <string name="sync_status_wait">Harap tunggu sampai sinkronisasi selesai</string>
-    <string name="sync_status_syncing_title">Menyingkronkan:</string>
+    <string name="sync_status_syncing_title">Menyinkronkan %1$d</string>
     <string name="sync_status_syncing_sub_title">dengan Dash blockchain</string>
     <string name="sync_status_unable_to_connect">Tidak dapat terhubung</string>
     <string name="sync_status_check_connection">Periksa koneksi anda</string>
@@ -323,9 +317,22 @@
     <string name="payment_request_please_try_again">Silakan coba lagi</string>
     <string name="payment_request_try_again">Coba lagi</string>
     <string name="payment_request_problem_title">Pembayaran tidak diakui</string>
-    <string name="payment_request_problem_message">Pembayaran anda diproses tetapi server tidak mampu mengakuinya</string>
+    <string name="payment_request_problem_message">Pembayaran Anda tidak dapat diproses oleh server, harap tanyakan kepada pedagang</string>
     <string name="payment_request_expired_title">Permintaan pembayaran kedaluwarsa</string>
     <string name="payment_request_close">Tutup</string>
     <string name="payment_request_skip">Lewati</string>
     <string name="payment_request_paid_to">Dibayarkan kepada</string>
+
+    <string name="import_image_not_valid_qr_code">Bukan Kode QR yang valid</string>
+    <string name="import_image_please_use_valid_qr_code">Harap gunakan Kode QR Dash yang valid</string>
+    <string name="import_image_no_private_key_copied">Tidak ada kunci pribadi yang disalin</string>
+    <string name="import_image_import_valid_private_key">Salin kunci pribadi yang valid untuk mengimpor Dash darinya</string>
+    <string name="import_image_invalid_private">Kunci Pribadi Tidak Valid</string>
+
+    <string name="syncing">Menyingkronkan:</string>
+    <string name="syncing_balance">Menyinkronkan Saldo</string>
+
+    <string name="all_transactions">Semua</string>
+    <string name="received_transactions">Diterima</string>
+    <string name="sent_transactions">Terkirim</string>
 </resources>

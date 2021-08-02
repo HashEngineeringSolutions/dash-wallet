@@ -1,4 +1,70 @@
 Dash Wallet
+v7.3.1
+* Fix Uphold logout instructions
+* Dismiss PIN Entry Dialogs upon Autologout  (bug from 7.2.4)
+* Fix issue with onboarding (bug from 7.2.4)
+
+v7.3.0
+* Add Liquid Exchange Integration (supports Buy Dash with Credit Card)
+
+v7.2.7
+* When paying via another app with BIP70, the Lock Screen does not appear (bug from 7.2.4)
+* Lock Screen accepts fingerprints where previously it only accepted the fingerprint once time (bug from 7.2.4)
+
+v7.2.6
+* When autologout is off, then the app doesn't ask for PIN when starting (bug from 7.2.4)
+* When paying via another app, the Lock Screen does not appear (bug from 7.2.4)
+* Support Android 11
+* New interface for restoring a backup file during onboarding
+
+v7.2.5
+* Use DashJ 0.17.7 to support Dash Core 0.17
+* Enable backup/restore on Android 10*
+* Remove backup restoration from other apps
+
+v7.2.4
+* Simplify synchronization status UI
+* Fix resume crash
+* Patch Strandhogg vulnerabilities
+* Fix exchange rate related crashes
+* Update translations
+* Add maven central for dependencies
+
+v7.2.3
+* Add import private key from shared image
+* use DashJ 0.17.6
+
+v7.2.2
+* Fix crashes on Import Private Key, Backup to File failures
+* Allow scanning inverted QR codes (black background, white foreground)
+* Prevent auto logout when typing text on Report Issue dialog
+
+v7.2.1
+* Fix Scan QR Code crash on Android 6 or earlier
+* Fix missing Advanced Security Screen Auto Logout toggle
+
+v7.2.0
+* Enhance Forgot PIN feature from Lock Screen
+* Update translations
+* Built for SDK 29 (Android 10)
+* Update dependencies
+* Use DashJ 0.17.5 (uses protobuf-javalite)
+
+v7.1.0
+* Use DashJ 0.17.4 (full chainlock support, Dash Core 0.16 updates)
+* BIP70: don't send tx if rejected by payment server
+* Save backup file without PIN (resolves issues when restoring backups in v7+)
+* Update Advanced Security Screen to support smaller devices
+* Update Recovery Phrase Verification Screen to support smaller devices
+* Cancel schedulied blockchain sync with resetting wallet (fixes crash)
+* Shorten dates on transactions on Home Screen
+* Fix History Filter UI issue (clipping)
+* Fix numeric keypad placement on small devices and emulators
+* Add scrolling to More Screen (supports small devices)
+* Support translations for new or non-standard currency names
+* Redesign Home Screen
+* Try connecting to masternodes first
+
 v7.0.9
 * Fix crash on Address Book Screen on Android 4.4
 * Add back button to Verify Recovery Phrase Screens

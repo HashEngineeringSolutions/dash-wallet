@@ -326,14 +326,11 @@ public class TransactionsAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
             }
 
             //
-            // Set the time. eg.  "On <date> at <time>"
+            // Set the time. eg.  "<date> <time>"
             //
             final Date time = tx.getUpdateTime();
-            String onTimeText = context.getString(R.string.transaction_row_time_text);
-
-            timeView.setText(String.format(onTimeText,
-                    DateUtils.formatDateTime(context, time.getTime(), DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR),
-                    DateUtils.formatDateTime(context, time.getTime(), DateUtils.FORMAT_SHOW_TIME)));
+            timeView.setText(DateUtils.formatDateTime(itemView.getContext(), time.getTime(),
+                    DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_ABBREV_MONTH | DateUtils.FORMAT_SHOW_TIME));
 
             //
             // Set primary status - Sent:  Sent, Masternode Special Tx's, Internal

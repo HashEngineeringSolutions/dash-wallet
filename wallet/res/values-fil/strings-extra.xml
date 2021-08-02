@@ -16,8 +16,6 @@
     <string name="set_pin_verifying_pin">Pagpapatunay ng PIN</string>
     <string name="set_pin_message">Ang PIN na ito ay kailangan upang i-unlock ang iyong app kapag nais gamitin.</string>
 
-    <string name="home_pay">Ipadala</string>
-    <string name="home_receive">Tumanggap</string>
     <string name="home_available_balance">Magagamit na balanse</string>
     <string name="home_balance_hidden">Nakatagong balanse</string>
     <string name="home_balance_show_hint">Pindutin upang ipakita ang balanse</string>
@@ -25,21 +23,24 @@
 
     <string name="dialog_confirm_confirm">Kumpirmahin</string>
     <string name="dialog_confirm_pay_to">Pinadala kay</string>
+    <string name="dialog_confirm_secured_by">Siniguro ni</string>
     <string name="dialog_confirm_fee">Network fee</string>
     <string name="dialog_confirm_total">Kabuuan</string>
 
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_secure_now">Protektahan ang iyong wallet ngayon</string>
+    <string name="shortcut_secure_now">Protektahan ang iyong wallet ngayon</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_scan_to_pay">I-scan para magpadala</string>
+    <string name="shortcut_scan_to_pay">I-scan upang magbayad</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_pay_to_address">Ipadala sa address</string>
+    <string name="shortcut_pay_to_address">Ipadala sa address</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_buy_sell">Bumili/ Magbenta ng Dash</string>
+    <string name="shortcut_buy_sell">Bumili/ Magbenta ng Dash</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_import_key">I-import ang private key</string>
+    <string name="shortcut_receive">Tumanggap</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_add_shortcut">Maglagay ng shortcut</string>
+    <string name="shortcut_import_key">I-import ang private key</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_add_shortcut">Maglagay ng shortcut</string>
 
     <!-- Lock Screen: Button: 2 lines, 9 characters across -->
     <string name="lock_action_quick_receive">Tanggapin ng mabilis</string>
@@ -80,10 +81,8 @@
     <string name="payments_tab_receive_label">Tumanggap</string>
     <string name="payments_pay_by_qr_title">Pinadala ni</string>
     <string name="payments_pay_by_qr_sub_title">Scanning QR code</string>
-    <string name="payments_pay_by_qr_button">Scan</string>
     <string name="payments_pay_to_clipboard_title">Ipadala sa kinopyang address</string>
     <string name="payments_pay_to_clipboard_sub_title">Walang address na nakopya</string>
-    <string name="payments_pay_to_clipboard_button">Ipadala</string>
 
     <string name="forgot_pin_title">Nakalimutan ang PIN?</string>
     <string name="forgot_pin_message">Maaari kang mag set ng bagong PIN sa tulong ng iyong recovery phrase</string>
@@ -91,6 +90,8 @@
     <string name="forgot_pin_instruction_2">Mag set up ng bagong PIN</string>
     <string name="forgot_pin_instruction_3">Buksan gamit ang iyong bagong PIN para ma-access ang iyong pitaka</string>
     <string name="forgot_pin_warning">Kapag nakalimutan mo ang iyong PIN at nawala ang iyong recover phrase, hindi muna ulit ma-aaccess ang iyong pitaka at pondo.</string>
+    <string name="forgot_pin_recover">I-enter ang recovery phrase</string>
+    <string name="forgot_pin_passphrase_doesnt_match">Ang recovery phrase ay hindi tumutugma sa kung saan na-set up ang wallet na ito.</string>
 
     <string name="send_coins_auto_lock_feasible">Ang transaksyon na ito ay dapat matapos agad ng walang ekstrang bayad</string>
     <string name="send_coins_auto_lock_not_feasible">Ang transaksyon na ito ay maaaring magtagal ng ilang minuto. Kumpletuhin agad sa halagang %1$s%2$s?</string>
@@ -189,8 +190,8 @@
     <string name="touch_fingerprint_sensor">Hawakan ang sensor ng fingerprint.</string>
     <string name="touch_fingerprint_to_enable">Hawakan ang fingerprint sensor upang mabuksan gamit ang fingerprint.</string>
     <string name="fingerprint_changed_title">Fingerprint data ay napalitan</string>
-	<string name="fingerprint_changed_message">Napansin namin ang pagbabago ng iyong fingerprint authentication data. Kailangan mong gamitin ang PIN sa oras na ito.</string>
-	<string name="exchange_rate_missing">Abg bayad na ito ay masyado ng matagal para magkaroon ng fiat value.</string>
+    <string name="fingerprint_changed_message">Napansin namin ang pagbabago ng iyong fingerprint authentication data. Kailangan mong gamitin ang PIN sa oras na ito.</string>
+    <string name="exchange_rate_missing">Abg bayad na ito ay masyado ng matagal para magkaroon ng fiat value.</string>
 
     <string name="preferences_enable_payment_request_summary">Gamitin ang protokol sa pagbabayad para sa pinasimulang pagbabayad ng QR code</string>
     <string name="preferences_enable_payment_request_title">BIP70 para sa scan-to-pay</string>
@@ -215,13 +216,13 @@
     <string name="verify_seed_success_message">Ang iyong pitaka ay ligtas na. Maari mong magamit ang recovery phrase kahit kailan upanh marekober ang account sa ibang device.</string>
     <string name="view_seed_done">Tapos</string>
     <string name="view_seed_title">Recovery phrase</string>
-	<string name="transaction_result_view_on_explorer">Tingnan sa block explorer</string>
-	<string name="transaction_result_paid_successfully">Matagumpay na naipadala</string>
-	<string name="transaction_result_sent_to">Pinadala kay</string>
-	<string name="transaction_date_and_time">Petsa</string>
-	<string name="transaction_close">Sarado</string>
-	<string name="transaction_details_amount_received">Halagang natanggap</string>
-	<string name="transaction_details_amount_sent">Halagang ipinadala</string>
+    <string name="transaction_result_view_on_explorer">Tingnan sa block explorer</string>
+    <string name="transaction_result_paid_successfully">Matagumpay na naipadala</string>
+    <string name="transaction_result_sent_to">Pinadala kay</string>
+    <string name="transaction_date_and_time">Petsa</string>
+    <string name="transaction_close">Sarado</string>
+    <string name="transaction_details_amount_received">Halagang natanggap</string>
+    <string name="transaction_details_amount_sent">Halagang ipinadala</string>
     <string name="transaction_details_sent_from">Pinadala mula</string>
     <string name="transaction_details_sent_to">Ipadala kay</string>
     <string name="transaction_details_received_at">Natanggap sa</string>
@@ -302,14 +303,8 @@
     <string name="welcome_screen_title_3">Mas marami pang kontrol</string>
     <string name="welcome_screen_subtitle_3">Magkaroon ng kumpletong kontrol at pinasadyang pitaka base sa iyong nais</string>
 
-    <string-array name="history_filter">
-        <item>Lahat</item>
-        <item>Natanggap</item>
-        <item>Ipinadala</item>
-    </string-array>
-
     <string name="sync_status_wait">Pakihintay na mag-sync upang makumpleto</string>
-    <string name="sync_status_syncing_title">Nagsi-sync</string>
+    <string name="sync_status_syncing_title">Syncing %1$d</string>
     <string name="sync_status_syncing_sub_title">kasama ang Dash blockchain</string>
     <string name="sync_status_unable_to_connect">Hindi maka-konekta</string>
     <string name="sync_status_check_connection">Suriin ang koneksyon</string>
@@ -325,9 +320,22 @@
     <string name="payment_request_please_try_again">Subukan muli</string>
     <string name="payment_request_try_again">Subukan muli</string>
     <string name="payment_request_problem_title">Ang pagbabayad ay hindi kinilala</string>
-    <string name="payment_request_problem_message">Ang iyong bayad ay naproseso ngunit ang server ay nabigo na kilalanin ito</string>
+    <string name="payment_request_problem_message">Ang iyong pagbabayad ay hindi maproseso ng server, mangyaring magtanong sa merchant</string>
     <string name="payment_request_expired_title">Ang hiling sa pagbayad ay nag-expire na</string>
     <string name="payment_request_close">Sarado</string>
     <string name="payment_request_skip">Laktawan</string>
     <string name="payment_request_paid_to">Nabayaran kay</string>
+
+    <string name="import_image_not_valid_qr_code">Hindi wastong QR Code</string>
+    <string name="import_image_please_use_valid_qr_code">Mangyaring gumamit ng wastong Dash QR Code</string>
+    <string name="import_image_no_private_key_copied">Walang nakopya ang private key</string>
+    <string name="import_image_import_valid_private_key">Kopyahin ang isang wastong private key upang mai-import ang Dash mula rito</string>
+    <string name="import_image_invalid_private">Di-wastong Private Key</string>
+
+    <string name="syncing">Nagsi-sync</string>
+    <string name="syncing_balance">Syncing Balance</string>
+
+    <string name="all_transactions">Lahat</string>
+    <string name="received_transactions">Natanggap</string>
+    <string name="sent_transactions">Ipinadala</string>
 </resources>

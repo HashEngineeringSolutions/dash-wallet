@@ -13,6 +13,10 @@
         <item name="android:windowBackground">@drawable/splash_activity_background</item>
     </style>
 
+    <style name="LockScreenActivity.Child.Theme" parent="SplashActivity.Theme">
+        <item name="android:windowBackground">@color/bg_less_bright</item>
+    </style>
+
     <style name="My.Theme.ChildActivity" parent="@style/My.Theme.NoActionBar">
         <item name="android:windowAnimationStyle">@style/ActivityAnimation</item>
     </style>
@@ -46,10 +50,10 @@
     <style name="VerifySeedWord" parent="MontserratRegular">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_margin">8dp</item>
+        <item name="android:layout_margin">@dimen/verify_seed_word_margin</item>
         <item name="android:gravity">center</item>
         <item name="android:textColor">@color/colorPrimary</item>
-        <item name="android:textSize">18sp</item>
+        <item name="android:textSize">@dimen/verify_seed_word_text_size</item>
     </style>
 
     <style name="VerifySeedBox">
@@ -83,8 +87,9 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_margin">3dp</item>
         <item name="android:minWidth">0dp</item>
-        <item name="android:paddingLeft">20dp</item>
-        <item name="android:paddingRight">20dp</item>
+        <item name="android:paddingLeft">@dimen/verify_seed_word_button_padding</item>
+        <item name="android:paddingRight">@dimen/verify_seed_word_button_padding</item>
+        <item name="android:textSize">@dimen/verify_seed_word_text_button_size</item>
     </style>
 
     <style name="SuccessfulTransactionSeparator">
@@ -93,82 +98,14 @@
         <item name="android:background">@color/menu_gray</item>
     </style>
 
-    <style name="MenuRow">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">70dp</item>
-        <item name="android:layout_marginLeft">15dp</item>
-        <item name="android:layout_marginTop">10dp</item>
-        <item name="android:layout_marginRight">15dp</item>
-        <item name="android:layout_marginBottom">10dp</item>
-        <item name="android:background">@drawable/selectable_round_corners</item>
-    </style>
-
-    <style name="MontserratMedium.MenuRowTitle">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginStart">12dp</item>
-        <item name="android:layout_marginLeft">12dp</item>
-        <item name="android:textColor">@color/black_text</item>
-        <item name="android:textSize">15sp</item>
-    </style>
-
-    <style name="MontserratRegular.MenuRowTitle">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginStart">12dp</item>
-        <item name="android:layout_marginLeft">12dp</item>
-        <item name="android:textColor">@color/black_text</item>
-        <item name="android:textSize">15sp</item>
-    </style>
-
-    <style name="MontserratRegular.MenuRowSubTitle">
-        <item name="android:lines">1</item>
-        <item name="android:ellipsize">end</item>
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">2dp</item>
-        <item name="android:layout_marginEnd">12dp</item>
-        <item name="layout_constraintEnd_toEndOf">parent</item>
-        <item name="android:textColor">@color/dash_gray</item>
-        <item name="android:textSize">12sp</item>
-    </style>
-
-    <style name="MenuRowIcon">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">36dp</item>
-        <item name="android:layout_marginStart">20dp</item>
-        <item name="android:layout_marginLeft">20dp</item>
-    </style>
-
-    <style name="MontserratMedium.MenuRowTitle.Internal">
-        <item name="android:layout_marginStart">20dp</item>
-        <item name="android:layout_marginEnd">20dp</item>
-        <item name="android:layout_width">0dp</item>
-        <item name="android:maxLines">2</item>
-        <item name="android:textSize">16sp</item>
-    </style>
-
-    <style name="MontserratRegular.MenuRowTitle.Internal">
-        <item name="android:layout_marginStart">20dp</item>
-        <item name="android:layout_marginLeft">20dp</item>
-        <item name="android:textSize">16sp</item>
-    </style>
-
-    <style name="MenuRowArrow">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginEnd">20dp</item>
-        <item name="android:layout_marginRight">20dp</item>
-    </style>
-
-    <style name="MenuRow.Internal">
-        <item name="android:layout_marginTop">0dp</item>
-    </style>
-
     <style name="HorizontalLine">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">1dp</item>
         <item name="android:background">@color/bg_list_selected</item>
+    </style>
+
+    <style name="SwitchCompat">
+        <item name="colorControlActivated">@color/dash_blue</item>
     </style>
 
 </resources>

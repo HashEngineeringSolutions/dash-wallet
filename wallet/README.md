@@ -80,8 +80,6 @@ use
 	git clone -b master https://github.com/HashEngineering/dash-wallet.git dash-wallet
 	cd dash-wallet
 	git pull
-	git submodule init
-    git submodule update
     
 	# each time
 	cd dash-wallet
@@ -191,7 +189,7 @@ Instructions for preparing an NFC tag with your address:
 
 ### DASHJ
 
-Dash Wallet uses dashj for Dash specific logic.  This project is forked from [bitcoinj] https://bitcoinj.github.io/
+Dash Wallet uses dashj for Dash specific logic.  This project is forked from [bitcoinj](https://bitcoinj.github.io/)
 
 
 ### EXCHANGE RATES

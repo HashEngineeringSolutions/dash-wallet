@@ -16,8 +16,6 @@
     <string name="set_pin_verifying_pin">Verifieer pin</string>
     <string name="set_pin_message">Deze PIN is vereist om uw app elke keer te ontgrendelen wanneer u deze gebruikt.</string>
 
-    <string name="home_pay">Verstuur</string>
-    <string name="home_receive">Ontvang</string>
     <string name="home_available_balance">Beschikbaar saldo</string>
     <string name="home_balance_hidden">Saldo verborgen</string>
     <string name="home_balance_show_hint">Tik om saldo te zien</string>
@@ -30,17 +28,19 @@
     <string name="dialog_confirm_total">Totaal</string>
 
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_secure_now">Beveilig portemonnee nu</string>
+    <string name="shortcut_secure_now">Beveilig portemonnee nu</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_scan_to_pay">Scan om te verzenden</string>
+    <string name="shortcut_scan_to_pay">Scan om te verzenden</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_pay_to_address">Versturen naar adres</string>
+    <string name="shortcut_pay_to_address">Versturen naar adres</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_buy_sell">Koop / verkoop Dash</string>
+    <string name="shortcut_buy_sell">Koop / verkoop Dash</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_import_key">Importeer persoonlijke sleutel</string>
+    <string name="shortcut_receive">Ontvang</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="quick_action_add_shortcut">Voeg snelkoppeling toe</string>
+    <string name="shortcut_import_key">Importeer persoonlijke sleutel</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_add_shortcut">Voeg snelkoppeling toe</string>
 
     <!-- Lock Screen: Button: 2 lines, 9 characters across -->
     <string name="lock_action_quick_receive">Snel Ontvangen</string>
@@ -81,10 +81,8 @@
     <string name="payments_tab_receive_label">Ontvangen</string>
     <string name="payments_pay_by_qr_title">Verstuurd door</string>
     <string name="payments_pay_by_qr_sub_title">QR Code scannen</string>
-    <string name="payments_pay_by_qr_button">Scan</string>
     <string name="payments_pay_to_clipboard_title">Versturen naar gekopieerd adres</string>
     <string name="payments_pay_to_clipboard_sub_title">Geen adres gekopieerd</string>
-    <string name="payments_pay_to_clipboard_button">Verstuur</string>
 
     <string name="forgot_pin_title">PIN vergeten?</string>
     <string name="forgot_pin_message">Je kan een nieuwe pin instellen met behulp van je herstelzin</string>
@@ -92,6 +90,8 @@
     <string name="forgot_pin_instruction_2">Stel een nieuwe pin in</string>
     <string name="forgot_pin_instruction_3">Log in met uw nieuwe PIN om toegang te krijgen tot uw portemonnee</string>
     <string name="forgot_pin_warning">Als u uw PIN bent vergeten en uw herstelzin bent kwijtgeraakt, kunt u geen toegang meer krijgen tot uw portemonnee en het saldo.</string>
+    <string name="forgot_pin_recover">Voer herstelzin in</string>
+    <string name="forgot_pin_passphrase_doesnt_match">De herstelzin komt niet overeen met waar deze portemonnee mee is ingesteld.</string>
 
     <string name="send_coins_auto_lock_feasible">Deze transactie wordt direct afgehandeld en zonder extra transactiekosten</string>
     <string name="send_coins_auto_lock_not_feasible">Het uitvoeren van deze transactie kan enkele minuten duren. Direct uitvoeren voor %1$s%2$s?</string>
@@ -190,8 +190,8 @@
     <string name="touch_fingerprint_sensor">Raak de vingerafdruk sensor aan.</string>
     <string name="touch_fingerprint_to_enable">Raak de vingerafdruk sensor aan om ontgrendelen met vingerafdruk te activeren.</string>
     <string name="fingerprint_changed_title">Vingerafdruk gegevens gewijzigd</string>
-	<string name="fingerprint_changed_message">We hebben een wijziging in uw vingerafdrukverificatie gedetecteerd. U moet deze keer uw PIN gebruiken.</string>
-	<string name="exchange_rate_missing">Deze betaling is te oud om de fiat-waarde te verkrijgen.</string>
+    <string name="fingerprint_changed_message">We hebben een wijziging in uw vingerafdrukverificatie gedetecteerd. U moet deze keer uw PIN gebruiken.</string>
+    <string name="exchange_rate_missing">Deze betaling is te oud om de fiat-waarde te verkrijgen.</string>
 
     <string name="preferences_enable_payment_request_summary">Gebruik betalingsprotocol voor QR-code geïnitieerde betalingen</string>
     <string name="preferences_enable_payment_request_title">BIP70 voor scan-to-pay</string>
@@ -216,13 +216,13 @@
     <string name="verify_seed_success_message">Uw portemonnee is nu beveiligd. U kunt uw herstelzin op elk gewenst moment gebruiken om uw account op een ander apparaat te herstellen.</string>
     <string name="view_seed_done">Klaar</string>
     <string name="view_seed_title">Herstelzin</string>
-	<string name="transaction_result_view_on_explorer">Bekijk in Block Explorer</string>
-	<string name="transaction_result_paid_successfully">Succesvol verzonden</string>
-	<string name="transaction_result_sent_to">Verzonden naar</string>
-	<string name="transaction_date_and_time">Datum</string>
-	<string name="transaction_close">Sluiten</string>
-	<string name="transaction_details_amount_received">Ontvangen bedrag</string>
-	<string name="transaction_details_amount_sent">Verzonden bedrag</string>
+    <string name="transaction_result_view_on_explorer">Bekijk in Block Explorer</string>
+    <string name="transaction_result_paid_successfully">Succesvol verzonden</string>
+    <string name="transaction_result_sent_to">Verzonden naar</string>
+    <string name="transaction_date_and_time">Datum</string>
+    <string name="transaction_close">Sluiten</string>
+    <string name="transaction_details_amount_received">Ontvangen bedrag</string>
+    <string name="transaction_details_amount_sent">Verzonden bedrag</string>
     <string name="transaction_details_sent_from">Verzonden vanaf</string>
     <string name="transaction_details_sent_to">Verzonden naar</string>
     <string name="transaction_details_received_at">Ontvangen met</string>
@@ -303,18 +303,12 @@
     <string name="welcome_screen_title_3">Meer controle</string>
     <string name="welcome_screen_subtitle_3">Heb volledige controle en pas uw portemonnee aan op basis van uw behoeften</string>
 
-    <string-array name="history_filter">
-        <item>Alles</item>
-        <item>Ontvangen</item>
-        <item>Verzonden</item>
-    </string-array>
-
     <string name="sync_status_wait">Wacht tot de synchronisatie is voltooid</string>
-    <string name="sync_status_syncing_title">Aan het synchroniseren</string>
+    <string name="sync_status_syncing_title">Aan het synchroniseren %1$d</string>
     <string name="sync_status_syncing_sub_title">met Dash blockchain</string>
     <string name="sync_status_unable_to_connect">Kan geen verbinding maken</string>
     <string name="sync_status_check_connection">Controleer je verbinding</string>
-    <string name="sync_status_sync_title">Sync</string>
+    <string name="sync_status_sync_title">Synchorniseer</string>
     <string name="sync_status_sync_completed">Voltooid</string>
 
     <string name="appwidget_wallet_not_ready">Stel uw portemonnee in</string>
@@ -326,9 +320,22 @@
     <string name="payment_request_please_try_again">Probeer opnieuw</string>
     <string name="payment_request_try_again">Probeer opnieuw</string>
     <string name="payment_request_problem_title">Betaling werd niet bevestigd</string>
-    <string name="payment_request_problem_message">Uw betaling is verwerkt, maar de server heeft deze niet kunnen bevestigen</string>
+    <string name="payment_request_problem_message">Je betaling kon niet door de server worden verwerkt, doe a.u.b. navraag bij de winkelier</string>
     <string name="payment_request_expired_title">Betaalverzoek is verlopen</string>
     <string name="payment_request_close">Sluiten</string>
     <string name="payment_request_skip">Overslaan</string>
     <string name="payment_request_paid_to">Betaald aan</string>
+
+    <string name="import_image_not_valid_qr_code">Ongeldige QR-code</string>
+    <string name="import_image_please_use_valid_qr_code">Gebruik een geldige QR-code</string>
+    <string name="import_image_no_private_key_copied">persoonlijke sleutel niet gekopieerd</string>
+    <string name="import_image_import_valid_private_key">Kopieer een geldige persoonlijke sleutel om de Dash er van te importeren</string>
+    <string name="import_image_invalid_private">Ongeldige persoonlijke sleutel</string>
+
+    <string name="syncing">Aan het synchroniseren</string>
+    <string name="syncing_balance">Saldo aan het synchroniseren</string>
+
+    <string name="all_transactions">Alles</string>
+    <string name="received_transactions">Ontvangen</string>
+    <string name="sent_transactions">Verzonden</string>
 </resources>
