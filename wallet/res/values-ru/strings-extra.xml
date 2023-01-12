@@ -7,6 +7,7 @@
     <string name="onboarding_load_wallet_error">Не удалось загрузить кошелёк!</string>
 
     <string name="set_pin_create_new_wallet">Создать новый кошелёк</string>
+    <string name="set_pin_upgrade_wallet">Обновить кошелёк</string>
     <string name="set_pin_restore_wallet">Восстановить кошелёк</string>
     <string name="set_pin_enter_pin">Введите старый PIN</string>
     <string name="set_pin_set_pin">Установите PIN</string>
@@ -15,6 +16,7 @@
     <string name="set_pin_decrypting">Расшифровка кошелька</string>
     <string name="set_pin_verifying_pin">Подтверждение PIN-кода</string>
     <string name="set_pin_message">Этот PIN нужно будет вводить для разблокировки приложения при каждом его использовании.</string>
+    <string name="set_pin_confirm_pin_incorrect">Неверный PIN</string>
 
     <string name="home_available_balance">Доступный баланс</string>
     <string name="home_balance_hidden">Баланс скрыт</string>
@@ -61,12 +63,10 @@
     <string name="scan_to_pay_error_dialog_title">Сканировать</string>
     <string name="scan_to_pay_error_dialog_message">Некорректный адрес Dash или URL запрос в буфере обмена:\n\n%s</string>
     <string name="scan_to_pay_error_dialog_message_no_data">Некорректный адрес Dash или URL запрос в буфере обмена.</string>
+    <string name="pay_to_confirm_address">Вы хотите отправить средства на этот адрес Dash?</string>
 
     <string name="receive_title">Получить</string>
     <string name="receive_enter_amount_message">Введите сумму для получения</string>
-    <string name="receive_enter_amount_button">Введите сумму</string>
-    <string name="receive_share_button">Поделиться</string>
-    <string name="receive_copied">Скопировано</string>
 
     <string name="pay_title">Отправить</string>
     <string name="history_title">История</string>
@@ -116,7 +116,6 @@
     <string name="import_export_keys_dialog_password_phrase">Ваша фраза восстановления.</string>
     <string name="preferences_report_issue_summary">Изложите в подробностях вашу проблему и отправьте на электронный адрес разработчиков.</string>
     <string name="navigation_configuration">Конфигурация</string>
-    <string name="button_copy_address">Скопировать адрес</string>
     <string name="request_coins_clipboard_address_msg">Адрес скопирован в буфер обмена</string>
     <string name="backup_wallet_to_seed_show_recovery_phrase">Показать</string>
     <string name="restore_wallet_from_invalid_seed_warning_message">«%s» не является словом из фразы восстановления</string>
@@ -145,6 +144,8 @@
     <string name="wallet_lock_try_again">Попробуйте снова через %1$d%2$s</string>
     <string name="wallet_lock_reset">Сброс</string>
     <string name="wallet_lock_wrong_pin">Неправильный ПИН-код! %s</string>
+    <string name="wallet_last_attempt">Последняя попытка ввести PIN</string>
+    <string name="wallet_last_attempt_message">После ещё одной неудачной попытки для восстановления кошелька потребуется фраза восстановления</string>
 
     <plurals name="wallet_lock_attempts_remaining">
         <item quantity="one">Осталось попыток: %d</item>
@@ -185,6 +186,13 @@
     <string name="notification_transactions_channel_description">Получать оповещения о входящих транзакциях.</string>
     <string name="notification_synchronization_channel_name"> Синхронизация</string>
     <string name="notification_synchronization_channel_description">Показывает уведомление, когда приложение синхронизируется с сетью.</string>
+    <string name="notification_generic_channel_name">Общие уведомления</string>
+    <string name="notification_generic_channel_description">Прочие события Dash Wallet</string>
+    <string name="notification_push_channel_name">Пуш-уведомления</string>
+    <string name="notification_push_channel_description">Показывать пуш-уведомления от Dash</string>
+    <string name="notification_settings_title">Уведомления</string>
+    <string name="notification_explainer_title">Dash Wallet хочет отправлять вам уведомления</string>
+    <string name="notification_explainer_message">В уведомлениях могут быть оповещения, звуки или иконки. Их можно настроить в Настройках телефона.</string>
 
     <string name="net_type_indicator" />
 
@@ -203,14 +211,13 @@
     <string name="preferences_enable_payment_request_title">BIP70 для функции "сканируй и плати"</string>
 
     <string name="verify_continue">Продолжить</string>
-    <string name="verify">Подтвердить</string>
     <string name="verify_backup_wallet">Резервное копирование кошелька</string>
     <string name="verify_show_recovery_phrase">Показать фразу восстановления</string>
     <string name="verify_secure_now">Сохранить кошелёк сейчас</string>
     <string name="verify_it_is_important">Это важно</string>
     <string name="verify_it_is_important_subtitle">Сейчас мы покажем секретный ключ к Вашему кошельку.</string>
     <string name="verify_info_text_1">Эта фраза восстановления - Ваш доступ к средствам на этом кошельке.</string>
-    <string name="verify_info_text_2">Мы не храним эту фразу восстановления.</string>
+    <string name="verify_info_text_2">Мы НЕ ХРАНИМ эту фразу восстановления.</string>
     <string name="verify_info_text_3">Вам понадобится эта фраза восстановления для доступа к Вашим средствам, если это устройство будет утеряно, повреждено или приложение Dash Wallet будет случайно удалено.</string>
     <string name="verify_skip">Пропустить</string>
     <string name="verify_secure_now_btn">Сохранить кошелек</string>
@@ -220,9 +227,24 @@
     <string name="verify_seed_buttons_tip">Пожалуйста, нажмите на слова из Вашей фразы восстановления в правильном порядке</string>
     <string name="verify_seed_success_title">Успешно подтверждено</string>
     <string name="verify_seed_success_message">Сейчас Ваш кошелёк защищён. Вы можете использовать фразу восстановления в любое время, чтобы получить доступ к Вашему аккаунту на другом устройстве.</string>
+    <string name="verify_no_screenshot_title">Не делайте скриншот</string>
+    <string name="verify_no_screenshot_message">Пожалуйста, запишите фразу восстановления в надёжном месте.</string>
+    <string name="verify_why_no_screenshot">Почему я не могу сделать скриншот?</string>
+    <string name="verify_warning_title">Предупреждение</string>
+    <string name="verify_warning_message">Эта фраза восстановления - Ваш доступ к средствам на этом кошельке.</string>
+    <string name="verify_warning_screenshots_title">НЕ ДЕЛАЙТЕ скриншоты</string>
+    <string name="verify_warning_screenshots_message">Скриншоты видны другим приложениям и устройствам.</string>
+    <string name="verify_warning_do_not_show">НЕ ПОКАЗЫВАЙТЕ никому вашу фразу восстановления.</string>
+    <string name="verify_warning_do_not_type">НИКОГДА не вводите Вашу фразу восстановления в менеджеры паролей или другие приложения.</string>
     <string name="view_seed_done">Готово</string>
     <string name="view_seed_title">Фраза восстановления</string>
     <string name="transaction_result_view_on_explorer">Посмотреть в Block Explorer</string>
+    <string name="transaction_result_tax_category">Категория</string>
+    <string name="transaction_result_tax_category_loading">Загрузка…</string>
+    <string name="tax_category_income">Доходы</string>
+    <string name="tax_category_expense">Расходы</string>
+    <string name="tax_category_transfer_in">Входящие переводы</string>
+    <string name="tax_category_transfer_out">Исходящие переводы</string>
     <string name="transaction_result_paid_successfully">Успешно отправлено</string>
     <string name="transaction_result_sent_to">Отправить</string>
     <string name="transaction_date_and_time">Дата</string>
@@ -234,6 +256,7 @@
     <string name="transaction_details_received_at">Получено на</string>
     <string name="transaction_details_moved_from">Перемещено из</string>
     <string name="transaction_details_moved_internally_to">Перемещено в </string>
+    <string name="transaction_failed_details">Ошибка транзакции</string>
 
     <string name="authenticate_fingerprint_title">Аутентифицировать</string>
     <string name="authenticate_fingerprint_message">Подтвердите отпечаток пальца, чтобы продолжить</string>
@@ -243,6 +266,8 @@
 
     <string name="menu_buy_and_sell_title">Купить &amp; Продать Dash</string>
     <string name="menu_buy_and_sell_subtitle">Подключиться к сторонним биржам</string>
+    <string name="liquid_unavailable">Интеграция Liquid с Dash Wallet больше не доступна</string>
+    <string name="liquid_unavailable_details">Если у вас есть вопросы о ваших средствах в Dash на Liquid, пожалуйста свяжитесь со службой поддержки Liquid</string>
     <string name="menu_security_title">Безопасность</string>
     <string name="menu_security_subtitle">Показать кодовую фразу, сделать резервную копию кошелька...</string>
     <string name="menu_settings_title">Настройки</string>
@@ -253,18 +278,29 @@
     <string name="menu_rescan_blockchain">Пересканировать блокчейн</string>
     <string name="menu_contact_support_title">Связаться с поддержкой</string>
     <string name="menu_contact_support_subtitle">Сообщить о проблеме</string>
+    <string name="menu_explore_title">Исследовать</string>
+    <string name="menu_explore_subtitle">Покупайте за DASH в более чем 155 000 магазинах</string>
 
     <string name="tools_address_book">Адресная книга</string>
     <string name="tools_import_private_key">Импортировать приватный ключ</string>
     <string name="tools_network_monitor">Сетевой монитор</string>
+    <string name="tools_show_xpub">Расширенный  публичный ключ</string>
 
     <string name="about_help_us_improve">Помогите нам стать лучше</string>
-    <string name="about_review_and_rate">Оставить отзыв &amp; Оценить приложение</string>
+    <string name="about_review_and_rate">Напишите отзыв и оцените приложение</string>
     <string name="about_contact_support">Связаться с поддержкой</string>
     <string name="about_fork_disclaimer">Это приложение с открытым кодом, основанное на Bitcoin Wallet</string>
-    <string name="about_copyright">Copyright © 2020 Dash Core</string>
+    <string name="about_copyright">Все права защищены © 2022 Dash Core</string>
     <string name="about_license">GNU General Public License v3.0</string>
     <string name="about_version_name">Dash Wallet %s</string>
+    <string name="about_last_explore_device_sync">Синхронизация с последним устройством с Explore</string>
+    <string name="about_last_explore_server_update">Последнее обновление сервера Explore</string>
+    <string name="about_firebase_installation_id">Идентификатор установки Firebase</string>
+    <string name="about_fcm_token">Токен Firebase Cloud Messaging</string>
+    <string name="about_last_explore_dash_update_error">Невозможно получить</string>
+    <string name="about_last_explore_dash_sync_never">никогда</string>
+    <string name="about_explore_failed_sync">Не удалось синхронизироваться c %s</string>
+    <string name="about_explore_preloaded_on">Предварительно загружен на %s</string>
 
     <string name="block">Блок</string>
     <string name="time">Время</string>
@@ -310,7 +346,6 @@
     <string name="welcome_screen_subtitle_3">Полный контроль и настройки кошелька для Ваших нужд</string>
 
     <string name="sync_status_wait">Пожалуйста, подождите завершения синхронизации</string>
-    <string name="sync_status_syncing_title">Синхронизация %1$d</string>
     <string name="sync_status_syncing_sub_title">с Dash блокчейн</string>
     <string name="sync_status_unable_to_connect">Не удалось подключиться</string>
     <string name="sync_status_check_connection">Проверьте ваше интернет-соединение</string>
@@ -319,7 +354,6 @@
 
     <string name="appwidget_wallet_not_ready">Пожалуйста, настройте свой кошелек</string>
 
-    <string name="payment_request_please_wait_title">Пожалуйста, подождите</string>
     <string name="payment_request_please_wait_message">Подключение к платёжному серверу</string>
     <string name="payment_request_unable_to_connect">Невозможно подключиться</string>
     <string name="payment_request_unable_to_send">Невозможно отправить</string>
@@ -338,10 +372,38 @@
     <string name="import_image_import_valid_private_key">Скопируйте действующий приватный ключ, чтобы с его помощью импортировать Dash</string>
     <string name="import_image_invalid_private">Неверный приватный ключ</string>
 
+    <string name="today">Сегодня</string>
+    <string name="yesterday">Вчера</string>
+
     <string name="syncing">Синхронизация</string>
     <string name="syncing_balance">Синхронизация баланса</string>
-
+    <string name="transaction_count">%dтранзакций</string>
     <string name="all_transactions">Все</string>
     <string name="received_transactions">Получено</string>
     <string name="sent_transactions">Отправлено</string>
+    <string name="set_pin_error_missing_wallet_title">Ошибка: отсутствует кошелёк</string>
+    <string name="set_pin_error_missing_wallet_message">Кошелёк отсутствует. Пожалуйста, обратитесь в Службу поддержки.</string>
+    <string name="wallet_encryption_error_title">Ошибка при создании кошелька</string>
+    <string name="wallet_encryption_error_message">При создании кошелька возникла проблема. Пожалуйста, обратитесь в Службу поддержки.</string>
+    <string name="wallet_not_encrypted_error_message">С вашим кошельком возникла проблема.\n\nЕсли в вашем кошельке нет Dash, тогда удалите и установите это приложение заново. Затем создайте новый кошелёк.\n\nЕсли у вас есть фраза восстановления или резервная копия, тогда удалите это приложение и установите его заново.\n\nВ иных случаях обратитесь в Службу поддержки.</string>
+
+    <string name="reset_wallet_title">Вы уверены, что хотите сбросить кошелёк?</string>
+    <string name="reset_wallet_message">Если вы переустановите кошелёк, то сможете восстановить доступ к нему только с помощью фразы восстановления.</string>
+    <string name="positive_reset_text">Да, сбросить кошелёк</string>
+    <string name="launch_reset_wallet_title">У вас есть средства на счете</string>
+    <string name="launch_reset_wallet_message">При сбросе кошелька вы потеряете все эти средства, если не сохранили фразу восстановления.</string>
+    <string name="continue_reset">Продолжить</string>
+    <string name="launch_reset_wallet_extra_message">Сохранить фразу восстановления</string>
+    <string name="start_reset_wallet_title">Вы можете потерять %s</string>
+    <string name="reset_wallet_text">Сбросить кошелек</string>
+    <string name="reclassify_transactions_title">Переклассифицировать транзакции</string>
+    <string name="reclassify_transactions_title_message">Эти классификации будут отражены при экспорте в CSV-файл, который в дальнейшем можно использовать для передачи в налоговые службы.</string>
+    <string name="reclassify_transactions_question">Где можно сменить категорию?</string>
+    <string name="reclassify_transactions_outgoing_title">Исходящие транзакции</string>
+    <string name="reclassify_transactions_by_default_message">по умолчанию будут отмечены как</string>
+    <string name="reclassify_transactions_incoming_title">Входящие транзакции</string>
+    <string name="reclassify_transactions_change_it_message">Можно изменить на</string>
+    <string name="reclassify_transactions_linked_accounts_title">Привязанные аккаунты</string>
+    <string name="reclassify_transactions_linked_accounts_message">по умолчанию все транзакции с привязанных аккаунтов или на них (биржи, стейкинг и т.д.) будут отмечены как переводы.</string>
+    <string name="reclassify_transactions_change_explanation">Выберите любую транзакцию на домашней странице и измените категорию на странице сведений о транзакции.</string>
 </resources>

@@ -1,0 +1,115 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'kotlin-kapt'
+    id 'androidx.navigation.safeargs.kotlin'
+    id 'dagger.hilt.android.plugin'
+}
+
+android {
+    compileSdkVersion 31
+
+    defaultConfig {
+        minSdkVersion 23
+        targetSdkVersion 31
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+    buildFeatures {
+        viewBinding true
+    }
+    testOptions {
+        unitTests.returnDefaultValues = true
+        unitTests.includeAndroidResources = true
+    }
+    sourceSets {
+        test.resources.srcDirs += 'test/resources'
+    }
+    namespace 'org.dash.wallet.features.exploredash'
+}
+
+kapt {
+    correctErrorTypes true
+}
+
+hilt {
+    enableAggregatingTask = true
+}
+
+dependencies {
+    implementation project(path: ':common')
+
+    // Core
+    implementation "androidx.core:core-ktx:$jetpackVersion"
+    implementation "androidx.appcompat:appcompat:$appCompatVersion"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:$coroutines_version"
+    implementation "androidx.work:work-runtime-ktx:$workRuntimeVersion"
+
+    // Architecture
+    implementation "androidx.navigation:navigation-fragment-ktx:$navigationVersion"
+    implementation "androidx.navigation:navigation-ui-ktx:$navigationVersion"
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycleVersion"
+
+    // Database
+    implementation "androidx.room:room-ktx:$roomVersion"
+    implementation "androidx.room:room-paging:$roomVersion"
+
+    // DI
+    implementation "com.google.dagger:hilt-android:$hiltVersion"
+    kapt "com.google.dagger:hilt-compiler:$hiltVersion"
+    kapt 'androidx.hilt:hilt-compiler:1.0.0'
+    implementation "androidx.hilt:hilt-work:$hiltWorkVersion"
+
+    // UI
+    implementation "com.google.android.material:material:$materialVersion"
+    implementation "androidx.recyclerview:recyclerview:$recyclerViewVersion"
+    implementation "com.github.bumptech.glide:glide:$glideVersion"
+    kapt "com.github.bumptech.glide:compiler:$glideVersion"
+    api 'androidx.paging:paging-runtime-ktx:3.1.1'
+
+    // Maps & Location
+    implementation 'com.google.android.gms:play-services-location:18.0.0'
+    implementation 'com.google.android.gms:play-services-maps:18.0.0'
+    implementation 'com.google.maps.android:maps-ktx:3.2.0'
+    implementation 'com.google.maps.android:android-maps-utils:2.2.6'
+
+    // Logs
+    implementation "org.slf4j:slf4j-api:$slf4jVersion"
+
+    // Firebase
+    implementation 'com.google.firebase:firebase-storage-ktx'
+    implementation 'com.google.firebase:firebase-auth-ktx'
+    implementation 'com.google.firebase:firebase-common-ktx'
+
+    // Tools
+    implementation 'net.lingala.zip4j:zip4j:2.9.1'
+
+
+    // Tests
+    testImplementation "junit:junit:$junitVersion"
+    testImplementation 'androidx.test:core-ktx:1.4.0'
+    testImplementation "org.mockito.kotlin:mockito-kotlin:$mockitoVersion"
+    testImplementation "androidx.arch.core:core-testing:$coreTestingVersion"
+    testImplementation "org.robolectric:robolectric:4.8.1"
+    testImplementation "androidx.room:room-testing:$roomVersion"
+    kapt "androidx.room:room-compiler:$roomVersion"
+
+    androidTestImplementation "org.mockito.kotlin:mockito-kotlin:$mockitoVersion"
+    androidTestImplementation "org.mockito:mockito-android:4.6.1"
+    androidTestImplementation "androidx.test.ext:junit:$junitExtVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$espressoVersion"
+}

@@ -16,34 +16,60 @@
 
 package de.schildbach.wallet.ui
 
+import android.app.Activity
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import androidx.core.os.bundleOf
+import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet.WalletApplication
+import de.schildbach.wallet.ui.rates.ExchangeRatesFragment.*
+import de.schildbach.wallet.ui.more.AboutActivity
+import de.schildbach.wallet.ui.main.WalletActivity
+import de.schildbach.wallet.ui.rates.ExchangeRatesActivity
 import de.schildbach.wallet_test.R
-import kotlinx.android.synthetic.main.activity_more.*
 import kotlinx.android.synthetic.main.activity_settings.*
-import org.dash.wallet.common.ui.DialogBuilder
+import org.dash.wallet.common.data.ExchangeRate
+import org.dash.wallet.common.services.SystemActionsService
+import org.dash.wallet.common.services.analytics.AnalyticsConstants
+import org.dash.wallet.common.services.analytics.AnalyticsService
+import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
 import org.slf4j.LoggerFactory
+import javax.inject.Inject
 
+
+@AndroidEntryPoint
 class SettingsActivity : BaseMenuActivity() {
+    companion object Constants {
+        private const val RC_DEFAULT_FIAT_CURRENCY_SELECTED: Int = 100
+    }
 
     private val log = LoggerFactory.getLogger(SettingsActivity::class.java)
+    @Inject
+    lateinit var analytics: AnalyticsService
+    @Inject
+    lateinit var systemActions: SystemActionsService
 
     override fun getLayoutId(): Int {
         return R.layout.activity_settings
     }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setTitle(R.string.settings_title)
         about.setOnClickListener {
+            analytics.logEvent(AnalyticsConstants.Settings.ABOUT, bundleOf())
             startActivity(Intent(this, AboutActivity::class.java))
         }
         local_currency.setOnClickListener {
-            startActivity(Intent(this, ExchangeRatesActivity::class.java))
+            analytics.logEvent(AnalyticsConstants.Settings.LOCAL_CURRENCY, bundleOf())
+            val intent = Intent(this, ExchangeRatesActivity::class.java)
+            intent.putExtra(ARG_SHOW_AS_DIALOG, false)
+            intent.putExtra(ARG_CURRENCY_CODE, configuration.exchangeCurrencyCode)
+            startActivityForResult(intent, RC_DEFAULT_FIAT_CURRENCY_SELECTED)
         }
+
         rescan_blockchain.setOnClickListener { resetBlockchain() }
+        notifications.setOnClickListener { systemActions.openNotificationSettings() }
     }
 
     override fun onStart() {
@@ -53,18 +79,37 @@ class SettingsActivity : BaseMenuActivity() {
     }
 
     private fun resetBlockchain() {
-        val dialog = DialogBuilder(this)
-        dialog.setTitle(R.string.preferences_initiate_reset_title)
-        dialog.setMessage(R.string.preferences_initiate_reset_dialog_message)
-        dialog.setPositiveButton(R.string.preferences_initiate_reset_dialog_positive) { dialog, which ->
-            log.info("manually initiated blockchain reset")
+        var isFinished = false
+        AdaptiveDialog.create(
+            null,
+            getString(R.string.preferences_initiate_reset_title),
+            getString(R.string.preferences_initiate_reset_dialog_message),
+            getString(R.string.button_cancel),
+            getString(R.string.preferences_initiate_reset_dialog_positive)
+        ).show(this) {
+            if (it == true) {
+                isFinished = true
+                log.info("manually initiated blockchain reset")
+                analytics.logEvent(AnalyticsConstants.Settings.RESCAN_BLOCKCHAIN_RESET, bundleOf())
 
-            WalletApplication.getInstance().resetBlockchain()
-            WalletApplication.getInstance().configuration.updateLastBlockchainResetTime()
-            startActivity(WalletActivity.createIntent(this))
+                WalletApplication.getInstance().resetBlockchain()
+                WalletApplication.getInstance().configuration.updateLastBlockchainResetTime()
+                startActivity(WalletActivity.createIntent(this@SettingsActivity))
+            } else {
+                if (!isFinished) {
+                    analytics.logEvent(AnalyticsConstants.Settings.RESCAN_BLOCKCHAIN_DISMISS, bundleOf())
+                }
+            }
         }
-        dialog.setNegativeButton(R.string.button_dismiss, null)
-        dialog.show()
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if(resultCode == Activity.RESULT_OK && requestCode == RC_DEFAULT_FIAT_CURRENCY_SELECTED){
+            val exchangeRate: ExchangeRate? = data?.getParcelableExtra(BUNDLE_EXCHANGE_RATE)
+            local_currency_symbol.text = if(exchangeRate != null) exchangeRate.currencyCode else
+                WalletApplication.getInstance().configuration.exchangeCurrencyCode
+        } else {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
 }

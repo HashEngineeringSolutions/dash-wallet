@@ -7,6 +7,7 @@
     <string name="onboarding_load_wallet_error">Tidak dapat memuat dompet!</string>
 
     <string name="set_pin_create_new_wallet">Buat Dompet Baru</string>
+    <string name="set_pin_upgrade_wallet">Tingkatkan Dompet</string>
     <string name="set_pin_restore_wallet">Pulihkan dompet</string>
     <string name="set_pin_enter_pin">Masukkan PIN lama</string>
     <string name="set_pin_set_pin">tetapkan PIN</string>
@@ -15,6 +16,7 @@
     <string name="set_pin_decrypting">Mendekripsi dompet</string>
     <string name="set_pin_verifying_pin">Memverifikasi PIN</string>
     <string name="set_pin_message">PIN ini akan diperlukan untuk membuka kunci aplikasi Anda setiap kali saat Anda menggunakannya.</string>
+    <string name="set_pin_confirm_pin_incorrect">PIN salah</string>
 
     <string name="home_available_balance">Saldo tersedia</string>
     <string name="home_balance_hidden">Saldo disembunyikan</string>
@@ -61,12 +63,10 @@
     <string name="scan_to_pay_error_dialog_title">Pindai untuk mengirim</string>
     <string name="scan_to_pay_error_dialog_message">Bukan Alamat Dash atau permintaan URL di clipboard yang valid:\n\n%s</string>
     <string name="scan_to_pay_error_dialog_message_no_data">Bukan Alamat Dash atau permintaan URL di clipboard yang valid.</string>
+    <string name="pay_to_confirm_address">Apakah ini alamat Dash yang ingin Anda kirimi pembayaran?</string>
 
     <string name="receive_title">Terima</string>
     <string name="receive_enter_amount_message">Tentukan jumlah yang akan diterima</string>
-    <string name="receive_enter_amount_button">Tentukan Jumlah</string>
-    <string name="receive_share_button">Berbagi</string>
-    <string name="receive_copied">Disalin</string>
 
     <string name="pay_title">Kirim</string>
     <string name="history_title">Riwayat</string>
@@ -116,7 +116,6 @@
     <string name="import_export_keys_dialog_password_phrase">Frasa pemulihan ada di sini.</string>
     <string name="preferences_report_issue_summary">Kumpulkan informasi masalah Anda dan kirimkan laporan Anda ke pengembang.</string>
     <string name="navigation_configuration">Konfigurasi</string>
-    <string name="button_copy_address">Salin alamat</string>
     <string name="request_coins_clipboard_address_msg">Alamat Dash disalin</string>
     <string name="backup_wallet_to_seed_show_recovery_phrase">Tunjukkan</string>
     <string name="restore_wallet_from_invalid_seed_warning_message">\"%s\" bukan kata frasa pemulihan</string>
@@ -145,6 +144,8 @@
     <string name="wallet_lock_try_again">Coba lagi dalam %1$d %2$s</string>
     <string name="wallet_lock_reset">Atur-ulang</string>
     <string name="wallet_lock_wrong_pin">PIN salah! %s</string>
+    <string name="wallet_last_attempt">Upaya PIN terakhir</string>
+    <string name="wallet_last_attempt_message">Upaya lain yang gagal akan membutuhkan frasa sandi saya untuk memulihkan dompet</string>
 
     <plurals name="wallet_lock_attempts_remaining">
         <item quantity="other">%d upaya tersisa </item>
@@ -176,6 +177,13 @@
     <string name="notification_transactions_channel_description">Terima peringatan untuk transaksi masuk.</string>
     <string name="notification_synchronization_channel_name">Sinkronisasi</string>
     <string name="notification_synchronization_channel_description">Perlihatkan pemberitahuan saat aplikasi menyinkronkan dengan jaringan.</string>
+    <string name="notification_generic_channel_name">Pemberitahuan umum</string>
+    <string name="notification_generic_channel_description">Acara Dash Wallet lainnya</string>
+    <string name="notification_push_channel_name">Notifikasi Dorong</string>
+    <string name="notification_push_channel_description">Menunjukkan pemberitahuan push yang dikirimkan kepada Anda oleh Dash</string>
+    <string name="notification_settings_title">Pemberitahuan</string>
+    <string name="notification_explainer_title">Dash Wallet ingin mengirimi Anda pemberitahuan</string>
+    <string name="notification_explainer_message">Pemberitahuan dapat mencakup peringatan, suara, dan lencana ikon. Ini dapat dikonfigurasi di Pengaturan telepon.</string>
 
     <string name="net_type_indicator" />
 
@@ -194,14 +202,13 @@
     <string name="preferences_enable_payment_request_title">BIP70 untuk pindai-untuk-bayar</string>
 
     <string name="verify_continue">Teruskan</string>
-    <string name="verify">Memeriksa</string>
     <string name="verify_backup_wallet">Cadangkan Dompet</string>
     <string name="verify_show_recovery_phrase">Tampilkan Frasa pemulihan</string>
     <string name="verify_secure_now">Amankan Dompet Sekarang</string>
     <string name="verify_it_is_important">Ini penting</string>
     <string name="verify_it_is_important_subtitle">Kami akan menunjukkan kepada Anda kunci rahasia ke dompet Anda.</string>
     <string name="verify_info_text_1">Frasa pemulihan ini adalah akses Anda ke dana di dompet ini.</string>
-    <string name="verify_info_text_2">Kami tidak menyimpan frasa pemulihan ini.</string>
+    <string name="verify_info_text_2">Kami TIDAK menyimpan frasa pemulihan ini.</string>
     <string name="verify_info_text_3">Anda akan memerlukan frasa pemulihan ini untuk mengakses dana Anda jika perangkat ini hilang, rusak, atau jika Dash Wallet secara tidak sengaja dihapus dari perangkat ini.</string>
     <string name="verify_skip">Lewati</string>
     <string name="verify_secure_now_btn">Amankan sekarang</string>
@@ -211,9 +218,24 @@
     <string name="verify_seed_buttons_tip">Ketuk kata-kata dari frasa pemulihan Anda dalam urutan yang benar</string>
     <string name="verify_seed_success_title">Berhasil Diverifikasi</string>
     <string name="verify_seed_success_message">Dompet Anda aman sekarang. Anda dapat menggunakan frasa pemulihan kapan saja untuk memulihkan akun di perangkat lain.</string>
+    <string name="verify_no_screenshot_title">Jangan mengambil tangkapan layar</string>
+    <string name="verify_no_screenshot_message">Sebaliknya, tulis frasa pemulihan di tempat yang aman.</string>
+    <string name="verify_why_no_screenshot">Mengapa saya harus tidak mengambil tangkapan layar?</string>
+    <string name="verify_warning_title">Peringatan</string>
+    <string name="verify_warning_message">Frasa pemulihan ini adalah akses Anda ke dana di dompet Anda.</string>
+    <string name="verify_warning_screenshots_title">JANGAN ambil tangkapan layar</string>
+    <string name="verify_warning_screenshots_message">Tangkapan layar dapat dilihat oleh aplikasi dan perangkat lain.</string>
+    <string name="verify_warning_do_not_show">JANGAN biarkan siapa pun melihat frasa pemulihan Anda.</string>
+    <string name="verify_warning_do_not_type">Jangan pernah mengetik frasa pemulihan Anda ke pengelola kata sandi atau di tempat lain.</string>
     <string name="view_seed_done">Selesai</string>
     <string name="view_seed_title">Frasa pemulihan</string>
     <string name="transaction_result_view_on_explorer">Lihat di Blok Explorer</string>
+    <string name="transaction_result_tax_category">Kategori Pajak</string>
+    <string name="transaction_result_tax_category_loading">Memuat...</string>
+    <string name="tax_category_income">Pemasukan</string>
+    <string name="tax_category_expense">pengeluaran</string>
+    <string name="tax_category_transfer_in">Transfer masuk</string>
+    <string name="tax_category_transfer_out">Transfer keluar</string>
     <string name="transaction_result_paid_successfully">Pengiriman berhasil</string>
     <string name="transaction_result_sent_to">Terkirim ke</string>
     <string name="transaction_date_and_time">Tanggal</string>
@@ -225,6 +247,7 @@
     <string name="transaction_details_received_at">Diterima di</string>
     <string name="transaction_details_moved_from">Pindah dari</string>
     <string name="transaction_details_moved_internally_to">Pindah ke internal</string>
+    <string name="transaction_failed_details">Transaksi  gagal</string>
 
     <string name="authenticate_fingerprint_title">Membuktikan</string>
     <string name="authenticate_fingerprint_message">Konfirmasikan sidik jari untuk melanjutkan</string>
@@ -234,6 +257,8 @@
 
     <string name="menu_buy_and_sell_title">Beli &amp; Jual Dash</string>
     <string name="menu_buy_and_sell_subtitle">Terhubung dengan pertukaran pihak ketiga</string>
+    <string name="liquid_unavailable">Integrasi Liquid dengan Dash Wallet tidak lagi tersedia</string>
+    <string name="liquid_unavailable_details">Jika Anda memiliki pertanyaan tentang kepemilikan Dash Anda di Liquid, silakan hubungi pusat dukungan Liquid</string>
     <string name="menu_security_title">Keamanan</string>
     <string name="menu_security_subtitle">Lihat frasa sandi, cadangkan domept...</string>
     <string name="menu_settings_title">Pengaturan</string>
@@ -244,18 +269,29 @@
     <string name="menu_rescan_blockchain">Memindai ulang blockchain</string>
     <string name="menu_contact_support_title">Hubungi Dukungan</string>
     <string name="menu_contact_support_subtitle">Laporkan masalah</string>
+    <string name="menu_explore_title">Jelajahi</string>
+    <string name="menu_explore_subtitle">Berbelanja dengan DASH di lebih dari 155.000 pedagang</string>
 
     <string name="tools_address_book">Buku alamat</string>
     <string name="tools_import_private_key">Impor kunci pribadi</string>
     <string name="tools_network_monitor">Monitor jaringan</string>
+    <string name="tools_show_xpub">Kunci Publik Diperpanjang</string>
 
     <string name="about_help_us_improve">Bantu kami meningkatkan pengalaman Anda</string>
-    <string name="about_review_and_rate">Ulas &amp; Beri nilai aplikasi</string>
+    <string name="about_review_and_rate">Tinjau dan beri peringkat aplikasi</string>
     <string name="about_contact_support">Hubungi Dukungan</string>
     <string name="about_fork_disclaimer">Ini adalah aplikasi open source yang bercabang dari Bitcoin Wallet</string>
-    <string name="about_copyright">Hak Cipta © 2020 Dash Core</string>
+    <string name="about_copyright">Hak Cipta © 2022 Dash Core</string>
     <string name="about_license">GNU General Public License v3.0</string>
     <string name="about_version_name">Dash Wallet %s</string>
+    <string name="about_last_explore_device_sync">Sinkronisasi perangkat Explore Terakhir</string>
+    <string name="about_last_explore_server_update">Pembaruan server Explore terakhir</string>
+    <string name="about_firebase_installation_id">ID penginstalan Firebase</string>
+    <string name="about_fcm_token">Token perpesanan cloud Firebase</string>
+    <string name="about_last_explore_dash_update_error">tidak bisa mengambil</string>
+    <string name="about_last_explore_dash_sync_never">tak pernah</string>
+    <string name="about_explore_failed_sync">Gagal menyinkronkan %s</string>
+    <string name="about_explore_preloaded_on">Pra-muat dalam %s</string>
 
     <string name="block">Blok</string>
     <string name="time">Waktu</string>
@@ -301,7 +337,6 @@
     <string name="welcome_screen_subtitle_3">Memiliki kendali penuh dan sesuaikan dompet Anda berdasarkan kebutuhan Anda</string>
 
     <string name="sync_status_wait">Harap tunggu sampai sinkronisasi selesai</string>
-    <string name="sync_status_syncing_title">Menyinkronkan %1$d</string>
     <string name="sync_status_syncing_sub_title">dengan Dash blockchain</string>
     <string name="sync_status_unable_to_connect">Tidak dapat terhubung</string>
     <string name="sync_status_check_connection">Periksa koneksi anda</string>
@@ -310,7 +345,6 @@
 
     <string name="appwidget_wallet_not_ready">Harap siapkan dompet Anda</string>
 
-    <string name="payment_request_please_wait_title">Silahkan tunggu</string>
     <string name="payment_request_please_wait_message">Mengghubungkan ke server pembayaran</string>
     <string name="payment_request_unable_to_connect">Tidak dapat terhubung</string>
     <string name="payment_request_unable_to_send">Tidak dapat mengirim</string>
@@ -329,10 +363,38 @@
     <string name="import_image_import_valid_private_key">Salin kunci pribadi yang valid untuk mengimpor Dash darinya</string>
     <string name="import_image_invalid_private">Kunci Pribadi Tidak Valid</string>
 
+    <string name="today">Hari ini</string>
+    <string name="yesterday">Kemarin</string>
+
     <string name="syncing">Menyingkronkan:</string>
     <string name="syncing_balance">Menyinkronkan Saldo</string>
-
+    <string name="transaction_count">%dtransaksi</string>
     <string name="all_transactions">Semua</string>
     <string name="received_transactions">Diterima</string>
     <string name="sent_transactions">Terkirim</string>
+    <string name="set_pin_error_missing_wallet_title">Kesalahan Dompet Hilang</string>
+    <string name="set_pin_error_missing_wallet_message">Dompetnya hilang. Harap laporkan hal ini ke Bagian Dukungan.</string>
+    <string name="wallet_encryption_error_title">Kesalahan Pembuatan Dompet</string>
+    <string name="wallet_encryption_error_message">Ada masalah saat membuat dompet. Harap laporkan hal ini ke Bagian Dukungan.</string>
+    <string name="wallet_not_encrypted_error_message">Ada masalah dengan dompet Anda.\n\nJika Anda tidak memiliki Dash di dompet ini, copot dan instal ulang aplikasi ini. Kemudian buat dompet baru.\n\nJika Anda memiliki frasa pemulihan atau file cadangan, hapus instalan aplikasi ini dan instal ulang.\n\nJika tidak, laporkan hal ini ke Bagian Dukungan.</string>
+
+    <string name="reset_wallet_title">Apakah Anda yakin ingin mengatur ulang dompet?</string>
+    <string name="reset_wallet_message">Jika Anda mengatur ulang dompet Anda, satu-satunya cara untuk mendapatkan aksesnya adalah memulihkan dompet dengan frasa pemulihan.</string>
+    <string name="positive_reset_text">Ya, Setel Ulang Dompet</string>
+    <string name="launch_reset_wallet_title">Anda memiliki saldo positif</string>
+    <string name="launch_reset_wallet_message">Jika Anda mengatur ulang dompet Anda, Anda akan kehilangan semua dana  jika Anda belum mencadangkan frase pemulihan.</string>
+    <string name="continue_reset">Teruskan</string>
+    <string name="launch_reset_wallet_extra_message">Cadangkan frasa pemulihan Anda</string>
+    <string name="start_reset_wallet_title">Anda mungkin kehilangan %s</string>
+    <string name="reset_wallet_text">Atur ulang dompet</string>
+    <string name="reclassify_transactions_title">Klasifikasi Ulang Transaksi Anda</string>
+    <string name="reclassify_transactions_title_message">Klasifikasi ini akan tercermin dalam Ekspor CSV yang dapat digunakan untuk mengimpor ke dalam layanan pelaporan pajak.</string>
+    <string name="reclassify_transactions_question">Di mana saya dapat mengubah kategori pajak?</string>
+    <string name="reclassify_transactions_outgoing_title">Transaksi keluar</string>
+    <string name="reclassify_transactions_by_default_message">secara default akan ditandai sebagai</string>
+    <string name="reclassify_transactions_incoming_title">Transaksi masuk</string>
+    <string name="reclassify_transactions_change_it_message">Anda dapat mengubahnya menjadi</string>
+    <string name="reclassify_transactions_linked_accounts_title">Akun terhubung</string>
+    <string name="reclassify_transactions_linked_accounts_message">secara default semua transaksi ke atau dari akun tertaut Anda (pertukaran, staking, dll) akan ditandai sebagai transfer.</string>
+    <string name="reclassify_transactions_change_explanation">Pilih transaksi apa pun dari beranda dan ubah kategori di halaman detail transaksi.</string>
 </resources>

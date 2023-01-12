@@ -17,6 +17,8 @@
 
 package org.dash.wallet.common;
 
+import static java.lang.Math.max;
+
 import android.annotation.SuppressLint;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -25,10 +27,15 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.text.format.DateUtils;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.google.common.base.Strings;
 
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.utils.MonetaryFormat;
+import org.dash.wallet.common.data.CurrencyInfo;
+import org.dash.wallet.common.util.GenericUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,8 +50,6 @@ public class Configuration {
     private final SharedPreferences prefs;
     private final Resources res;
 
-    public static final String PREFS_KEY_BTC_PRECISION = "btc_precision";
-    public static final String PREFS_KEY_OWN_NAME = "own_name";
     public static final String PREFS_KEY_HIDE_BALANCE = "hide_balance";
     public static final String PREFS_KEY_SEND_COINS_AUTOCLOSE = "send_coins_autoclose";
     public static final String PREFS_KEY_CONNECTIVITY_NOTIFICATION = "connectivity_notification";
@@ -53,8 +58,8 @@ public class Configuration {
     public static final String PREFS_KEY_TRUSTED_PEER = "trusted_peer";
     public static final String PREFS_KEY_TRUSTED_PEER_ONLY = "trusted_peer_only";
     public static final String PREFS_KEY_BLOCK_EXPLORER = "block_explorer";
-    public static final String PREFS_KEY_DATA_USAGE = "data_usage";
     public static final String PREFS_KEY_REMIND_BALANCE = "remind_balance";
+    public static final String PREFS_KEY_REMIND_BALANCE_TIME = "remind_balance_time";
     public static final String PREFS_KEY_DISCLAIMER = "disclaimer";
     private static final String PREFS_KEY_LABS_QR_PAYMENT_REQUEST = "labs_qr_payment_request";
     private static final String PREFS_KEY_PREVIOUS_VERSION = "previous_version";
@@ -66,8 +71,7 @@ public class Configuration {
     private static final String PREFS_KEY_LAST_VERSION = "last_version";
     private static final String PREFS_KEY_LAST_USED = "last_used";
     private static final String PREFS_KEY_BEST_CHAIN_HEIGHT_EVER = "best_chain_height_ever";
-    private static final String PREFS_KEY_LAST_EXCHANGE_DIRECTION = "last_exchange_direction";
-    private static final String PREFS_KEY_CHANGE_LOG_VERSION = "change_log_version";
+    private static final String PREFS_KEY_BEST_HEADER_HEIGHT_EVER = "best_header_height_ever";
     public static final String PREFS_KEY_REMIND_BACKUP = "remind_backup";
     private static final String PREFS_KEY_LAST_BACKUP = "last_backup";
     public static final String PREFS_KEY_REMIND_BACKUP_SEED = "remind_backup_seed";
@@ -75,7 +79,6 @@ public class Configuration {
     private static final String PREFS_KEY_LAST_RESTORE = "last_restore";
     private static final String PREFS_KEY_LAST_ENCRYPT_KEYS = "last_encrypt_keys";
     private static final String PREFS_KEY_LAST_BLOCKCHAIN_RESET = "last_blockchain_reset";
-    private static final String PREFS_KEY_LAST_BLUETOOTH_ADDRESS = "last_bluetooth_address";
 
     private static final String PREFS_REMIND_ENABLE_FINGERPRINT = "remind_enable_fingerprint";
     private static final String PREFS_ENABLE_FINGERPRINT = "enable_fingerprint";
@@ -83,8 +86,35 @@ public class Configuration {
     public static final String PREFS_V7_REDESIGN_TUTORIAL_COMPLETED = "v7_tutorial_completed";
     public static final String PREFS_PIN_LENGTH = "pin_length";
 
+    public static final String PREFS_KEY_LAST_UPHOLD_BALANCE = "last_uphold_balance";
+
+    // Coinbase
+
+    public static final String PREFS_KEY_LAST_COINBASE_ACCESS_TOKEN = "last_coinbase_access_token";
+    public static final String PREFS_KEY_LAST_COINBASE_REFRESH_TOKEN = "last_coinbase_refresh_token";
+    public static final String PREFS_KEY_COINBASE_USER_ACCOUNT_ID = "coinbase_account_id";
+    public static final String PREFS_KEY_COINBASE_AUTH_INFO_SHOWN = "coinbase_auth_info_shown";
+    public static final String PREFS_KEY_COINBASE_USER_WITHDRAWAL_LIMIT = "withdrawal_limit";
+    public static final String PREFS_KEY_COINBASE_SEND_LIMIT_CURRENCY = "send_limit_currency";
+
+
+
     private static final int PREFS_DEFAULT_BTC_SHIFT = 0;
-    private static final int PREFS_DEFAULT_BTC_PRECISION = 8;
+    public static final int PREFS_DEFAULT_BTC_PRECISION = 8;
+    public static final String PREFS_KEY_IS_DASH_TO_FIAT_DIRECTION = "is_dash_to_fiat_direction";
+    public static final String PREFS_KEY_SHOW_NOTIFICATIONS_EXPLAINER = "show_notifications_explainer";
+    public static final String PREFS_KEY_SHOW_TAX_CATEGORY_EXPLAINER = "show_tax_catagory_explainer";
+    public static final String PREFS_KEY_SHOW_TAX_CATEGORY_INSTALLTIME = "show_tax_catagory_install_time";
+
+    // Explore Dash
+    public static final String PREFS_KEY_HAS_INFO_SCREEN_BEEN_SHOWN_ALREADY = "has_info_screen_been_shown";
+    public static final String PREFS_KEY_HAS_LOCATION_DIALOG_BEEN_SHOWN = "has_location_dialog_been_shown";
+    public static final String PREFS_KEY_EXPLORE_DATABASE_NAME = "explore_database_name";
+
+    // CrowdNode
+    public static final String PREFS_KEY_CROWDNODE_ACCOUNT_ADDRESS = "crowdnode_account_address";
+    public static final String PREFS_KEY_CROWDNODE_PRIMARY_ADDRESS = "crowdnode_primary_address";
+    public static final String PREFS_KEY_CROWDNODE_STAKING_APY = "crowdnode_staking_apy_last";
 
     private static final Logger log = LoggerFactory.getLogger(Configuration.class);
 
@@ -105,20 +135,8 @@ public class Configuration {
         }
     }
 
-    private int getBtcPrecision() {
-        final String precision = prefs.getString(PREFS_KEY_BTC_PRECISION, null);
-        if (precision != null)
-            return precision.charAt(0) - '0';
-        else
-            return PREFS_DEFAULT_BTC_PRECISION;
-    }
-
     public int getBtcShift() {
-        final String precision = prefs.getString(PREFS_KEY_BTC_PRECISION, null);
-        if (precision != null)
-            return precision.length() == 3 ? precision.charAt(2) - '0' : 0;
-        else
-            return PREFS_DEFAULT_BTC_SHIFT;
+        return PREFS_DEFAULT_BTC_SHIFT;
     }
 
     public Coin getBtcBase() {
@@ -133,12 +151,12 @@ public class Configuration {
             throw new IllegalStateException("cannot handle shift: " + shift);
     }
 
+    @NonNull
     public MonetaryFormat getFormat() {
-        final int shift = PREFS_DEFAULT_BTC_SHIFT;
         final int minPrecision = 2;
         final int numberToRepeat = 1;
         final int decimalRepetitions = (PREFS_DEFAULT_BTC_PRECISION - minPrecision) / numberToRepeat;
-        return new MonetaryFormat().shift(shift).minDecimals(minPrecision).repeatOptionalDecimals(numberToRepeat,
+        return new MonetaryFormat().shift(PREFS_DEFAULT_BTC_SHIFT).minDecimals(minPrecision).repeatOptionalDecimals(numberToRepeat,
                 decimalRepetitions);
     }
 
@@ -150,10 +168,6 @@ public class Configuration {
             return new MonetaryFormat().shift(3).minDecimals(2).optionalDecimals(2, 1);
         else
             return new MonetaryFormat().shift(6).minDecimals(0).optionalDecimals(2);
-    }
-
-    public String getOwnName() {
-        return Strings.emptyToNull(prefs.getString(PREFS_KEY_OWN_NAME, "").trim());
     }
 
     public boolean getHideBalance() {
@@ -172,6 +186,7 @@ public class Configuration {
         return prefs.getBoolean(PREFS_KEY_CONNECTIVITY_NOTIFICATION, false);
     }
 
+    @Nullable
     public String getTrustedPeerHost() {
         return Strings.emptyToNull(prefs.getString(PREFS_KEY_TRUSTED_PEER, "").trim());
     }
@@ -222,10 +237,6 @@ public class Configuration {
 
     public void setBiometricLimit(final float limit) {
         prefs.edit().putFloat(PREFS_KEY_BIOMETRIC_LIMIT, limit).apply();
-    }
-
-    public boolean remindBackup() {
-        return prefs.getBoolean(PREFS_KEY_REMIND_BACKUP, true);
     }
 
     public long getLastBackupTime() {
@@ -296,8 +307,12 @@ public class Configuration {
         prefs.edit().putBoolean(PREFS_KEY_DISCLAIMER, enabled).apply();
     }
 
+    @Nullable
     public String getExchangeCurrencyCode() {
-        return prefs.getString(PREFS_KEY_EXCHANGE_CURRENCY, null);
+        String currencyCode = prefs.getString(PREFS_KEY_EXCHANGE_CURRENCY, null);
+        // previous versions of the app (prior to 7.3.3) may have stored an obsolete
+        // currency code in the preferences.  Let's change to the most up to date.
+        return CurrencyInfo.getOtherName(currencyCode);
     }
 
     public void setExchangeCurrencyCode(final String exchangeCurrencyCode) {
@@ -371,32 +386,25 @@ public class Configuration {
             prefs.edit().putInt(PREFS_KEY_BEST_CHAIN_HEIGHT_EVER, bestChainHeightEver).apply();
     }
 
+    public int getBestHeaderHeightEver() {
+        return prefs.getInt(PREFS_KEY_BEST_HEADER_HEIGHT_EVER, 0);
+    }
+
+    public void maybeIncrementBestHeaderHeightEver(final int bestHeaderHeightEver) {
+        if (bestHeaderHeightEver > getBestHeaderHeightEver())
+            prefs.edit().putInt(PREFS_KEY_BEST_HEADER_HEIGHT_EVER, bestHeaderHeightEver).apply();
+    }
+
+    public int getBestHeightEver() {
+        return max(getBestHeaderHeightEver(), getBestChainHeightEver());
+    }
+
     public boolean isRestoringBackup() {
         return prefs.getBoolean(PREFS_RESTORING_BACKUP, false);
     }
 
     public void setRestoringBackup(final boolean isRestoringBackup) {
         prefs.edit().putBoolean(PREFS_RESTORING_BACKUP, isRestoringBackup).apply();
-    }
-
-    public boolean getLastExchangeDirection() {
-        return prefs.getBoolean(PREFS_KEY_LAST_EXCHANGE_DIRECTION, true);
-    }
-
-    public void setLastExchangeDirection(final boolean exchangeDirection) {
-        prefs.edit().putBoolean(PREFS_KEY_LAST_EXCHANGE_DIRECTION, exchangeDirection).apply();
-    }
-
-    public boolean changeLogVersionCodeCrossed(final int currentVersionCode, final int triggeringVersionCode) {
-        final int changeLogVersion = prefs.getInt(PREFS_KEY_CHANGE_LOG_VERSION, 0);
-
-        final boolean wasBelow = changeLogVersion < triggeringVersionCode;
-        final boolean wasUsedBefore = changeLogVersion > 0;
-        final boolean isNowAbove = currentVersionCode >= triggeringVersionCode;
-
-        prefs.edit().putInt(PREFS_KEY_CHANGE_LOG_VERSION, currentVersionCode).apply();
-
-        return /* wasUsedBefore && */wasBelow && isNowAbove;
     }
 
     public void registerOnSharedPreferenceChangeListener(final OnSharedPreferenceChangeListener listener) {
@@ -455,4 +463,173 @@ public class Configuration {
         prefs.edit().putLong(PREFS_KEY_LAST_BLOCKCHAIN_RESET, System.currentTimeMillis()).apply();
     }
 
+    public void setLastUpholdBalance(String balance) {
+        prefs.edit().putString(PREFS_KEY_LAST_UPHOLD_BALANCE, balance).apply();
+    }
+
+    public String getLastUpholdBalance() {
+        return prefs.getString(PREFS_KEY_LAST_UPHOLD_BALANCE, null);
+    }
+
+    public Boolean isDashToFiatDirection() {
+        return prefs.getBoolean(PREFS_KEY_IS_DASH_TO_FIAT_DIRECTION, true);
+    }
+
+    public void setDashToFiatDirection(final Boolean isDashToFiatDirection) {
+        prefs.edit().putBoolean(PREFS_KEY_IS_DASH_TO_FIAT_DIRECTION, isDashToFiatDirection).apply();
+    }
+
+    public boolean getShowNotificationsExplainer() {
+        return prefs.getBoolean(PREFS_KEY_SHOW_NOTIFICATIONS_EXPLAINER, true);
+    }
+
+    public void setShowNotificationsExplainer(boolean needToShow) {
+        prefs.edit().putBoolean(PREFS_KEY_SHOW_NOTIFICATIONS_EXPLAINER, needToShow).apply();
+    }
+
+    private long getRemindBalanceTime() {
+        return prefs.getLong(PREFS_KEY_REMIND_BALANCE_TIME, 0);
+    }
+
+    private void setRemindBalanceTime(final long remindBalanceTime) {
+        prefs.edit().putLong(PREFS_KEY_REMIND_BALANCE_TIME, remindBalanceTime).apply();
+    }
+
+    public boolean isTimeToRemindBalance() {
+        final long now = System.currentTimeMillis();
+        return remindBalance() && now >= getRemindBalanceTime();
+    }
+
+    public void setRemindBalanceTimeIn(final long durationMs) {
+        final long now = System.currentTimeMillis();
+        setRemindBalanceTime(now + durationMs);
+    }
+
+    // Tax Categories
+
+    public boolean getHasDisplayedTaxCategoryExplainer() {
+        return prefs.getBoolean(PREFS_KEY_SHOW_TAX_CATEGORY_EXPLAINER, false);
+    }
+
+    public void setHasDisplayedTaxCategoryExplainer() {
+        prefs.edit().putBoolean(PREFS_KEY_SHOW_TAX_CATEGORY_EXPLAINER, true).apply();
+    }
+
+    public long getTaxCategoryInstallTime() {
+        return prefs.getLong(PREFS_KEY_SHOW_TAX_CATEGORY_INSTALLTIME, 0L);
+    }
+
+    public void setTaxCategoryInstallTime(long time) {
+        prefs.edit().putLong(PREFS_KEY_SHOW_TAX_CATEGORY_INSTALLTIME, time).apply();
+    }
+
+    // Explore Dash
+
+    public boolean hasExploreDashInfoScreenBeenShown() {
+        return prefs.getBoolean(PREFS_KEY_HAS_INFO_SCREEN_BEEN_SHOWN_ALREADY, false);
+    }
+
+    public void setHasExploreDashInfoScreenBeenShown(boolean isShown){
+        prefs.edit().putBoolean(PREFS_KEY_HAS_INFO_SCREEN_BEEN_SHOWN_ALREADY, isShown).apply();
+    }
+
+    public boolean hasExploreDashLocationDialogBeenShown() {
+        return prefs.getBoolean(PREFS_KEY_HAS_LOCATION_DIALOG_BEEN_SHOWN, false);
+    }
+
+    public void setHasExploreDashLocationDialogBeenShown(boolean isShown) {
+        prefs.edit().putBoolean(PREFS_KEY_HAS_LOCATION_DIALOG_BEEN_SHOWN, isShown).apply();
+    }
+
+    public String setExploreDatabaseName(Long timestamp) {
+        String dbName = "explore-database-" + timestamp;
+        prefs.edit().putString(PREFS_KEY_EXPLORE_DATABASE_NAME, dbName).apply();
+        return dbName;
+    }
+
+    @NonNull
+    public String getExploreDatabaseName() {
+        return prefs.getString(PREFS_KEY_EXPLORE_DATABASE_NAME, "explore-database");
+    }
+
+    // Coinbase
+    // TODO: put new preferences in the CoinbaseConfig and migrate these.
+
+    public void setLastCoinBaseAccessToken(String token) {
+        prefs.edit().putString(PREFS_KEY_LAST_COINBASE_ACCESS_TOKEN, token).apply();
+    }
+
+    @NonNull
+    public String getLastCoinbaseAccessToken() {
+        return prefs.getString(PREFS_KEY_LAST_COINBASE_ACCESS_TOKEN, "");
+    }
+
+    public void setLastCoinBaseRefreshToken(String token) {
+        prefs.edit().putString(PREFS_KEY_LAST_COINBASE_REFRESH_TOKEN, token).apply();
+    }
+
+    public String getLastCoinbaseRefreshToken() {
+        return prefs.getString(PREFS_KEY_LAST_COINBASE_REFRESH_TOKEN, null);
+    }
+
+    public Boolean getHasCoinbaseAuthInfoBeenShown() {
+        return prefs.getBoolean(PREFS_KEY_COINBASE_AUTH_INFO_SHOWN, false);
+    }
+
+    public void setHasCoinbaseAuthInfoBeenShown(boolean isShown) {
+        prefs.edit().putBoolean(PREFS_KEY_COINBASE_AUTH_INFO_SHOWN, isShown).apply();
+    }
+
+    public void setCoinBaseUserAccountId(String accountId) {
+        prefs.edit().putString(PREFS_KEY_COINBASE_USER_ACCOUNT_ID, accountId).apply();
+    }
+
+    public String getCoinbaseUserAccountId(){
+        return prefs.getString(PREFS_KEY_COINBASE_USER_ACCOUNT_ID, null);
+    }
+
+    public void setCoinbaseUserWithdrawalLimitAmount(String amount){
+        prefs.edit().putString(PREFS_KEY_COINBASE_USER_WITHDRAWAL_LIMIT, amount).apply();
+    }
+
+    public String getCoinbaseUserWithdrawalLimitAmount() {
+        return prefs.getString(PREFS_KEY_COINBASE_USER_WITHDRAWAL_LIMIT, null);
+    }
+
+    public void setCoinbaseSendLimitCurrency(String currency){
+        prefs.edit().putString(PREFS_KEY_COINBASE_SEND_LIMIT_CURRENCY, currency).apply();
+    }
+
+    public String getCoinbaseSendLimitCurrency() {
+        return prefs.getString(PREFS_KEY_COINBASE_SEND_LIMIT_CURRENCY, GenericUtils.getLocaleCurrencyCode());
+    }
+
+    // CrowdNode
+
+    @NonNull
+    public String getCrowdNodeAccountAddress() {
+        return prefs.getString(PREFS_KEY_CROWDNODE_ACCOUNT_ADDRESS, "");
+    }
+
+    public void setCrowdNodeAccountAddress(@NonNull String address) {
+        prefs.edit().putString(PREFS_KEY_CROWDNODE_ACCOUNT_ADDRESS, address).apply();
+    }
+
+    @NonNull
+    public String getCrowdNodePrimaryAddress() {
+        return prefs.getString(PREFS_KEY_CROWDNODE_PRIMARY_ADDRESS, "");
+    }
+
+    public void setCrowdNodePrimaryAddress(@NonNull String address) {
+        prefs.edit().putString(PREFS_KEY_CROWDNODE_PRIMARY_ADDRESS, address).apply();
+    }
+
+    @NonNull
+    public Float getPrefsKeyCrowdNodeStakingApy() {
+        return prefs.getFloat(PREFS_KEY_CROWDNODE_STAKING_APY, 0.0f);
+    }
+
+    public void setPrefsKeyCrowdNodeStakingApy(float apy) {
+        prefs.edit().putFloat(PREFS_KEY_CROWDNODE_STAKING_APY, apy).apply();
+    }
 }

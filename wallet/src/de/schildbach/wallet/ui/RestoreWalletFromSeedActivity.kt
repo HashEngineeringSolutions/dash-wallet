@@ -16,28 +16,32 @@
 
 package de.schildbach.wallet.ui
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
+import android.text.InputFilter
+import android.text.Spanned
 import android.text.TextUtils
 import android.text.TextWatcher
 import android.view.MenuItem
-import androidx.appcompat.app.AlertDialog
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
+import androidx.activity.viewModels
+import androidx.lifecycle.lifecycleScope
+import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet.WalletApplication
-import de.schildbach.wallet.livedata.Status
 import de.schildbach.wallet.ui.backup.RestoreFromFileActivity
 import de.schildbach.wallet_test.R
 import kotlinx.android.synthetic.main.activity_forgot_pin.*
 import kotlinx.android.synthetic.main.activity_recover_wallet_from_seed.*
+import kotlinx.coroutines.launch
 import org.bitcoinj.crypto.MnemonicException
+import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
 import java.util.*
+import javax.inject.Inject
+import kotlin.collections.ArrayList
 
-
+@AndroidEntryPoint
 class RestoreWalletFromSeedActivity : RestoreFromFileActivity() {
 
     companion object {
@@ -52,9 +56,10 @@ class RestoreWalletFromSeedActivity : RestoreFromFileActivity() {
         }
     }
 
-    private lateinit var viewModel: RestoreWalletFromSeedViewModel
+    private val viewModel: RestoreWalletFromSeedViewModel by viewModels()
 
-    private lateinit var walletApplication: WalletApplication
+    @Inject
+    lateinit var walletApplication: WalletApplication
 
     private val recoveryPinMode by lazy {
         intent?.extras?.getBoolean(EXTRA_RECOVERY_PIN_MODE) ?: false
@@ -62,7 +67,7 @@ class RestoreWalletFromSeedActivity : RestoreFromFileActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
+        super.setSecuredActivity(true)
         setContentView(R.layout.activity_recover_wallet_from_seed)
 
         setSupportActionBar(toolbar)
@@ -73,17 +78,30 @@ class RestoreWalletFromSeedActivity : RestoreFromFileActivity() {
         }
 
         setTitle(R.string.recover_wallet_title)
-
-        walletApplication = (application as WalletApplication)
-
-        viewModel = ViewModelProvider(this)[RestoreWalletFromSeedViewModel::class.java]
-
         initView()
-        initViewModel()
+
+        viewModel.startActivityAction.observe(this) {
+            startActivityForResult(it, SET_PIN_REQUEST_CODE)
+        }
     }
 
     private fun initView() {
         input.requestFocus()
+        input.filters = arrayOf<InputFilter>(
+            object : InputFilter.AllCaps() {
+                override fun filter(
+                    source: CharSequence,
+                    start: Int,
+                    end: Int,
+                    dest: Spanned?,
+                    dstart: Int,
+                    dend: Int
+                ): CharSequence {
+                    return source.toString().lowercase(Locale.getDefault())
+                }
+            }
+        )
+
         input.addTextChangedListener(object : TextWatcher {
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
                 submit.isEnabled = s.toString().trim().isNotEmpty()
@@ -97,46 +115,39 @@ class RestoreWalletFromSeedActivity : RestoreFromFileActivity() {
             val seed = input.text.trim().replace(Regex(" +"), " ")
             if (seed.isNotEmpty()) {
                 val words = ArrayList(mutableListOf(*seed.split(' ').toTypedArray()))
-                if (recoveryPinMode) {
-                    viewModel.recoverPin(words)
-                } else {
-                    viewModel.restoreWalletFromSeed(words)
+                lifecycleScope.launch {
+                    try {
+                        restoreWallet(words)
+                    } catch (ex: Exception) {
+                        val message = when {
+                            TextUtils.isEmpty(ex.message) -> ex.javaClass.simpleName
+                            else -> ex.message!!
+                        }
+                        val errorMessage = when (ex) {
+                            is MnemonicException.MnemonicLengthException -> walletApplication.getString(R.string.restore_wallet_from_invalid_seed_not_twelve_words)
+                            is MnemonicException.MnemonicChecksumException -> walletApplication.getString(R.string.restore_wallet_from_invalid_seed_bad_checksum)
+                            is MnemonicException.MnemonicWordException -> walletApplication.getString(R.string.restore_wallet_from_invalid_seed_warning_message, ex.badWord)
+                            else -> walletApplication.getString(R.string.restore_wallet_from_invalid_seed_failure, message)
+                        }
+                        showErrorDialog(errorMessage)
+                    }
                 }
             }
         }
     }
 
-    @SuppressLint("StringFormatInvalid")
-    private fun initViewModel() {
-        viewModel.showRestoreWalletFailureAction.observe(this, Observer {
-            val message = when {
-                TextUtils.isEmpty(it.message) -> it.javaClass.simpleName
-                else -> it.message!!
+    private suspend fun restoreWallet(words: ArrayList<String>) {
+        if (recoveryPinMode) {
+            val pin = viewModel.recoverPin(words)
+
+            if (pin != null) {
+                startActivity(SetPinActivity.createIntent(this, R.string.set_pin_set_pin, true, pin))
+            } else {
+                showErrorDialog(getString(R.string.forgot_pin_passphrase_doesnt_match))
             }
-            val errorMessage = when (it) {
-                is MnemonicException.MnemonicLengthException -> walletApplication.getString(R.string.restore_wallet_from_invalid_seed_not_twelve_words)
-                is MnemonicException.MnemonicChecksumException -> walletApplication.getString(R.string.restore_wallet_from_invalid_seed_bad_checksum)
-                is MnemonicException.MnemonicWordException -> walletApplication.getString(R.string.restore_wallet_from_invalid_seed_warning_message, it.badWord)
-                else -> walletApplication.getString(R.string.restore_wallet_from_invalid_seed_failure, message)
-            }
-            showErrorDialog(errorMessage)
-        })
-        viewModel.recoverPinLiveData.observe(this, Observer {
-            when (it.status) {
-                Status.SUCCESS -> {
-                    startActivity(SetPinActivity.createIntent(this, R.string.set_pin_set_pin, true, it.data))
-                }
-                Status.LOADING -> {
-                    // ignore
-                }
-                Status.ERROR -> {
-                    showErrorDialog(getString(R.string.forgot_pin_passphrase_doesnt_match))
-                }
-            }
-        })
-        viewModel.startActivityAction.observe(this, Observer {
-            startActivityForResult(it, SET_PIN_REQUEST_CODE)
-        })
+        } else {
+            viewModel.restoreWalletFromSeed(words)
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -150,12 +161,13 @@ class RestoreWalletFromSeedActivity : RestoreFromFileActivity() {
     }
 
     private fun showErrorDialog(errorMessage: String) {
-        AlertDialog.Builder(this).apply {
-            setTitle(R.string.import_export_keys_dialog_failure_title)
-            setMessage(errorMessage)
-            setPositiveButton(R.string.button_ok, null)
-            show()
-        }
+        AdaptiveDialog.create(
+            null,
+            title = getString(R.string.import_export_keys_dialog_failure_title),
+            message = errorMessage,
+            negativeButtonText = "",
+            positiveButtonText = getString(R.string.button_ok)
+        ).show(this)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

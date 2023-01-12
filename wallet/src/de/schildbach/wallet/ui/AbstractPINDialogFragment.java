@@ -8,10 +8,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Process;
-import androidx.annotation.RequiresApi;
-import androidx.core.os.CancellationSignal;
-import androidx.fragment.app.DialogFragment;
-import androidx.appcompat.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -20,25 +16,28 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.os.CancellationSignal;
 import androidx.fragment.app.DialogFragment;
 
 import org.bitcoinj.wallet.Wallet;
-import org.dash.wallet.common.ui.DialogBuilder;
+import org.dash.wallet.common.ui.BaseAlertDialogBuilder;
+import org.dash.wallet.common.util.KeyboardUtil;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.AndroidEntryPoint;
 import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.security.BiometricHelper;
+import de.schildbach.wallet.security.BiometricLockoutException;
 import de.schildbach.wallet.ui.preference.PinRetryController;
 import de.schildbach.wallet.ui.widget.FingerprintView;
-import de.schildbach.wallet.util.FingerprintHelper;
-import de.schildbach.wallet.util.KeyboardUtil;
 import de.schildbach.wallet_test.R;
+import kotlin.Unit;
 
 /**
  * Created by Hash Engineering on 4/8/2018.
  */
-
+@AndroidEntryPoint
 public abstract class AbstractPINDialogFragment extends DialogFragment {
 
     protected DialogInterface.OnDismissListener onDismissListener;
@@ -47,8 +46,6 @@ public abstract class AbstractPINDialogFragment extends DialogFragment {
     protected WalletApplication application;
     protected Handler backgroundHandler;
     protected PinRetryController pinRetryController;
-    protected FingerprintHelper fingerprintHelper;
-    protected CancellationSignal fingerprintCancellationSignal;
 
     protected EditText pinView;
     protected TextView badPinView;
@@ -58,6 +55,8 @@ public abstract class AbstractPINDialogFragment extends DialogFragment {
 
     protected int dialogLayout;
     protected int dialogTitle;
+
+    @Inject public BiometricHelper biometricHelper;
 
     @Override
     public void onAttach(final Activity activity) {
@@ -86,18 +85,13 @@ public abstract class AbstractPINDialogFragment extends DialogFragment {
             }
         });
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            fingerprintHelper = new FingerprintHelper(getActivity());
-            if (fingerprintHelper.init()) {
-                boolean isFingerprintEnabled = fingerprintHelper.isFingerprintEnabled();
-                if (isFingerprintEnabled) {
-                    fingerprintView.setVisibility(View.VISIBLE);
-                    startFingerprintListener();
-                } else {
-                    fingerprintView.setText(R.string.touch_fingerprint_to_enable);
-                }
+        if (biometricHelper.isAvailable()) {
+            boolean isFingerprintEnabled = biometricHelper.isEnabled();
+            if (isFingerprintEnabled) {
+                fingerprintView.setVisibility(View.VISIBLE);
+                startFingerprintListener();
             } else {
-                fingerprintHelper = null;
+                fingerprintView.setText(R.string.touch_fingerprint_to_enable);
             }
         }
 
@@ -107,51 +101,31 @@ public abstract class AbstractPINDialogFragment extends DialogFragment {
             backgroundHandler = new Handler(backgroundThread.getLooper());
         }
 
-        final DialogBuilder builder = new DialogBuilder(getContext());
-        builder.setTitle(dialogTitle);
-        builder.setView(view);
-        builder.setCancelable(false);
-
-        final AlertDialog alertDialog = builder.create();
-        alertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
-            @Override
-            public void onShow(DialogInterface dialog) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    pinView.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            KeyboardUtil.showSoftKeyboard(getActivity(), pinView);
-                        }
-                    }, 100);
-                } else {
-                    KeyboardUtil.showSoftKeyboard(getActivity(), pinView);
-                }
+        final BaseAlertDialogBuilder abstractPinAlertDialogBuilder = new BaseAlertDialogBuilder(requireContext());
+        abstractPinAlertDialogBuilder.setTitle(getString(dialogTitle));
+        abstractPinAlertDialogBuilder.setView(view);
+        abstractPinAlertDialogBuilder.setCancelable(false);
+        final AlertDialog alertDialog = abstractPinAlertDialogBuilder.buildAlertDialog();
+        alertDialog.setOnShowListener(dialog -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                pinView.postDelayed(() -> KeyboardUtil.Companion.showSoftKeyboard(getActivity(), pinView), 100);
+            } else {
+                KeyboardUtil.Companion.showSoftKeyboard(getActivity(), pinView);
             }
         });
 
         return alertDialog;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
     private void startFingerprintListener() {
-        fingerprintCancellationSignal = new CancellationSignal();
-        fingerprintHelper.getPassword(fingerprintCancellationSignal, new FingerprintHelper.Callback() {
-            @Override
-            public void onSuccess(String savedPass) {
+        biometricHelper.getPassword(requireActivity(), true, (savedPass, error) -> {
+            if (error != null) {
+                fingerprintView.showError(error instanceof BiometricLockoutException);
+            } else if (savedPass != null) {
                 checkPassword(savedPass);
             }
 
-            @Override
-            public void onFailure(String message, boolean canceled, boolean exceededMaxAttempts) {
-                if (!canceled) {
-                    fingerprintView.showError(exceededMaxAttempts);
-                }
-            }
-
-            @Override
-            public void onHelp(int helpCode, String helpString) {
-                fingerprintView.showError(false);
-            }
+            return Unit.INSTANCE;
         });
     }
 
@@ -182,6 +156,9 @@ public abstract class AbstractPINDialogFragment extends DialogFragment {
 
     abstract protected void checkPassword(final String password);
 
+    // TODO: this needs better handling as it can be confused with the WalletDataProvider.
+    // Perhaps keep the walletBuffer from the activity in the RestoreWalletFromFileViewModel
+    // and share it across fragments
     public interface WalletProvider {
 
         Wallet getWallet();

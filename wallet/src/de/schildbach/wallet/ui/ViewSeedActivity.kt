@@ -19,12 +19,14 @@ package de.schildbach.wallet.ui
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet_test.R
 import kotlinx.android.synthetic.main.activity_view_seed.*
 
 /**
  * @author Eric Britten
  */
+@AndroidEntryPoint
 class ViewSeedActivity : BaseMenuActivity() {
 
     companion object {
@@ -46,7 +48,7 @@ class ViewSeedActivity : BaseMenuActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //setContentView(R.layout.activity_verify_seed)
+        super.setSecuredActivity(true)
 
         seed = if (intent.extras?.containsKey(EXTRA_SEED)!!) {
             intent.extras!!.getStringArray(EXTRA_SEED)!!
@@ -63,6 +65,10 @@ class ViewSeedActivity : BaseMenuActivity() {
            finish()
         }
 
+        explanation_btn.setOnClickListener {
+            VerifySeedWarningDialog().show(supportFragmentManager, "verify_seed_warning")
+        }
+
         setTitle(R.string.view_seed_title)
     }
 
@@ -70,8 +76,7 @@ class ViewSeedActivity : BaseMenuActivity() {
         finish()
     }
 
-    //override fun finish() {
-    //    super.finish()
-    //    overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
-    //}
+    override fun onLockScreenActivated() {
+        finish()
+    }
 }

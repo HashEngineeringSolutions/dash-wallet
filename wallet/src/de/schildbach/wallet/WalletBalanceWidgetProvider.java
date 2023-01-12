@@ -36,6 +36,7 @@ import org.bitcoinj.utils.MonetaryFormat;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.Wallet.BalanceType;
 import org.dash.wallet.common.Configuration;
+import org.dash.wallet.common.data.ExchangeRate;
 import org.dash.wallet.common.util.GenericUtils;
 import org.dash.wallet.common.util.MonetarySpannable;
 import org.slf4j.Logger;
@@ -43,13 +44,12 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Method;
 
-import de.schildbach.wallet.rates.ExchangeRate;
 import de.schildbach.wallet.ui.OnboardingActivity;
-import de.schildbach.wallet.ui.QuickReceiveActivity;
-import de.schildbach.wallet.ui.SendCoinsQrActivity;
+import de.schildbach.wallet.ui.payments.QuickReceiveActivity;
+import de.schildbach.wallet.ui.send.SendCoinsQrActivity;
 import de.schildbach.wallet_test.R;
 
-import static org.dash.wallet.common.Constants.PREFIX_ALMOST_EQUAL_TO;
+import static org.dash.wallet.common.util.Constants.PREFIX_ALMOST_EQUAL_TO;
 
 /**
  * @author Andreas Schildbach
@@ -108,7 +108,7 @@ public class WalletBalanceWidgetProvider extends AppWidgetProvider {
         views.setViewVisibility(R.id.main_pane, walletNotReady ? View.GONE : View.VISIBLE);
         views.setViewVisibility(R.id.wallet_not_initialized_message, walletNotReady ? View.VISIBLE : View.GONE);
         views.setOnClickPendingIntent(R.id.widget_button_balance,
-                PendingIntent.getActivity(context, 0, OnboardingActivity.createIntent(context), 0));
+                PendingIntent.getActivity(context, 0, OnboardingActivity.createIntent(context), PendingIntent.FLAG_IMMUTABLE));
 
         if (walletNotReady) {
             appWidgetManager.updateAppWidget(appWidgetId, views);
@@ -159,11 +159,11 @@ public class WalletBalanceWidgetProvider extends AppWidgetProvider {
                 }
 
                 views.setOnClickPendingIntent(R.id.widget_button_balance,
-                        PendingIntent.getActivity(context, 0, OnboardingActivity.createIntent(context), 0));
+                        PendingIntent.getActivity(context, 0, OnboardingActivity.createIntent(context), PendingIntent.FLAG_IMMUTABLE));
                 views.setOnClickPendingIntent(R.id.widget_button_request,
-                        PendingIntent.getActivity(context, 0, QuickReceiveActivity.createIntent(context), 0));
+                        PendingIntent.getActivity(context, 0, QuickReceiveActivity.createIntent(context), PendingIntent.FLAG_IMMUTABLE));
                 views.setOnClickPendingIntent(R.id.widget_button_send_qr,
-                        PendingIntent.getActivity(context, 0, SendCoinsQrActivity.createIntent(context, true), 0));
+                        PendingIntent.getActivity(context, 0, SendCoinsQrActivity.createIntent(context, true), PendingIntent.FLAG_IMMUTABLE));
 
                 appWidgetManager.updateAppWidget(appWidgetId, views);
             }

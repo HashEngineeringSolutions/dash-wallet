@@ -21,13 +21,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import dagger.hilt.android.AndroidEntryPoint;
 
-public class InteractionAwareActivity extends AppCompatActivity {
-
+@AndroidEntryPoint
+public class InteractionAwareActivity extends SecureActivity {
     public static final String FORCE_FINISH_ACTION = "InteractionAwareActivity.FORCE_FINISH_ACTION";
 
     @Override
@@ -40,25 +39,25 @@ public class InteractionAwareActivity extends AppCompatActivity {
     @Override
     public void onUserInteraction() {
         super.onUserInteraction();
-        ((ResetAutoLogoutTimerHandler) getApplication()).resetAutoLogoutTimer();
+        ((AutoLogoutTimerHandler) getApplication()).resetAutoLogoutTimer();
     }
 
     @Override
-    protected void onPause() {
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
-        super.onPause();
+    protected void onDestroy() {
+        try {
+            unregisterReceiver(forceFinishReceiver);
+        } catch (Exception e) {
+            // already unregistered
+        }
+        super.onDestroy();
     }
 
-    @Override
-    protected void onResume() {
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
-        super.onResume();
+    protected void turnOffAutoLogout() {
+        ((AutoLogoutTimerHandler) getApplication()).stopAutoLogoutTimer();
     }
 
-    @Override
-    public void finish() {
-        unregisterReceiver(forceFinishReceiver);
-        super.finish();
+    protected void turnOnAutoLogout() {
+        ((AutoLogoutTimerHandler) getApplication()).startAutoLogoutTimer();
     }
 
     private final BroadcastReceiver forceFinishReceiver = new BroadcastReceiver() {

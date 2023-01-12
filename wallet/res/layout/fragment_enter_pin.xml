@@ -35,7 +35,7 @@
 
                     <TextView
                         android:id="@+id/title"
-                        style="@style/MontserratMedium.BodyTitle"
+                        style="@style/Body1.Medium"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="8dp"
@@ -43,12 +43,11 @@
 
                     <TextView
                         android:id="@+id/message"
-                        style="@style/MontserratMedium.BodyText"
+                        style="@style/Body2.Medium.Tertiary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:padding="8dp"
-                        android:text="@string/authenticate_pin_message"
-                        android:textColor="@color/dash_gray" />
+                        android:text="@string/authenticate_pin_message" />
 
                     <ViewSwitcher
                         android:id="@+id/pin_progress_switcher"
@@ -57,25 +56,17 @@
                         android:layout_marginTop="8dp">
 
                         <LinearLayout
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical">
 
                             <de.schildbach.wallet.ui.widget.PinPreviewView
                                 android:id="@+id/pin_preview"
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_gravity="start"
                                 android:layout_marginStart="12dp"
                                 app:pp_item_size="35dp" />
-
-                            <de.schildbach.wallet.ui.widget.FingerprintView
-                                android:id="@+id/fingerprint_view"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:visibility="gone"
-                                tools:visibility="visible" />
-
                         </LinearLayout>
 
                         <ProgressBar
@@ -102,7 +93,7 @@
 
     </FrameLayout>
 
-    <de.schildbach.wallet.ui.widget.NumericKeyboardView
+    <org.dash.wallet.common.ui.enter_amount.NumericKeyboardView
         android:id="@+id/numeric_keyboard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

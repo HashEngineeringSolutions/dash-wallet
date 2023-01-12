@@ -2,6 +2,7 @@
 <resources>
 
     <string name="toast_wallet_reset">Sua carteira foi reiniciada!\nA recuperação levará um tempo.</string>
+    <string name="toast_start_storage_provider_selector_failed">Nenhum provedor compatível de armazenamento em nuvem está instalado.\nVocê precisa de algum como \"Nextcloud\" ou \"Google Drive\".</string>
     <string name="wallet_disclaimer_fragment_remind_safety">Use por sua conta e risco. Leia as &lt;u&gt;indicações de segurança&lt;/u&gt;.</string>
     <string name="wallet_disclaimer_fragment_remind_backup">Você precisa fazer backup da sua carteira!</string>
     <string name="blockchain_state_progress_hours">%1$s, %2$d horas atrás</string>
@@ -64,8 +65,6 @@
     <string name="send_coins_fragment_pin_label">Inserir PIN</string>
     <string name="send_coins_fragment_hint_fee_economic">Uma taxa de rede de %s será paga.</string>
     <string name="send_coins_fragment_hint_fee_priority">Uma taxa para a prioridade de%s será paga. Se você se preocupa com baixas taxas, use "prioridade" apenas se você precisar de confirmação mais rapido possível.</string>
-    <string name="send_coins_fragment_hint_dusty_send">O valor é muito baixo para ser enviado</string>
-    <string name="send_coins_fragment_hint_insufficient_money">Fundos insuficientes</string>
     <string name="send_coins_fragment_hint_empty_wallet_failed">A quantidade de pequenos pagamentos em sua carteira não somam um valor para envio.</string>
     <string name="send_coins_fragment_hint_replaying">Pagamentos não são possíveis no momento porque a carteira não está totalmente sincronizada com a rede</string>
     <string name="send_coins_fragment_direct_payment_enable">Enviar pagamento diretamente ao destinatário.</string>
@@ -116,7 +115,6 @@
     <string name="request_coins_fragment_initiate_request_qr">Tenha o código lido pelo emissor.</string>
     <string name="request_coins_fragment_initiate_request_nfc">Ou toque em um dispositivo NFC habilitado.</string>
     <string name="request_coins_clipboard_msg">Pedido de Dash copiado para a área de transferência</string>
-    <string name="request_coins_share_dialog_title">Compartilhar pedido de Dash…</string>
     <string name="request_coins_no_local_app_msg">Nenhum outro aplicativo Dash encontrado</string>
     <string name="request_coins_options_local_app_title">Pedir de um aplicativo local</string>
     <string name="address_book_activity_title">Livro de endereços</string>
@@ -205,6 +203,7 @@
     <string name="import_keys_dialog_button_import">Restaurar</string>
     <string name="restore_wallet_dialog_success">Carteira foi restaurada.</string>
     <string name="restore_wallet_dialog_success_replay">Sua carteira foi restaurada com sucesso. O saldo será determinado em seguida. Isso poderá levar algum tempo.</string>
+    <string name="restore_wallet_dialog_success_encrypted">Aviso: Sua carteira está protegida por um código PIN. Certifique-se de que ainda lembra deste código antes de receber nesta carteira.</string>
     <string name="import_keys_dialog_failure">A carteira não pôde ser restaurada:\n\n%s\n\nSenha incorreta?</string>
     <string name="backup_wallet_permission_dialog_title">Falta permissão de escrita</string>
     <string name="backup_wallet_permission_dialog_message">Para pesquisar backups da carteira em seu armazenamento externo, você precisa conceder permissão de leitura.</string>
@@ -212,7 +211,7 @@
     <string name="backup_wallet_dialog_message">Seu backup será criptografado com a senha escolhida e será salvo no armazenamento externo.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Sua carteira é protegida por um PIN. Certifique-se de que você se lembra do PIN, além da senha de backup!</string>
     <string name="export_keys_dialog_button_export">Exportar</string>
-    <string name="export_keys_dialog_success"><![CDATA[<p>O backup de sua carteira foi feito em <tt>%s</tt></p><p>Se o seu dispositivo possui um SD card removível, seu backup <i>deve</i> estar nesse cartão. Remova-o e mantenha-o em um local seguro. Se seu cartão <i>não</i> for removível, você precisa arquivar seu backup em outro lugar.</p><p><b>Se o único lugar que tem para fazer seu backup é seu dispositivo você corre o risco de perder tudo ao mesmo tempo!</b></p><p>De qualquer maneira, tenha certeza de que se lembra da sua senha de backup. Quer arquivar sua carteira agora?</p>]]></string>
+    <string name="export_keys_dialog_success"><![CDATA[<p>Sua carteira foi copiada para <tt>%s</tt></p><p><b>Se o seu dispositivo for o único local de backup, há o risco de você perder os dois ao mesmo tempo!</b></p><p>Em qualquer caso, certifique-se de lembrar sua senha de backup.</p>]]></string>
     <string name="export_keys_dialog_failure">Sua carteira não pôde ser salva: \n%s</string>
     <string name="export_keys_dialog_button_archive">Arquivar</string>
     <string name="export_keys_dialog_mail_subject">Backup da carteira Dash</string>
@@ -279,10 +278,10 @@
     <string name="preferences_show_disclaimer_title">Mostrar aviso legal</string>
     <string name="preferences_show_disclaimer_summary">Você já leu as notas de segurança? Já fez o backup da sua carteira em um lugar seguro?</string>
     <string name="preferences_report_issue_title">Informar problema</string>
-    <string name="preferences_initiate_reset_title">Reiniciar Blockchain</string>
-    <string name="preferences_initiate_reset_summary">Redefinir a blockchain, transações e saldo de carteira. Voltar a realizar vai demorar um pouco, então apenas faz isso se você sabe o por quê.</string>
-    <string name="preferences_initiate_reset_dialog_message">Gostaria de redefinir e reproduzir a blockchain\n\nIsso ocultará temporariamente o saldo da sua carteira e removerá as transações. Ambos serão recuperados à medida que a sincronização da blockchain progride. Certifique-se de que tem uma conexão à Internet.</string>
-    <string name="preferences_initiate_reset_dialog_positive">Reiniciar</string>
+    <string name="preferences_initiate_reset_title">Reexaminar blockchain</string>
+    <string name="preferences_initiate_reset_summary">Varrer novamente blockchain, transações e saldo da carteira. Repetir esse processo vai demorar um pouco, então só faça isso se você souber o porquê.</string>
+    <string name="preferences_initiate_reset_dialog_message">Deseja verificar novamente o blockchain?\n\nIsso ocultará temporariamente o saldo da sua carteira e removerá as transações. Ambos serão recuperados à medida que a sincronização do blockchain progride. Certifique-se de que você tem uma conexão confiável com a Internet.</string>
+    <string name="preferences_initiate_reset_dialog_positive">Reescanear</string>
     <string name="preferences_extended_public_key_title">Mostrar xpub</string>
     <string name="preferences_extended_public_key_summary">Ver a chave pública estendida de sua carteira, para que possa ser importada para outros aplicativos e serviços. Tenha cuidado: isso irá divulgar a sua privacidade monetária para o app.</string>
     <string name="bitmap_fragment_share">Compartilhar…</string>
@@ -301,6 +300,14 @@
     <string name="report_issue_dialog_collect_wallet_dump">Anexar "wallet dump"</string>
     <string name="report_issue_dialog_mail_intent_chooser">Enviar relatório usando…</string>
     <string name="report_issue_dialog_mail_intent_failed">Envio de relatório falhou.</string>
+    <string name="report_transaction_history_export">Exportar</string>
+    <string name="report_transaction_history_title">Exportar CSV</string>
+    <string name="report_transaction_history_not_synced_title">Exportar CSV</string>
+    <string name="report_transaction_history_not_synced_message">Por favor, aguarde até que a carteira esteja totalmente sincronizada antes de exportar seu histórico de transações.</string>
+    <string name="report_transaction_history_message">O histórico completo de transações será exportado.\n\nTodos os pagamentos serão considerados como despesa e todas as transações recebidas serão receitas. O proprietário desta carteira é responsável por fazer quaisquer ajustes de base de custo no sistema de relatórios fiscais escolhido.</string>
+    <string name="report_transaction_history_mail_intent_chooser">Enviar histórico de transações usando…</string>
+    <string name="report_transaction_history_dialog_mail_intent_failed">Falha no envio do histórico de transações.</string>
+
     <string name="about_title">Sobre</string>
     <string name="about_version_title">Versão</string>
     <string name="about_copyright_title">Copyright</string>
@@ -329,7 +336,6 @@
     <string name="button_ok">OK</string>
     <string name="button_dismiss">Dispensar</string>
     <string name="button_cancel">Cancelar</string>
-    <string name="button_retry">Repetir</string>
     <string name="button_help">Ajuda</string>
     <string name="button_add">Adicionar</string>
     <string name="button_delete">Eliminar</string>
@@ -339,7 +345,6 @@
     <string name="button_copy">Copiar</string>
     <string name="button_copy_request">Copiar solicitude</string>
     <string name="button_paste">Colar</string>
-    <string name="button_share">Compartilhar</string>
     <string name="button_set_as_default">Definir como padrão</string>
     <string name="button_request_coins">Solicitar Dash</string>
     <string name="button_send_coins">Enviar Dash</string>
@@ -378,8 +383,10 @@
     <string name="payment_protocol_insufficient_funds_error_message">Você não tem fundos suficientes para completar esta transação</string>
 
 
-
+    <string name="select_a_service_to_buy_and_sell_dash">Selecione um serviço para comprar e vender Dash.</string>
     <string name="select_a_service">Selecione um serviço</string>
     <string name="activity_buy_and_sell_dash_filter">Filtro</string>
     <string name="clear_filter">Limpar Filtro</string>
+    <string name="select_currency">Selecione a moeda</string>
+    <string name="reason">Razão</string>
 </resources>

@@ -16,55 +16,103 @@
 
 package de.schildbach.wallet.ui
 
-import android.app.Application
 import android.content.Intent
-import androidx.lifecycle.AndroidViewModel
+import android.os.Handler
+import android.os.HandlerThread
+import android.os.Process
+import androidx.lifecycle.ViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import de.schildbach.wallet.Constants
 import de.schildbach.wallet.WalletApplication
-import de.schildbach.wallet.livedata.RecoverPinLiveData
+import de.schildbach.wallet.security.SecurityFunctions
+import de.schildbach.wallet.security.SecurityGuard
+import de.schildbach.wallet.ui.util.SingleLiveEvent
 import de.schildbach.wallet.util.MnemonicCodeExt
 import de.schildbach.wallet.util.WalletUtils
 import de.schildbach.wallet_test.R
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.bitcoinj.crypto.MnemonicException
+import org.dash.wallet.common.Configuration
 import org.slf4j.LoggerFactory
+import java.util.*
+import javax.inject.Inject
 
-class RestoreWalletFromSeedViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class RestoreWalletFromSeedViewModel @Inject constructor(
+    private val walletApplication: WalletApplication,
+    private val configuration: Configuration,
+    private val securityFunctions: SecurityFunctions
+) : ViewModel() {
 
     private val log = LoggerFactory.getLogger(RestoreWalletFromSeedViewModel::class.java)
-
-    private val walletApplication = application as WalletApplication
-
-    internal val showRestoreWalletFailureAction = SingleLiveEvent<MnemonicException>()
     internal val startActivityAction = SingleLiveEvent<Intent>()
+    private val securityGuard = SecurityGuard()
 
-    val recoverPinLiveData = RecoverPinLiveData(application)
+    suspend fun recover(words: List<String>): String? = withContext(Dispatchers.Default) {
+        val wallet = walletApplication.wallet!!
+        val encryptionKey = securityFunctions.deriveKey(
+            walletApplication.wallet!!,
+            securityGuard.retrievePassword()
+        )
 
-    fun restoreWalletFromSeed(words: MutableList<String>) {
+        try {
+            val decryptedSeed =
+                wallet.keyChainSeed.decrypt(wallet.keyCrypter, null, encryptionKey) // takes time
+            val seed = decryptedSeed.mnemonicCode!!.toTypedArray()
+            if (seed contentEquals words.toTypedArray()) {
+                return@withContext securityGuard.retrievePin()
+            }
+        } catch (_: Exception) { }
+
+        return@withContext null
+    }
+
+    /**
+     * Normalize - converts all letter to lowercase and to words matching those of a BIP39 word list.
+     * Examples:
+     *   Satoshi -> satoshi (all letters become lowercase)
+     *   TODO: also handle this: medaille -> médaille
+     * @param words - the recovery phrase word list
+     */
+    private fun normalize(words: List<String>): List<String> {
+        return words.map { it.lowercase(Locale.getDefault()) }
+    }
+
+    fun restoreWalletFromSeed(words: List<String>) {
         if (isSeedValid(words)) {
-            val wallet = WalletUtils.restoreWalletFromSeed(words, Constants.NETWORK_PARAMETERS)
-            walletApplication.wallet = wallet
+            val wallet = WalletUtils.restoreWalletFromSeed(normalize(words), Constants.NETWORK_PARAMETERS)
+            walletApplication.setWallet(wallet)
             log.info("successfully restored wallet from seed")
-            walletApplication.configuration.disarmBackupSeedReminder()
-            walletApplication.configuration.isRestoringBackup = true
+            configuration.disarmBackupSeedReminder()
+            configuration.isRestoringBackup = true
             walletApplication.resetBlockchainState()
-            startActivityAction.call(SetPinActivity.createIntent(getApplication(), R.string.set_pin_restore_wallet))
+            startActivityAction.call(SetPinActivity.createIntent(walletApplication, R.string.set_pin_restore_wallet))
         }
     }
 
-    fun recoverPin(words: MutableList<String>) {
-        if (isSeedValid(words)) {
-            recoverPinLiveData.recover(words)
+    suspend fun recoverPin(words: List<String>): String? {
+        return if (isSeedValid(words)) {
+            recover(normalize(words))
+        } else {
+            null
         }
     }
 
-    private fun isSeedValid(words: MutableList<String>): Boolean {
+    /**
+     * Checks to see if this seed is valid.  The validation is not case sensitive, nor does it
+     * depend on accent marks or other diacritics.
+     *
+     * @param words
+     * @return
+     */
+    private fun isSeedValid(words: List<String>): Boolean {
         return try {
             MnemonicCodeExt.getInstance().check(walletApplication, words)
             true
         } catch (x: MnemonicException) {
             log.info("problem restoring wallet from seed: ", x)
-            showRestoreWalletFailureAction.call(x)
-            false
+            throw x
         }
     }
 }

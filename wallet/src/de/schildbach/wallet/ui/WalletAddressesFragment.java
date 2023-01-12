@@ -35,7 +35,7 @@ import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.data.AddressBookProvider;
 import de.schildbach.wallet.util.BitmapFragment;
-import de.schildbach.wallet.util.Qr;
+import org.dash.wallet.common.util.Qr;
 import de.schildbach.wallet.util.Toast;
 import de.schildbach.wallet.util.WalletUtils;
 import de.schildbach.wallet.util.WholeStringBuilder;
@@ -78,7 +78,6 @@ public final class WalletAddressesFragment extends FancyListFragment {
     @Override
     public void onAttach(final Activity activity) {
         super.onAttach(activity);
-
         this.activity = (AddressBookActivity) activity;
         this.application = (WalletApplication) activity.getApplication();
         this.config = application.getConfiguration();
@@ -203,12 +202,12 @@ public final class WalletAddressesFragment extends FancyListFragment {
             }
 
             private void handleEdit(final Address address) {
-                EditAddressBookEntryFragment.edit(getFragmentManager(), address);
+                EditAddressBookEntryFragment.edit(getParentFragmentManager(), address);
             }
 
             private void handleShowQr(final Address address) {
-                final String uri = BitcoinURI.convertToBitcoinURI(address, null, config.getOwnName(), null);
-                BitmapFragment.show(getFragmentManager(), Qr.bitmap(uri));
+                final String uri = BitcoinURI.convertToBitcoinURI(address, null, null, null);
+                BitmapFragment.show(getParentFragmentManager(), Qr.bitmap(uri));
             }
 
             private void handleCopyToClipboard(final Address address) {
@@ -256,12 +255,9 @@ public final class WalletAddressesFragment extends FancyListFragment {
                 }
             });
 
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    adapter.replaceDerivedKeys(derivedKeys);
-                    adapter.replaceRandomKeys(randomKeys);
-                }
+            handler.post(() -> {
+                adapter.replaceDerivedKeys(derivedKeys);
+                adapter.replaceRandomKeys(randomKeys);
             });
         }
     };

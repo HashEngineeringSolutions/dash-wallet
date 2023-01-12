@@ -2,6 +2,7 @@
 <resources>
 
     <string name="toast_wallet_reset">Ваш кошелёк был сброшен!\nВосстановление займёт некоторое время.</string>
+    <string name="toast_start_storage_provider_selector_failed">Подходящих облачных хранилищ не установлено.\nВам потребуется что-то вроде \"Nextcloud\" или \"Google Drive\".</string>
     <string name="wallet_disclaimer_fragment_remind_safety">Используйте на свой страх и риск. Прочитайте &lt;u&gt;заметки по безопасности&lt;/u&gt;.</string>
     <string name="wallet_disclaimer_fragment_remind_backup">Вам необходимо создать резервную копию кошелька!</string>
     <string name="blockchain_state_progress_hours">%1$s, %2$d часов отставания</string>
@@ -64,8 +65,6 @@
     <string name="send_coins_fragment_pin_label">Введите PIN-код</string>
     <string name="send_coins_fragment_hint_fee_economic">Будет заплачена комиссия %s.</string>
     <string name="send_coins_fragment_hint_fee_priority">Приоритетный размер платы составит %s. Если размер комиссии имеет для Вас значение, используйте опцию приоритета, только когда Вам необходимо срочное подтверждение транзакции.</string>
-    <string name="send_coins_fragment_hint_dusty_send">Сумма слишком мала для отправки</string>
-    <string name="send_coins_fragment_hint_insufficient_money">Недостаточно средств</string>
     <string name="send_coins_fragment_hint_empty_wallet_failed">Количества малых платежей в Вашем кошельке недостаточно для отправки средств.</string>
     <string name="send_coins_fragment_hint_replaying">В данный момент платежи невозможны, так как кошелёк не полностью синхронизирован с сетью.</string>
     <string name="send_coins_fragment_direct_payment_enable">Отправить платёж непосредственно получателю.</string>
@@ -116,7 +115,6 @@
     <string name="request_coins_fragment_initiate_request_qr">Пусть отправитель отсканирует этот код.</string>
     <string name="request_coins_fragment_initiate_request_nfc">Или коснитесь устройства с поддержкой NFC.</string>
     <string name="request_coins_clipboard_msg">Запрос скопирован в буфер обмена</string>
-    <string name="request_coins_share_dialog_title">Поделиться запросом…</string>
     <string name="request_coins_no_local_app_msg">Не обнаружено других приложений для Dash</string>
     <string name="request_coins_options_local_app_title">Запрос от локального приложения</string>
     <string name="address_book_activity_title">Адресная книга</string>
@@ -205,6 +203,7 @@
     <string name="import_keys_dialog_button_import">Восстановить</string>
     <string name="restore_wallet_dialog_success">Кошелёк был восстановлен.</string>
     <string name="restore_wallet_dialog_success_replay">Ваш кошелёк успешно восстановлен. Сейчас определится его баланс. Это может занять какое-то время.</string>
+    <string name="restore_wallet_dialog_success_encrypted">Предупреждение: Ваш кошелёк защищён PIN-кодом. Прежде чем получить средства на этот кошелёк, убедитесь, что Вы его помните.</string>
     <string name="import_keys_dialog_failure">Кошелёк не может быть восстановлен:\n\n%s\n\nПроверьте правильность набора пароля.</string>
     <string name="backup_wallet_permission_dialog_title">Отсутствуют права на запись</string>
     <string name="backup_wallet_permission_dialog_message">Для того, чтобы сохранить резервную копию кошелька на внешнем устройстве, Вам нужно предоставить права на запись.</string>
@@ -212,7 +211,7 @@
     <string name="backup_wallet_dialog_message">Резервная копия будет зашифрована выбранным паролем и сохранена на внешнем устройстве.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Ваш кошелёк защищен PIN-кодом. Запомните ваш PIN-код и пароль для восстановления резервной копии.</string>
     <string name="export_keys_dialog_button_export">Резервная копия</string>
-    <string name="export_keys_dialog_success"><![CDATA[<p>Создана резервная копия кошелька <tt>%s</tt></p><p>Если Ваше устройство имеет съёмную SD-карту, резервная копия <i>должна</i> быть на этой карте. Извлеките её и храните в безопасном месте. Если Ваше устройство <i>не поддерживает</i> съёмную SD-карту, то Вы должны хранить резервную копию в другом месте, а не на Вашем устройстве.</p><p><b>Если Ваше устройство - это единственное место, где хранится резервная копия, то Вы рискуете потерять кошелёк, потеряв устройство!</b></p><p>В любом случае, убедитесь, что Вы помните пароль от резервной копии. Вы хотите заархивировать Ваш кошелёк сейчас?</p>]]></string>
+    <string name="export_keys_dialog_success"><![CDATA[<p>Резервная копия Вашего кошелька была сохранена в<tt>%s</tt></p><p><b>Если все резервные копии хранятся на одном устройстве, Вы рискуете потерять их вместе с устройством!</b></p><p>В любом случае, убедитесь, что вы помните пароль для восстановления из резервной копии.</p>]]></string>
     <string name="export_keys_dialog_failure">Не удается создать резервную копию кошелька:\n%s</string>
     <string name="export_keys_dialog_button_archive">Архив</string>
     <string name="export_keys_dialog_mail_subject">Резервное копирование кошелька Dash</string>
@@ -279,10 +278,10 @@
     <string name="preferences_show_disclaimer_title">Показать дисклеймер</string>
     <string name="preferences_show_disclaimer_summary">Вы прочли рекомендации по безопасности? Вы уже сохранили резервную копию в безопасном месте?</string>
     <string name="preferences_report_issue_title">Сообщить о проблеме</string>
-    <string name="preferences_initiate_reset_title">Перегрузить блокчейн</string>
-    <string name="preferences_initiate_reset_summary">Сброс блокчейна, транзакций и баланса. Перезагрузка займёт некоторое время, поэтому прибегайте к этому только тогда, когда точно знаете, что Вы делаете.</string>
-    <string name="preferences_initiate_reset_dialog_message">Вы хотите сбросить и обновить блокчейн?\n\nЭто сделает временно недоступными ваши баланс и список транзакций. Они будут восстановлены в процессе синхронизации блокчейна. Убедитесь, что что у Вас надёжное подключение к интернету.</string>
-    <string name="preferences_initiate_reset_dialog_positive">Сброс</string>
+    <string name="preferences_initiate_reset_title">Пересканировать цепочку блоков</string>
+    <string name="preferences_initiate_reset_summary">Повторное сканирование блокчейна, транзакций и баланса. Перезагрузка займёт некоторое время, поэтому прибегайте к этому только тогда, когда точно знаете, что Вы делаете.</string>
+    <string name="preferences_initiate_reset_dialog_message">Вы хотите повторно сканировать блокчейн?\n\nЭто сделает временно недоступными ваши баланс и список транзакций. Они будут восстановлены в процессе синхронизации блокчейна. Убедитесь, что у Вас надёжное подключение к интернету.</string>
+    <string name="preferences_initiate_reset_dialog_positive">Синхронизировать снова</string>
     <string name="preferences_extended_public_key_title">Показать xpub</string>
     <string name="preferences_extended_public_key_summary">Просмотр расширенного открытого ключа Вашего кошелька может быть полезен для импортирования в другие приложения и услуги. Будьте осторожны: этим Вы нарушаете свою финансовую конфиденциальность.</string>
     <string name="bitmap_fragment_share">Поделиться…</string>
@@ -301,6 +300,14 @@
     <string name="report_issue_dialog_collect_wallet_dump">Добавить дамп памяти кошелька</string>
     <string name="report_issue_dialog_mail_intent_chooser">Отправить отчёт, используя…</string>
     <string name="report_issue_dialog_mail_intent_failed">Ошибка при отправке отчёта.</string>
+    <string name="report_transaction_history_export">Экспортировать</string>
+    <string name="report_transaction_history_title">Экспортировать CSV</string>
+    <string name="report_transaction_history_not_synced_title">Экспортировать CSV</string>
+    <string name="report_transaction_history_not_synced_message">Перед экспортированием истории транзакций дождитесь полной синхронизации кошелька </string>
+    <string name="report_transaction_history_message">Будет экспортирована полная история транзакций.\n\nВсе платежи будут считаться расходами, а все входящие транзакции - доходами. Ответственность за корректировку данных о балансовой стоимости несёт владелец кошелька согласно выбранной им системе налоговой отчётности. </string>
+    <string name="report_transaction_history_mail_intent_chooser">Отправить историю транзакций с помощью...</string>
+    <string name="report_transaction_history_dialog_mail_intent_failed">Ошибка при отправке истории транзакций.</string>
+
     <string name="about_title">О программе</string>
     <string name="about_version_title">Версия</string>
     <string name="about_copyright_title">Авторское право</string>
@@ -329,7 +336,6 @@
     <string name="button_ok">OK</string>
     <string name="button_dismiss">Отклонить</string>
     <string name="button_cancel">Отмена</string>
-    <string name="button_retry">Повторить</string>
     <string name="button_help">Помощь</string>
     <string name="button_add">Добавить</string>
     <string name="button_delete">Удалить</string>
@@ -339,7 +345,6 @@
     <string name="button_copy">Копировать</string>
     <string name="button_copy_request">Скопировать запрос</string>
     <string name="button_paste">Вставить</string>
-    <string name="button_share">Поделиться</string>
     <string name="button_set_as_default">Установить по умолчанию</string>
     <string name="button_request_coins">Получить Dash</string>
     <string name="button_send_coins">Отправить Dash</string>
@@ -378,8 +383,10 @@
     <string name="payment_protocol_insufficient_funds_error_message">У вас недостаточно средств для завершения этой транзакции</string>
 
 
-
+    <string name="select_a_service_to_buy_and_sell_dash">Выбрать сервис для покупки и продажи Dash.</string>
     <string name="select_a_service">Выберите сервис</string>
     <string name="activity_buy_and_sell_dash_filter">Фильтр</string>
     <string name="clear_filter">Очистить фильтр</string>
+    <string name="select_currency">Выберите валюту</string>
+    <string name="reason">Причина</string>
 </resources>

@@ -58,7 +58,6 @@
     <string name="send_coins_fragment_pin_label">Unesite PIN</string>
     <string name="send_coins_fragment_hint_fee_economic">Mrežna provizija od %s će biti plaćena.</string>
     <string name="send_coins_fragment_hint_fee_priority">Prioritetna provizija od %s će biti plaćena. Ako vam je bitna mala provizija koristite "prioritet" samo ukoliko vam je bitno da dobijete potvrdu što pre.</string>
-    <string name="send_coins_fragment_hint_dusty_send">Iznos je suviše mali da bi bio poslat</string>
     <string name="send_coins_fragment_hint_empty_wallet_failed">Iznos zbira malih uplata u vašem novčaniku ne odgovara vrednosti koja se može poslati.</string>
     <string name="send_coins_fragment_direct_payment_enable">Pošalji uplatu primaocu direktno.</string>
     <string name="send_coins_fragment_direct_payment_ack">Direktno slanje vaše uplate je uspešno izvršeno.</string>
@@ -105,7 +104,6 @@
     <string name="request_coins_fragment_initiate_request_qr">Neka pošiljalac skenira ovaj kod.</string>
     <string name="request_coins_fragment_initiate_request_nfc">Ili dodirnite uredjaj sa NFC-om.</string>
     <string name="request_coins_clipboard_msg">Dash zahtev je prekopiran u privremeno skladište.</string>
-    <string name="request_coins_share_dialog_title">Podeli zahtev za Dash...</string>
     <string name="request_coins_no_local_app_msg">Nije pronadjena druga Dash aplikacija</string>
     <string name="request_coins_options_local_app_title">Zahtev od lokalne aplikacije</string>
     <string name="address_book_activity_title">Adresar</string>
@@ -179,7 +177,6 @@
     <string name="backup_wallet_dialog_message">Vaša rezervna kopija će biti šifrovana sa odabranom šifrom i upisana na eksterno skladište.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Vaš novčanik je zaštićen PIN-om za potrošnju. Postarajte se da zapamtite PIN kao i šifru za rezervnu kopiju.</string>
     <string name="export_keys_dialog_button_export">Rezervna kopija</string>
-    <string name="export_keys_dialog_success"><![CDATA[<p>Rezervna kopija vašeg novčanika je napravljena na <tt>%s</tt></p><p>Ako vaš uređaj ima SD karticu koja se može izvaditi, vaša rezervna kopija <i>bi trebala</i>da bude na toj kartici. Izvadite je i čuvajte je na sigurnom. Ako kartica <i>ne može</i> da se izvadi, treba da arhivirate rezervnu kopiju na nekom drugom mestu a ne na vašem uređaju.</p><p><b>Ako je vaš uređaj jedino mesto na kom čuvate rezervnu kopiju, rizikujete da izgubite i jedno i drugo u isto vreme!</b></p><p>U svakom slučaju se postarajte da zapamtite šifru za rezervnu kopiju. Da li želite da arhivirate vaš novčanik sad?</p>]]></string>
     <string name="export_keys_dialog_failure">Nije uspelo pravljanje rezervne kopije vašeg novčanika:\n%s</string>
     <string name="export_keys_dialog_button_archive">Arhiva</string>
     <string name="export_keys_dialog_mail_subject">Dash Wallet rezervna kopija</string>
@@ -243,10 +240,7 @@
     <string name="preferences_remind_balance_title">Podsetnik stanja</string>
     <string name="preferences_remind_balance_summary">Posle par nedelja nekorišćenja, aplikacija će izbaciti notifikaciju da li u novčaniku još uvek ima novčića.</string>
     <string name="preferences_report_issue_title">Prijavi problem</string>
-    <string name="preferences_initiate_reset_title">Resetuj block chain</string>
-    <string name="preferences_initiate_reset_summary">Resetuj block chain, transakcije i stanje na novčaniku. Reprodukcija će potrajati tako da radite ovo samo ako znate zašto.</string>
-    <string name="preferences_initiate_reset_dialog_message">Da li želite da resetujete i reprodukujete block chain?\n\nOvo će privremeno sakriti stanje na vašem novčaniku i ukloniti transakcije. Oba će se vratiti kako bude napredovala sinhronizacija block chain-a. Postarajte se da imate stabilnu Internet konekciju.</string>
-    <string name="preferences_initiate_reset_dialog_positive">Resetuj</string>
+    <string name="preferences_initiate_reset_title">Skeniraj opet blockchain</string>
     <string name="preferences_extended_public_key_title">Prikaži xpub</string>
     <string name="preferences_extended_public_key_summary">Prikažite prošireni javni ključ vašeg novčanika kako biste ga uvezli u druge aplikacije i servise. Budite pažljivi: ovim ćete aplikaciji otkriti vašu monetarnu privatnost.</string>
     <string name="bitmap_fragment_share">Podeli...</string>
@@ -291,7 +285,6 @@
     <string name="button_ok">OK</string>
     <string name="button_dismiss">Odbaci</string>
     <string name="button_cancel">Otkaži</string>
-    <string name="button_retry">Pokušaj opet</string>
     <string name="button_help">Pomoć</string>
     <string name="button_add">Dodaj</string>
     <string name="button_delete">Obriši</string>
@@ -300,7 +293,6 @@
     <string name="button_edit">Izmeni</string>
     <string name="button_copy">Kopiraj</string>
     <string name="button_paste">Nalepi</string>
-    <string name="button_share">Podeli</string>
     <string name="button_set_as_default">Postavi kao podrazumevano</string>
     <string name="button_request_coins">Zahtevaj Dash</string>
     <string name="button_send_coins">Pošalji Dash</string>

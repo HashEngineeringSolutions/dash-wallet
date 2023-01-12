@@ -2,9 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="de.schildbach.wallet_test"
-    android:installLocation="internalOnly"
-    android:versionCode="70311"
-    android:versionName="7.3.2">
+    android:installLocation="internalOnly">
 
     <!-- normal permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -12,13 +10,15 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.NFC" />
-    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <!-- dangerous permissions -->
     <uses-permission android:name="android.permission.CAMERA" /> <!-- group: CAMERA -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
 
     <uses-feature
@@ -56,17 +56,27 @@
     <application
         android:name="de.schildbach.wallet.WalletApplication"
         android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:largeHeap="true"
         android:theme="@style/My.Theme"
+        android:taskAffinity=""
         tools:ignore="LockedOrientationActivity">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${GOOGLE_PLAY_API_KEY}" />
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
 
         <activity
             android:name="de.schildbach.wallet.ui.OnboardingActivity"
             android:screenOrientation="portrait"
-            android:taskAffinity=""
-            android:theme="@style/SplashActivity.Theme">
+            android:theme="@style/SplashActivity.Theme"
+            android:exported="true">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -92,18 +102,19 @@
             android:theme="@style/My.Theme.ChildActivity" />
 
         <activity
-            android:name="de.schildbach.wallet.ui.WalletActivity"
+            android:name="de.schildbach.wallet.ui.main.WalletActivity"
             android:configChanges="keyboard|keyboardHidden"
             android:exported="true"
             android:label="@string/app_name_short"
-            android:taskAffinity=""
             android:screenOrientation="portrait"
             android:theme="@style/LockScreenActivity.Child.Theme"
             android:windowSoftInputMode="stateAlwaysHidden" />
 
         <activity-alias
             android:name="de.schildbach.wallet.WalletActivity"
-            android:targetActivity="de.schildbach.wallet.ui.WalletActivity">
+            android:targetActivity="de.schildbach.wallet.ui.main.WalletActivity"
+            android:exported="true">
+
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
 
@@ -115,18 +126,13 @@
         </activity-alias>
 
         <activity
-            android:name="de.schildbach.wallet.ui.send.SendCoinsInternalActivity"
-            android:label="@string/pay_title"
-            android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity" />
-
-        <activity
             android:name="de.schildbach.wallet.ui.send.SendCoinsActivity"
             android:label="@string/pay_title"
             android:screenOrientation="portrait"
-            android:taskAffinity=""
             android:theme="@style/My.Theme.ChildActivity"
-            tools:ignore="LockedOrientationActivity">
+            tools:ignore="LockedOrientationActivity"
+            android:exported="true">
+
             <intent-filter android:label="@string/send_coins_activity_title">
                 <action android:name="android.intent.action.VIEW" />
 
@@ -137,6 +143,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
             </intent-filter>
+
             <intent-filter android:label="@string/send_coins_activity_title">
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
 
@@ -148,23 +155,17 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="de.schildbach.wallet.ui.SendCoinsQrActivity"
+            android:name="de.schildbach.wallet.ui.send.SendCoinsQrActivity"
             android:configChanges="keyboard|keyboardHidden"
             android:screenOrientation="portrait"
-            android:theme="@style/LockScreenActivity.Child.Theme"></activity>
-        <activity
-            android:name="de.schildbach.wallet.ui.RequestCoinsActivity"
-            android:configChanges="keyboard|keyboardHidden"
-            android:label="@string/request_coins_activity_title"
-            android:theme="@style/LockScreenActivity.Child.Theme"
-            android:windowSoftInputMode="adjustResize" />
+            android:theme="@style/LockScreenActivity.Child.Theme"/>
         <activity
             android:name="de.schildbach.wallet.ui.AddressBookActivity"
             android:configChanges="keyboard|keyboardHidden"
             android:label="@string/address_book_activity_title"
             android:theme="@style/LockScreenActivity.Child.Theme" />
         <activity
-            android:name="de.schildbach.wallet.ui.ExchangeRatesActivity"
+            android:name="de.schildbach.wallet.ui.rates.ExchangeRatesActivity"
             android:configChanges="keyboard|keyboardHidden"
             android:label="@string/exchange_rates_activity_title"
             android:theme="@style/LockScreenActivity.Child.Theme" />
@@ -173,10 +174,6 @@
             android:configChanges="keyboard|keyboardHidden"
             android:label="@string/network_monitor_activity_title"
             android:theme="@style/LockScreenActivity.Child.Theme" />
-        <activity
-            android:name="de.schildbach.wallet.ui.backup.BackupWalletActivity"
-            android:configChanges="orientation|keyboard|keyboardHidden"
-            android:theme="@style/My.Theme.Dialog" />
 
         <activity
             android:name="de.schildbach.wallet.ui.preference.PreferenceActivity"
@@ -194,20 +191,18 @@
             android:theme="@style/My.Theme.Fullscreen"
             android:windowSoftInputMode="stateAlwaysHidden" />
         <activity
-            android:name="de.schildbach.wallet.ui.send.SweepWalletActivity"
+            android:name="de.schildbach.wallet.ui.payments.SweepWalletActivity"
             android:configChanges="keyboard|keyboardHidden"
             android:label="@string/sweep_wallet_activity_title"
-            android:launchMode="singleTask"
             android:theme="@style/My.Theme.ChildActivity"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name="de.schildbach.wallet.ui.WalletUriHandlerActivity"
-            android:label="@string/app_name"
             android:noHistory="true"
             android:excludeFromRecents="true"
-            android:taskAffinity=""
-            android:theme="@style/My.Theme.Transparent">
+            android:theme="@style/My.Theme.Transparent"
+            android:exported="true">
 
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -223,10 +218,9 @@
         <activity
             android:name="de.schildbach.wallet.ui.ImportSharedImageActivity"
             android:excludeFromRecents="true"
-            android:label="@string/app_name"
             android:noHistory="true"
-            android:taskAffinity=""
-            android:theme="@style/My.Theme.Transparent">
+            android:theme="@style/My.Theme.Transparent"
+            android:exported="true">
 
             <intent-filter android:label="@string/sweep_wallet_activity_title">
                 <action android:name="android.intent.action.SEND" />
@@ -252,12 +246,7 @@
             android:theme="@style/My.Theme.ChildActivity" />
 
         <activity
-            android:name="de.schildbach.wallet.ui.MoreActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/LockScreenActivity.Child.Theme" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.SecurityActivity"
+            android:name="de.schildbach.wallet.ui.more.SecurityActivity"
             android:screenOrientation="portrait"
             android:theme="@style/LockScreenActivity.Child.Theme" />
 
@@ -268,7 +257,7 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
-            android:name="de.schildbach.wallet.ui.AdvancedSecurityActivity"
+            android:name="de.schildbach.wallet.ui.more.AdvancedSecurityActivity"
             android:screenOrientation="portrait"
             android:theme="@style/LockScreenActivity.Child.Theme" />
 
@@ -278,7 +267,14 @@
             android:theme="@style/LockScreenActivity.Child.Theme" />
 
         <activity
-            android:name="de.schildbach.wallet.ui.AboutActivity"
+            android:name="de.schildbach.wallet.ui.staking.StakingActivity"
+            android:parentActivityName="de.schildbach.wallet.ui.main.WalletActivity"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/LockScreenActivity.Child.Theme" />
+
+        <activity
+            android:name="de.schildbach.wallet.ui.more.AboutActivity"
             android:screenOrientation="portrait"
             android:theme="@style/LockScreenActivity.Child.Theme" />
 
@@ -288,24 +284,14 @@
             android:theme="@style/LockScreenActivity.Child.Theme" />
 
         <activity
-            android:name="de.schildbach.wallet.ui.PaymentsActivity"
+            android:name="de.schildbach.wallet.ui.payments.QuickReceiveActivity"
             android:screenOrientation="portrait"
             android:theme="@style/LockScreenActivity.Child.Theme" />
 
         <activity
-            android:name="de.schildbach.wallet.ui.QuickReceiveActivity"
+            android:name="de.schildbach.wallet.ui.transactions.TransactionResultActivity"
             android:screenOrientation="portrait"
             android:theme="@style/LockScreenActivity.Child.Theme" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.ReceiveActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/LockScreenActivity.Child.Theme" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.TransactionResultActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.Fullscreen" />
 
         <activity
             android:name="de.schildbach.wallet.ui.ForgotPinActivity"
@@ -318,7 +304,7 @@
             android:theme="@style/LockScreenActivity.Theme" />
 
         <activity
-            android:name="de.schildbach.wallet.ui.UpholdTransferActivity"
+            android:name="de.schildbach.wallet.ui.send.UpholdTransferActivity"
             android:screenOrientation="portrait"
             android:theme="@style/My.Theme.ChildActivity" />
 
@@ -327,86 +313,6 @@
             android:screenOrientation="portrait"
             android:theme="@style/LockScreenActivity.Theme" />
 
-
-        <!--///////////////////////////-->
-
-
-        <activity
-            android:name="de.schildbach.wallet.ui.BuyAndSellLiquidUpholdActivity"
-            android:theme="@style/My.Theme.ChildActivity" />
-
-        <activity
-            android:name="org.dash.wallet.integration.liquid.ui.BuyDashWithCreditCardActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity" />
-        <activity
-            android:name="org.dash.wallet.integration.liquid.ui.BuyDashWithCryptoCurrencyActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity" />
-
-        <activity
-            android:name="org.dash.wallet.integration.liquid.ui.SellDashActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity" />
-
-
-        <activity
-            android:name="org.dash.wallet.integration.liquid.ui.WebViewActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity" />
-
-
-        <activity
-            android:name="org.dash.wallet.integration.liquid.ui.LiquidBuyAndSellDashActivity"
-            android:theme="@style/My.Theme.ChildActivity" />
-        <activity
-            android:name="org.dash.wallet.integration.liquid.ui.LiquidSplashActivity"
-            android:launchMode="singleTop"
-            android:theme="@style/My.Theme.ChildActivity"/>
-
-        <activity
-            android:name="org.dash.wallet.integration.liquid.ui.LiquidAuthRedirectActivity"
-            android:taskAffinity=""
-            android:excludeFromRecents="true"
-            android:noHistory="true"
-            android:theme="@style/My.Theme.ChildActivity">
-
-            <intent-filter android:label="@string/liquid">
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="callback"
-                    android:scheme="liquid-oauth" />
-
-
-            </intent-filter>
-
-            <!--    <intent-filter android:autoVerify="true">
-                    <action android:name="android.intent.action.VIEW" />
-
-                    <category android:name="android.intent.category.DEFAULT" />
-                    <category android:name="android.intent.category.BROWSABLE" />
-
-
-
-                </intent-filter>-->
-
-        </activity>
-
-        <!--   <activity
-               android:name="de.schildbach.wallet.ui.LiquidTransferActivity"
-               android:screenOrientation="portrait"
-               android:theme="@style/My.Theme.ChildActivity" />
-
-           <activity
-               android:name="de.schildbach.wallet.ui.LiquidDashToDashTransferActivity"
-               android:screenOrientation="portrait"
-               android:theme="@style/My.Theme.ChildActivity" />-->
-
-        <!--/////////-->
         <provider
             android:name="de.schildbach.wallet.data.AddressBookProvider"
             android:authorities="${applicationId}.address_book"
@@ -421,9 +327,17 @@
                 android:resource="@xml/file_provider" />
         </provider>
 
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            tools:node="remove">
+        </provider>
+
         <receiver
             android:name="de.schildbach.wallet.WalletBalanceWidgetProvider"
-            android:label="@string/appwidget_wallet_balance_title">
+            android:label="@string/appwidget_wallet_balance_title"
+            android:exported="true">
+
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -440,7 +354,10 @@
             android:name="de.schildbach.wallet.offline.AcceptBluetoothService"
             android:exported="false" />
 
-        <receiver android:name="de.schildbach.wallet.service.BootstrapReceiver">
+        <receiver
+            android:name="de.schildbach.wallet.service.BootstrapReceiver"
+            android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
@@ -450,18 +367,39 @@
         </receiver>
 
         <service
-            android:name="de.schildbach.wallet.service.UpgradeWalletService"
-            android:exported="false" />
-        <service
-            android:name="de.schildbach.wallet.service.InactivityNotificationService"
-            android:exported="false" />
-        <service
             android:name="de.schildbach.wallet.service.BlockchainSyncJobService"
             android:permission="android.permission.BIND_JOB_SERVICE" />
+
+        <service
+            android:name="de.schildbach.wallet.ui.notifications.PushMessagingService"
+            android:exported="false">
+
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_dash_d_white" />
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/fcm_notification_channel_id" />
 
         <meta-data
             android:name="android.nfc.disable_beam_default"
             android:value="true" />
-    </application>
 
+        <activity
+            android:name="de.schildbach.wallet.ui.coinbase.CoinbaseActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/LockScreenActivity.Theme" />
+
+        <activity
+            android:name="de.schildbach.wallet.ui.coinbase.CoinBaseWebClientActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/My.Theme.ChildActivity"
+            android:exported="true" />
+    </application>
 </manifest>

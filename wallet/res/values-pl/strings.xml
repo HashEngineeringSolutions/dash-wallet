@@ -2,6 +2,7 @@
 <resources>
 
     <string name="toast_wallet_reset">Portfel został zresetowany,\njego odtworzenie zajmie trochę czasu.</string>
+    <string name="toast_start_storage_provider_selector_failed">Nie masz zainstalowanego odpowiedniego oprogramowania do przechowywania danych w chmurze.\nPotrzujesz \"Nextcoud\" lub \"Google Drive\" </string>
     <string name="wallet_disclaimer_fragment_remind_safety">Używaj na własne ryzyko. Przeczytaj &lt;u&gt;instrukcję bezpieczeństwa&lt;/u&gt;.</string>
     <string name="wallet_disclaimer_fragment_remind_backup">Musisz zrobić kopię zapasową swojego portfela!</string>
     <string name="blockchain_state_progress_hours">%1$s, przestarzały o %2$d godzin</string>
@@ -64,8 +65,6 @@
     <string name="send_coins_fragment_pin_label">Wpisz PIN</string>
     <string name="send_coins_fragment_hint_fee_economic">Opłata sieci %s zostanie pobrana.</string>
     <string name="send_coins_fragment_hint_fee_priority">zostanie pobrana opłata priorytetowa  %s. Jeśli zależy ci na niskich opłatach, używaj \'opłaty priorytetowej\', jedynie gdy potrzebujesz szybkiego potwierdzenia transakcji.</string>
-    <string name="send_coins_fragment_hint_dusty_send">Kwota jest zbyt mała, aby wysłać</string>
-    <string name="send_coins_fragment_hint_insufficient_money">Niewystarczająca ilość funduszy</string>
     <string name="send_coins_fragment_hint_empty_wallet_failed">Ilość małych płatności w twoim portfelu nie dodaje się do wartości możliwej do wysyłki.</string>
     <string name="send_coins_fragment_hint_replaying">Obecnie, płatności nie są możliwe, ponieważ portfel nie jest w pełni zsynchronizowany z siecią. </string>
     <string name="send_coins_fragment_direct_payment_enable">Wyślij płatność bezpośrednio do odbiorcy.</string>
@@ -116,7 +115,6 @@
     <string name="request_coins_fragment_initiate_request_qr">Niech nadawca zeskanuje ten kod QR</string>
     <string name="request_coins_fragment_initiate_request_nfc">Lub zbliż do siebie urządzenia z aktywnym NFC</string>
     <string name="request_coins_clipboard_msg">Prośba o Dash została skopiowana do schowka</string>
-    <string name="request_coins_share_dialog_title">Udostępnij prośbę o Dashy…</string>
     <string name="request_coins_no_local_app_msg">Nie znaleziono innej aplikacji Dash</string>
     <string name="request_coins_options_local_app_title">Żądanie z lokalnej aplikacji</string>
     <string name="address_book_activity_title">Książka adresowa</string>
@@ -205,6 +203,7 @@
     <string name="import_keys_dialog_button_import">Odzyskaj</string>
     <string name="restore_wallet_dialog_success">Portfel został przywrócony.</string>
     <string name="restore_wallet_dialog_success_replay">Twój portfel został przywrócony pomyślnie. Następnie zostanie określone jego saldo. Może to zająć chwilę.</string>
+    <string name="restore_wallet_dialog_success_encrypted">Uwaga! Twój portfel jest zabezpieczony za pomocą kodu PIN. Upewnij się, że  pamiętasz swój PIN zanim wyślesz tam fundusze. </string>
     <string name="import_keys_dialog_failure">Nie udało się zaimportować kluczy prywatnych:\n\n%s\n\nBłędne hasło?</string>
     <string name="backup_wallet_permission_dialog_title">Brak zezwolenia na zapis</string>
     <string name="backup_wallet_permission_dialog_message">Aby móc wykonać kopię bezpieczeństwa, wymagane jest udzielenie pozwolenia na zapis.</string>
@@ -212,7 +211,7 @@
     <string name="backup_wallet_dialog_message">Twoje prywatne klucze zostaną zaszyfrowane wybranym hasłem a następnie zapisane na zewnętrznym nośniku.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Twój portfel jest chroniony przez PIN do wydawania. Miej pewność, że pamiętasz PIN w dodatku hasło zapasowe!</string>
     <string name="export_keys_dialog_button_export">Kopia zapasowa</string>
-    <string name="export_keys_dialog_success">Twoje klucze prywatne zostały eksportowane do\n\n%s\n\nZabezpiecz je wraz z hasłem!\n\nCzy chcesz zabezpieczyć Twoje klucze za pomocą tej aplikacji?</string>
+    <string name="export_keys_dialog_success"><![CDATA[<p>Kopia zapasowa twojego portfela została stworzona i wysłana do <tt>%s</tt></p><p><b> Jeśli to urządzenie jest jedynym miejscem, w którym przechowujesz kopię zapasową, to ryzykujesz, że stracisz oba w tym samym czasie!</b></p><p>W każdym bądź razie upewnij się, że pamiętasz hasło kopii zapasowej portfela. </p>]]></string>
     <string name="export_keys_dialog_failure">Twoje prywatne klucze nie mogły być wyeksportowane:\n%s</string>
     <string name="export_keys_dialog_button_archive">Zrób kopię zapasową</string>
     <string name="export_keys_dialog_mail_subject">Przechowalnia kluczy prywatnych Dash Wallet</string>
@@ -279,10 +278,10 @@
     <string name="preferences_show_disclaimer_title">Pokaż zastrzeżenia</string>
     <string name="preferences_show_disclaimer_summary">Czy naprawdę przeczytałeś notatki dotyczące bezpieczeństwa? Czy dokonałeś juz kopii zapasowej portfela w bezpieczne miejsce?</string>
     <string name="preferences_report_issue_title">Zgłoś problem</string>
-    <string name="preferences_initiate_reset_title">Zresetuj łańcuch bloków</string>
-    <string name="preferences_initiate_reset_summary">Zresetuj łańcuch bloków, transakcji i balans portfela. Może to zająć chwilę, dlatego też używaj tego tylko jeśli jesteś pewien.</string>
-    <string name="preferences_initiate_reset_dialog_message">Czy chciałbyś zresetować i odtworzyć łańcuch bloków?\n\nTo tymczasowo wyzeruje stan twojego portfela i usunie transakcje. Wszystko zostanie przywrócone po synchronizacji łańcucha bloków. Upewnij się, że masz niezawodne połączenie z internetem.</string>
-    <string name="preferences_initiate_reset_dialog_positive">Resetuj</string>
+    <string name="preferences_initiate_reset_title">Przeskanuj blockchain ponownie</string>
+    <string name="preferences_initiate_reset_summary">Ponownie przeskanuj blockchain, transakcje i saldo portfela. Powtórka zajmie trochę czasu, więc rób to tylko wtedy, gdy masz dobry powód.</string>
+    <string name="preferences_initiate_reset_dialog_message">Chcesz ponownie przeskanować łańcuch bloków?\n\nSpowoduje to tymczasowe ukrycie salda portfela i usunięcie transakcji. Oba zostaną odzyskane w miarę postępu synchronizacji łańcucha bloków. Upewnij się, że masz niezawodne połączenie z internetem.</string>
+    <string name="preferences_initiate_reset_dialog_positive">Ponownie zeskanuj</string>
     <string name="preferences_extended_public_key_title">Pokaż xpub</string>
     <string name="preferences_extended_public_key_summary">Sprawdź rozszerzony klucz publiczny twojego portfela, tak aby mógł być zaimportowany do innych aplikacji i usług. Bądź ostrożny: ta operacja ujawni poufne dane twojego portfela.</string>
     <string name="bitmap_fragment_share">Udostępnij…</string>
@@ -301,6 +300,14 @@
     <string name="report_issue_dialog_collect_wallet_dump">Dołącz zrzut portfela</string>
     <string name="report_issue_dialog_mail_intent_chooser">Wyślij zgłoszenie używając…</string>
     <string name="report_issue_dialog_mail_intent_failed">Wysyłanie raportu nie powiodło się.</string>
+    <string name="report_transaction_history_export">Eksportuj</string>
+    <string name="report_transaction_history_title">Eksportuj CSV</string>
+    <string name="report_transaction_history_not_synced_title">Eksportuj CSV</string>
+    <string name="report_transaction_history_not_synced_message">Poczekaj, aż portfel będzie w pełni zsynchronizowany przed eksportem historii transakcji.</string>
+    <string name="report_transaction_history_message">Pełna historia transakcji zostanie wyeksportowana. Płatności będą uważane za koszt, a wszystkie nadchodzące transakcje będą dochodami. Właściciel tego portfela jest odpowiedzialny za dokonywanie wszelkich korekt w wybranym systemie raportowania podatków.</string>
+    <string name="report_transaction_history_mail_intent_chooser">Wyślij historię transakcji za pomocą…</string>
+    <string name="report_transaction_history_dialog_mail_intent_failed">Wysyłanie historii transakcji nie powiodło się.</string>
+
     <string name="about_title">O programie</string>
     <string name="about_version_title">Wersja</string>
     <string name="about_copyright_title">Prawa autorskie</string>
@@ -329,7 +336,6 @@
     <string name="button_ok">OK</string>
     <string name="button_dismiss">Odrzuć</string>
     <string name="button_cancel">Anuluj</string>
-    <string name="button_retry">Ponów</string>
     <string name="button_help">Pomoc</string>
     <string name="button_add">Dodaj</string>
     <string name="button_delete">Usuń</string>
@@ -339,7 +345,6 @@
     <string name="button_copy">Kopiuj</string>
     <string name="button_copy_request">Skopiuj żądanie</string>
     <string name="button_paste">Wklej</string>
-    <string name="button_share">Udostępnij</string>
     <string name="button_set_as_default">Ustaw jako domyślne</string>
     <string name="button_request_coins">Poproś o Dashy</string>
     <string name="button_send_coins">Wyślij Dashe</string>
@@ -378,8 +383,10 @@
     <string name="payment_protocol_insufficient_funds_error_message">Nie posiadasz wystarczających środków aby dokonać tej transakcji</string>
 
 
-
+    <string name="select_a_service_to_buy_and_sell_dash">Wybierz usługe do kupowania i sprzedawania Dash</string>
     <string name="select_a_service">Wybierz usługę</string>
     <string name="activity_buy_and_sell_dash_filter">Filtrowanie</string>
     <string name="clear_filter">Zresetuj Filtrowanie</string>
+    <string name="select_currency">Wybierz Walutę</string>
+    <string name="reason">Powód</string>
 </resources>

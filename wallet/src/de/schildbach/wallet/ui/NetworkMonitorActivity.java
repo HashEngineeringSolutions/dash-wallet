@@ -23,16 +23,19 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentStatePagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
 import de.schildbach.wallet_test.R;
+import kotlinx.coroutines.FlowPreview;
 
 /**
  * @author Andreas Schildbach
  */
+@FlowPreview
 public final class NetworkMonitorActivity extends AbstractBindServiceActivity {
 
     private PeerListFragment peerListFragment;
@@ -46,6 +49,9 @@ public final class NetworkMonitorActivity extends AbstractBindServiceActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.network_monitor_content);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar.setTitle(getString(R.string.network_monitor_activity_title));
+        toolbar.setNavigationOnClickListener(v -> finish());
 
         pager = findViewById(R.id.network_monitor_pager);
         final FragmentManager fm = getSupportFragmentManager();
@@ -63,7 +69,7 @@ public final class NetworkMonitorActivity extends AbstractBindServiceActivity {
 
             pager.setAdapter(pagerAdapter);
             pager.setPageMargin(2);
-            pager.setPageMarginDrawable(R.color.bg_less_bright);
+            pager.setPageMarginDrawable(R.color.background_primary);
             pager.addOnPageChangeListener(onPageChangeListener);
 
             peerListFragment = new PeerListFragment();

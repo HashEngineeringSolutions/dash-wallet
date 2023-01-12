@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Generic titles/messages -->
+    <string name="loading">Завантаження...</string>
+    <string name="loading_error">Виникла помилка. Спробуйте ще раз пізніше.</string>
+    <string name="please_wait_title">Будь ласка, зачекайте</string>
+    <string name="dash_available">%1$s доступно</string>
+    <string name="network_unavailable_title">Мережа Недоступна</string>
+    <string name="network_unavailable_check_connection">Будь ласка, перевірте підключення до мережі</string>
+    <string name="network_unavailable_balance_not_accurate">Баланс може відображатись некоректно через втрату зв\'язку</string>
+    <string name="buy_dash">Купити Dash</string>
+    <string name="copied">Скопійовано</string>
+    <string name="staking_title">Стейкінг</string>
+    <string name="email">Електронна адреса</string>
+    <string name="email_placeholder">e.g. johndoe@mail.com</string>
+    <string name="error">Помилка</string>
+    <string name="select_a_coin">Виберіть монету</string>
+    <string name="request_coins_share_dialog_title">Поділитись запитом Dash-монет…</string>
+    <string name="transfer_dash">Переказати Dash</string>
+    <string name="balance">Баланс:</string>
+
+    <!-- Local Currency List: GGP -->
+    <string name="currency_GGP">Гернсійський фунт</string>
+    <!-- Local Currency List: JEP -->
+    <string name="currency_JEP">Джерсійський фунт</string>
+    <!-- Local Currency List: IMP -->
+    <string name="currency_IMP">Фунт острова Мен</string>
+    <!-- Local Currency List: USDC is a stablecoin that is pegged to the United States dollar -->
+    <string name="currency_USDC">USD Coin</string>
+    <!-- Local Currency List: Litecoin cryptocurrency -->
+    <string name="currency_LTC">Litecoin</string>
+    <!-- Local Currency List: Ethereum cryptocurrency -->
+    <string name="currency_ETH">Ethereum</string>
+    <!-- Local Currency List: Bitcoin cryptocurrency -->
+    <string name="currency_BTC">Bitcoin</string>
+    <!-- Local Currency List: PAX is a stablecoin that is pegged to the United States dollar -->
+    <string name="currency_PAX">Paxos Standard</string>
+    <!-- Local Currency List: GUSD is a stablecoin that is pegged to the United States dollar -->
+    <string name="currency_GUSD">Gemini Dollar</string>
+
+    <!-- Generic buttons -->
+    <string name="button_dismiss">Відхилити</string>
+    <string name="network_unavailable_return">Повернутися до гаманця</string>
+    <string name="button_continue">Продовжити</string>
+    <string name="get_quote">Отримати пропозицію</string>
+    <string name="button_close">Закрити</string>
+    <string name="button_retry">Повторити</string>
+    <string name="button_send_report">Надіслати Звіт</string>
+    <string name="button_info">інформація</string>
+    <string name="button_copy_address">Скопіювати адресу</string>
+    <string name="button_understand">Я розумію</string>
+    <string name="button_okay">Згода</string>
+    <string name="button_share">Поділитися</string>
+    <string name="verify">Підтвердити</string>
+    <string name="receive_enter_amount_button">Вкажіть суму</string>
+
+    <!-- Design system UI elements -->
+    <string name="search_hint">Пошук</string>
+    <string name="permission_allow">Дозволити</string>
+    <string name="permission_deny">Відмовитись</string>
+    <string name="pay_with">Платіть з</string>
+    <string name="choose_payment_method">Виберіть спосіб оплати</string>
+    <string name="debit_credit_card">Дебетова/кредитна картка</string>
+    <string name="max">Максимум</string>
+    <string name="select_the_coin">Виберіть монету</string>
+    <string name="dash">Dash</string>
+    <string name="dash_wallet_name">Dash Wallet</string>
+    <string name="from">з</string>
+    <string name="to">до</string>
+    <string name="select_currency">Вибрати Валюту</string>
+    <string name="send_coins_error_dusty_send">Сума надто мала для відправки</string>
+    <string name="send_coins_error_insufficient_money">Недостатньо коштів</string>
+
+    <string name="empty_wallet_warning_title">Схоже ви спустошуєте свій гаманець</string>
+    <string name="empty_wallet_crowdnode_warning">Пам\'ятайте, що ви не зможете вивести кошти з CrowdNode на цей гаманець, доки на балансі не буде хоча б 0.0003 Dash.</string>
+    <string name="syncing">Синхронізація</string>
+</resources>

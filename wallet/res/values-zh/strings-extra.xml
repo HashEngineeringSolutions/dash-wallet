@@ -7,6 +7,7 @@
     <string name="onboarding_load_wallet_error">无法加载钱包!</string>
 
     <string name="set_pin_create_new_wallet">创建一个新钱包</string>
+    <string name="set_pin_upgrade_wallet">升级钱包</string>
     <string name="set_pin_restore_wallet">还原钱包</string>
     <string name="set_pin_enter_pin">输入旧PIN</string>
     <string name="set_pin_set_pin">设置PIN</string>
@@ -15,6 +16,7 @@
     <string name="set_pin_decrypting">正在解密钱包</string>
     <string name="set_pin_verifying_pin">验证PIN</string>
     <string name="set_pin_message">每次使用时都需要输入PIN以解锁您的app.</string>
+    <string name="set_pin_confirm_pin_incorrect">PIN码错误</string>
 
     <string name="home_available_balance">可用余额</string>
     <string name="home_balance_hidden">余额已隐藏</string>
@@ -61,12 +63,10 @@
     <string name="scan_to_pay_error_dialog_title">扫描发送</string>
     <string name="scan_to_pay_error_dialog_message">剪切板没有包含有效的Dash地址或链接:\n\n%s</string>
     <string name="scan_to_pay_error_dialog_message_no_data">剪切板没有包含有效的Dash地址或链接</string>
+    <string name="pay_to_confirm_address">这是您想要发送付款的Dash地址吗?</string>
 
     <string name="receive_title">接收</string>
     <string name="receive_enter_amount_message">指定收款数额</string>
-    <string name="receive_enter_amount_button">指定数额</string>
-    <string name="receive_share_button">分享</string>
-    <string name="receive_copied">已复制</string>
 
     <string name="pay_title">发送</string>
     <string name="history_title">历史</string>
@@ -116,7 +116,6 @@
     <string name="import_export_keys_dialog_password_phrase">这里是您的助记词.</string>
     <string name="preferences_report_issue_summary">请描述您所遇到的问题并通过邮箱给开发者发送报告.</string>
     <string name="navigation_configuration">恭喜</string>
-    <string name="button_copy_address">复制地址</string>
     <string name="request_coins_clipboard_address_msg">Dash地址已复制</string>
     <string name="backup_wallet_to_seed_show_recovery_phrase">显示</string>
     <string name="restore_wallet_from_invalid_seed_warning_message">\"%s\" 不是一个助记词</string>
@@ -145,6 +144,8 @@
     <string name="wallet_lock_try_again">请在 %1$d %2$s 后再试</string>
     <string name="wallet_lock_reset">重置</string>
     <string name="wallet_lock_wrong_pin">PIN码错误! %s</string>
+    <string name="wallet_last_attempt">最后一次PIN尝试</string>
+    <string name="wallet_last_attempt_message">再次失败的话将需要助记词来恢复钱包</string>
 
     <plurals name="wallet_lock_attempts_remaining">
         <item quantity="other">剩余尝试次数 %d </item>
@@ -176,6 +177,13 @@
     <string name="notification_transactions_channel_description">接收关于新转入交易的提醒.</string>
     <string name="notification_synchronization_channel_name">同步</string>
     <string name="notification_synchronization_channel_description">当app正在同步网络时显示通知.</string>
+    <string name="notification_generic_channel_name">一般通知</string>
+    <string name="notification_generic_channel_description"> 其他Dash钱包活动</string>
+    <string name="notification_push_channel_name">推送通知</string>
+    <string name="notification_push_channel_description">显示由Dash发送给您的推送通知</string>
+    <string name="notification_settings_title">通知</string>
+    <string name="notification_explainer_title">Dash钱包想向您发送通知</string>
+    <string name="notification_explainer_message">通知可能包括警报, 声音和图标标记. 这些可以在手机设置中进行配置.</string>
 
     <string name="net_type_indicator" />
 
@@ -194,7 +202,6 @@
     <string name="preferences_enable_payment_request_title">BIP70支持扫即付</string>
 
     <string name="verify_continue">继续</string>
-    <string name="verify">验证</string>
     <string name="verify_backup_wallet">备份钱包</string>
     <string name="verify_show_recovery_phrase">显示助记词</string>
     <string name="verify_secure_now">立刻保护钱包</string>
@@ -211,9 +218,24 @@
     <string name="verify_seed_buttons_tip">请以正确顺序输入您的助记词</string>
     <string name="verify_seed_success_title">验证成功</string>
     <string name="verify_seed_success_message">您的钱包现已安全. 您可以随时在其他设备通过您的助记词找回您的账户.</string>
+    <string name="verify_no_screenshot_title">请勿截屏</string>
+    <string name="verify_no_screenshot_message">相反, 将助记词写在安全的地方.</string>
+    <string name="verify_why_no_screenshot">为什么我不应该截屏?</string>
+    <string name="verify_warning_title">警告</string>
+    <string name="verify_warning_message">通过此助记词可获得您钱包的使用权.</string>
+    <string name="verify_warning_screenshots_title">请千万不要截屏</string>
+    <string name="verify_warning_screenshots_message">其他应用和设备可读取截屏.</string>
+    <string name="verify_warning_do_not_show">请千万不要让他人看到您的助记词.</string>
+    <string name="verify_warning_do_not_type">永远不要将助记词输入密码管理器或其它地方.</string>
     <string name="view_seed_done">完成</string>
     <string name="view_seed_title">助记词</string>
     <string name="transaction_result_view_on_explorer">在区块浏览器中查看</string>
+    <string name="transaction_result_tax_category">税务种类</string>
+    <string name="transaction_result_tax_category_loading">加载中...</string>
+    <string name="tax_category_income">收入</string>
+    <string name="tax_category_expense">支出</string>
+    <string name="tax_category_transfer_in">转入</string>
+    <string name="tax_category_transfer_out">转出</string>
     <string name="transaction_result_paid_successfully">发送成功</string>
     <string name="transaction_result_sent_to">发送至</string>
     <string name="transaction_date_and_time">日期</string>
@@ -225,6 +247,7 @@
     <string name="transaction_details_received_at">接收于</string>
     <string name="transaction_details_moved_from">移动于</string>
     <string name="transaction_details_moved_internally_to">内部移动至</string>
+    <string name="transaction_failed_details">交易失败</string>
 
     <string name="authenticate_fingerprint_title">验证</string>
     <string name="authenticate_fingerprint_message">确认指纹以继续</string>
@@ -234,6 +257,8 @@
 
     <string name="menu_buy_and_sell_title">买 &amp; 卖 Dash</string>
     <string name="menu_buy_and_sell_subtitle">与第三方交易所连接</string>
+    <string name="liquid_unavailable">Liquid 与 Dash钱包的整合功能已经不能再使用</string>
+    <string name="liquid_unavailable_details">如果您对您再 Liquid的 Dash持仓有任何问题, 请联系 Liquid客服中心</string>
     <string name="menu_security_title">安全</string>
     <string name="menu_security_subtitle">查看密码, 备份钱包...</string>
     <string name="menu_settings_title">设置</string>
@@ -244,18 +269,29 @@
     <string name="menu_rescan_blockchain">重新扫描区块链</string>
     <string name="menu_contact_support_title">联系支持</string>
     <string name="menu_contact_support_subtitle">报告问题</string>
+    <string name="menu_explore_title">探索</string>
+    <string name="menu_explore_subtitle">在超过155,000家商户使用Dash购物</string>
 
     <string name="tools_address_book">地址簿</string>
     <string name="tools_import_private_key">导入私钥</string>
     <string name="tools_network_monitor">网络监视器</string>
+    <string name="tools_show_xpub">扩展的公钥</string>
 
     <string name="about_help_us_improve">帮助我们改善您的体验</string>
-    <string name="about_review_and_rate">对app进行评论 &amp; 评分</string>
+    <string name="about_review_and_rate">对app评价并评分</string>
     <string name="about_contact_support">联系支持</string>
     <string name="about_fork_disclaimer">这是从比特币钱包分叉而来的开源应用程序</string>
-    <string name="about_copyright">版权 © 2020 Dash Core</string>
+    <string name="about_copyright">版权所有 © 2022 Dash Core</string>
     <string name="about_license">GNU 公共通用许可 v3.0</string>
     <string name="about_version_name">Dash钱包 %s</string>
+    <string name="about_last_explore_device_sync">最后一次探索设备同步</string>
+    <string name="about_last_explore_server_update">最后一次探索服务器更新</string>
+    <string name="about_firebase_installation_id">Firebase安装 ID</string>
+    <string name="about_fcm_token">Firebase云信息代币</string>
+    <string name="about_last_explore_dash_update_error">无法获取</string>
+    <string name="about_last_explore_dash_sync_never">从不</string>
+    <string name="about_explore_failed_sync">同步失败 %s</string>
+    <string name="about_explore_preloaded_on">预加载 %s</string>
 
     <string name="block">区块</string>
     <string name="time">时间</string>
@@ -301,7 +337,6 @@
     <string name="welcome_screen_subtitle_3">完全控制并根据需求定制您的钱包</string>
 
     <string name="sync_status_wait">请等待同步完成</string>
-    <string name="sync_status_syncing_title">正在同步 %1$d</string>
     <string name="sync_status_syncing_sub_title">以Dash区块链</string>
     <string name="sync_status_unable_to_connect">无法连接</string>
     <string name="sync_status_check_connection">检查您的连接</string>
@@ -310,7 +345,6 @@
 
     <string name="appwidget_wallet_not_ready">请设置您的钱包</string>
 
-    <string name="payment_request_please_wait_title">请稍等</string>
     <string name="payment_request_please_wait_message">正在连接支付服务器</string>
     <string name="payment_request_unable_to_connect">无法连接</string>
     <string name="payment_request_unable_to_send">无法发送</string>
@@ -329,10 +363,38 @@
     <string name="import_image_import_valid_private_key">复制一个有效的私钥并将其中的Dash导入</string>
     <string name="import_image_invalid_private">无效的私钥</string>
 
+    <string name="today">今天</string>
+    <string name="yesterday">昨天</string>
+
     <string name="syncing">正在同步</string>
     <string name="syncing_balance">正在同步余额</string>
-
+    <string name="transaction_count">%d交易</string>
     <string name="all_transactions">所有</string>
     <string name="received_transactions">已接收</string>
     <string name="sent_transactions">已发送</string>
+    <string name="set_pin_error_missing_wallet_title">缺少钱包错误</string>
+    <string name="set_pin_error_missing_wallet_message">钱包丢失. 请将此报告提交给服务与支持平台.</string>
+    <string name="wallet_encryption_error_title">钱包创建错误</string>
+    <string name="wallet_encryption_error_message">创建钱包时出现问题. 请将此报告提交给帮助与支持平台.</string>
+    <string name="wallet_not_encrypted_error_message">您的钱包有问题.\n\n如果您钱包中没有Dash, 请卸载并重新安装此应用. 然后创建一个新钱包.\n\n如果您有助记词或备份文件, 那么请卸载此应用后重新安装.\n\n否则, 请向支持与服务平台报告.</string>
+
+    <string name="reset_wallet_title">您确定想要重置钱包吗?</string>
+    <string name="reset_wallet_message">如果您重置了钱包, 唯一能够再访问它的方法就是通过助记词来找回钱包.</string>
+    <string name="positive_reset_text">是的, 重置钱包</string>
+    <string name="launch_reset_wallet_title">您尚有余额</string>
+    <string name="launch_reset_wallet_message">如果您重置了钱包, 并且没有备份您的助记词, 那么您将丢失您全部资金.</string>
+    <string name="continue_reset">继续</string>
+    <string name="launch_reset_wallet_extra_message">备份助记词</string>
+    <string name="start_reset_wallet_title">您或许将丢失%s</string>
+    <string name="reset_wallet_text">重置钱包</string>
+    <string name="reclassify_transactions_title">重新分类您的交易</string>
+    <string name="reclassify_transactions_title_message">这些分类将反映在可用于导入税务报告服务的 CSV文件中.</string>
+    <string name="reclassify_transactions_question">我在哪离可以更改税务种类?</string>
+    <string name="reclassify_transactions_outgoing_title">发出的交易</string>
+    <string name="reclassify_transactions_by_default_message">在默认下将被标记为</string>
+    <string name="reclassify_transactions_incoming_title">接收的交易</string>
+    <string name="reclassify_transactions_change_it_message">您可以将其改为</string>
+    <string name="reclassify_transactions_linked_accounts_title">关联账户</string>
+    <string name="reclassify_transactions_linked_accounts_message">在默认下, 所有进出您关联账户的交易 (交易所, 质押等) 都将被标记为转账.</string>
+    <string name="reclassify_transactions_change_explanation">从主页选择任何交易并在交易详情页面更改类别.</string>
 </resources>

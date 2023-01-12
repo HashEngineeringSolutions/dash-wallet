@@ -17,45 +17,41 @@
 package de.schildbach.wallet.ui
 
 import android.app.Dialog
-import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
-import de.schildbach.wallet.WalletApplication
+import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.viewModels
+import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet.livedata.Status
 import de.schildbach.wallet.ui.widget.PinPreviewView
 import de.schildbach.wallet_test.R
 import kotlinx.android.synthetic.main.fragment_enter_pin.*
 
-open class SetupPinDuringUpgradeDialog : CheckPinDialog() {
+@AndroidEntryPoint
+open class SetupPinDuringUpgradeDialog(
+    private var onResult: ((Boolean?, String?) -> Unit)?
+) : CheckPinDialog() {
 
     companion object {
         @JvmStatic
-        fun show(activity: AppCompatActivity, requestCode: Int = 0) {
-            val checkPinDialogExt = SetupPinDuringUpgradeDialog()
-            val args = Bundle()
-            args.putInt(ARG_REQUEST_CODE, requestCode)
-            args.putBoolean(ARG_PIN_ONLY, true)
-            checkPinDialogExt.arguments = args
+        fun show(activity: AppCompatActivity, onResult: (Boolean?, String?) -> Unit) {
+            val checkPinDialogExt = SetupPinDuringUpgradeDialog(onResult)
             checkPinDialogExt.show(activity.supportFragmentManager, FRAGMENT_TAG)
         }
     }
 
-    private val negativeButton: Button by lazy { view!!.findViewById<Button>(R.id.negative_button) }
-    private val positiveButton: Button by lazy { view!!.findViewById<Button>(R.id.positive_button) }
+    private val negativeButton: Button by lazy { requireView().findViewById(R.id.negative_button) }
+    private val positiveButton: Button by lazy { requireView().findViewById(R.id.positive_button) }
 
-    private lateinit var setPinViewModel: SetPinViewModel
-
-    private val walletNotEncrypted = !WalletApplication.getInstance().wallet.isEncrypted
+    private val setPinViewModel by viewModels<SetPinViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (walletNotEncrypted) {
-            pinLength = PinPreviewView.DEFAULT_PIN_LENGTH
+        if (!setPinViewModel.isWalletEncrypted) {
+            viewModel.pinLength = PinPreviewView.DEFAULT_PIN_LENGTH
         }
     }
 
@@ -71,7 +67,7 @@ open class SetupPinDuringUpgradeDialog : CheckPinDialog() {
         isCancelable = false
         positiveButton.visibility = View.GONE
 
-        if (walletNotEncrypted) {
+        if (!setPinViewModel.isWalletEncrypted) {
             title.setText(R.string.forgot_pin_instruction_2)
             message.setText(R.string.lock_enter_pin)
             negativeButton.setText(R.string.button_cancel)
@@ -84,20 +80,19 @@ open class SetupPinDuringUpgradeDialog : CheckPinDialog() {
                 }
             }
         }
-        setPinViewModel = ViewModelProviders.of(this).get(SetPinViewModel::class.java)
-        setPinViewModel.encryptWalletLiveData.observe(viewLifecycleOwner, Observer {
+        setPinViewModel.encryptWalletLiveData.observe(viewLifecycleOwner) {
             when (it.status) {
                 Status.SUCCESS -> {
-                    sharedModel.onWalletEncryptedCallback.value = viewModel.pin.toString()
+                    onResult?.invoke(true, viewModel.pin.toString())
                 }
                 Status.ERROR -> {
-                    sharedModel.onWalletEncryptedCallback.value = null
+                    onResult?.invoke(false, null)
                 }
                 Status.LOADING -> {
                     setState(State.DECRYPTING)
                 }
             }
-        })
+        }
     }
 
     override fun onStart() {
@@ -115,7 +110,7 @@ open class SetupPinDuringUpgradeDialog : CheckPinDialog() {
         setPinViewModel.savePinAndEncrypt(pin, false)
     }
 
-    override fun showLockedAlert(context: Context) {
-        sharedModel.onCancelCallback.call()
+    override fun showLockedAlert(activity: FragmentActivity, lockedTimeMessage: String) {
+        onResult?.invoke(null, null)
     }
 }

@@ -15,17 +15,16 @@
  */
 package org.dash.wallet.common.data;
 
-import android.annotation.TargetApi;
 import android.content.Context;
-import android.os.Build;
 
 import org.dash.wallet.common.R;
 
 import java.util.Currency;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
-    @author: Eric Britten
+    @author Eric Britten
  */
 
 public class CurrencyInfo {
@@ -41,14 +40,14 @@ public class CurrencyInfo {
         in the exchange rates list, but must get the name of BYR
         from the device.
      */
-    private static HashMap<String, String> obsoleteCurrencyMap;
+    private static final HashMap<String, String> obsoleteCurrencyMap;
 
     /*
         These currencies are listed in the price data, but are not
         ISO 4217 currency codes.  This will map those codes to the
         currency names.
      */
-    private static HashMap<String, Integer> otherCurrencyMap;
+    private static final HashMap<String, Integer> otherCurrencyMap;
 
     /*
         These currencies are listed in the price data and have the
@@ -58,7 +57,7 @@ public class CurrencyInfo {
 
         e.g CNH vs CNY (ISO 4217)
      */
-    private static HashMap<String, String> useOtherNameMap;
+    private static final HashMap<String, String> useOtherNameMap;
 
 
     static {
@@ -125,13 +124,20 @@ public class CurrencyInfo {
         return currencyName;
     }
 
-    @TargetApi(Build.VERSION_CODES.KITKAT)
-    public static String getCurrencyNameFromCode(String code) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            Currency oldCurrency = Currency.getInstance(code.toUpperCase());
-            return oldCurrency.getDisplayName();
-        } else {
-            return "";
+    // convert a locale currency code to that which is used by the app
+    public static String getOtherName(String currencyCode) {
+        if (currencyCode != null) {
+            for (Map.Entry<String, String> entry : useOtherNameMap.entrySet()) {
+                if (currencyCode.equals(entry.getValue())) {
+                    return entry.getKey();
+                }
+            }
         }
+        return currencyCode;
+    }
+
+    public static String getCurrencyNameFromCode(String code) {
+        Currency oldCurrency = Currency.getInstance(code.toUpperCase());
+        return oldCurrency.getDisplayName();
     }
 }

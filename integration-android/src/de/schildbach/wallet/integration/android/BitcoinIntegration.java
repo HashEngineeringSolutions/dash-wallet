@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2012-2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -264,7 +264,7 @@ public final class BitcoinIntegration {
         final Intent marketIntent = new Intent(Intent.ACTION_VIEW,
                 Uri.parse("market://details?id=hashengineering.darkcoin.wallet"));
         final Intent binaryIntent = new Intent(Intent.ACTION_VIEW,
-                Uri.parse("https://github.com/HashEngineering/dash-wallet/releases"));
+                Uri.parse("https://github.com/dashevo/dash-wallet/releases"));
 
         final PackageManager pm = context.getPackageManager();
         if (pm.resolveActivity(marketIntent, 0) != null)

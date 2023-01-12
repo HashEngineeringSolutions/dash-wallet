@@ -20,40 +20,40 @@ package de.schildbach.wallet.util;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Writer;
 import java.text.DateFormat;
 import java.text.ParseException;
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.TimeZone;
 
 import javax.annotation.Nullable;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.CoinDefinition;
+import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.DumpedPrivateKey;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.script.ScriptException;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.TransactionInput;
-import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.script.Script;
+import org.bitcoinj.utils.MonetaryFormat;
 import org.bitcoinj.wallet.DeterministicKeyChain;
 import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bitcoinj.wallet.UnreadableWalletException;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.WalletProtobufSerializer;
+import org.dash.wallet.common.transactions.TransactionUtils;
 
 import com.google.common.base.Charsets;
 
@@ -61,6 +61,7 @@ import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet_test.R;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -68,7 +69,7 @@ import android.text.Editable;
 import android.text.SpannableStringBuilder;
 import android.text.format.DateUtils;
 
-import static org.dash.wallet.common.Constants.CHAR_THIN_SPACE;
+import static org.dash.wallet.common.util.Constants.CHAR_THIN_SPACE;
 
 /**
  * @author Andreas Schildbach
@@ -113,91 +114,6 @@ public class WalletUtils {
         }
 
         return builder;
-    }
-
-    @Nullable
-    public static Address getWalletAddressOfReceived(final Transaction tx, final Wallet wallet) {
-        for (final TransactionOutput output : tx.getOutputs()) {
-            try {
-                if (output.isMine(wallet)) {
-                    final Script script = output.getScriptPubKey();
-                    return script.getToAddress(Constants.NETWORK_PARAMETERS, true);
-                }
-            } catch (final ScriptException x) {
-                // swallow
-            }
-        }
-
-        return null;
-    }
-
-    public static List<Address> getFromAddressOfSent(final Transaction tx, final Wallet wallet) {
-        List<Address> result = new ArrayList<>();
-
-        for (final TransactionInput input : tx.getInputs()) {
-            try {
-                Transaction connectedTransaction = input.getConnectedTransaction();
-                if (connectedTransaction != null) {
-                    TransactionOutput output = connectedTransaction.getOutput(input.getOutpoint().getIndex());
-                    final Script script = output.getScriptPubKey();
-                    result.add(script.getToAddress(Constants.NETWORK_PARAMETERS, true));
-                }
-            } catch (final ScriptException x) {
-                // swallow
-            }
-        }
-
-        return result;
-    }
-
-    public static List<Address> getToAddressOfReceived(final Transaction tx, final  Wallet wallet) {
-        List<Address> result = new ArrayList<>();
-
-        for (TransactionOutput output : tx.getOutputs()) {
-            try {
-                if (output.isMine(wallet)) {
-                    final Script script = output.getScriptPubKey();
-                    result.add(script.getToAddress(Constants.NETWORK_PARAMETERS, true));
-                }
-            } catch (final ScriptException x) {
-                // swallow
-            }
-        }
-
-        return result;
-    }
-
-    public static List<Address> getToAddressOfSent(final Transaction tx, final Wallet wallet) {
-        List<Address> result = new ArrayList<>();
-
-        for (TransactionOutput output : tx.getOutputs()) {
-            try {
-                if (!output.isMine(wallet)) {
-                    final Script script = output.getScriptPubKey();
-                    result.add(script.getToAddress(Constants.NETWORK_PARAMETERS, true));
-                }
-            } catch (final ScriptException x) {
-                // swallow
-            }
-        }
-
-        return result;
-    }
-
-
-    public static boolean isEntirelySelf(final Transaction tx, final Wallet wallet) {
-        for (final TransactionInput input : tx.getInputs()) {
-            final TransactionOutput connectedOutput = input.getConnectedOutput();
-            if (connectedOutput == null || !connectedOutput.isMine(wallet))
-                return false;
-        }
-
-        for (final TransactionOutput output : tx.getOutputs()) {
-            if (!output.isMine(wallet))
-                return false;
-        }
-
-        return true;
     }
 
     public static Wallet restoreWalletFromProtobufOrBase58(final InputStream is,
@@ -275,7 +191,7 @@ public class WalletUtils {
     public static void writeKeys(final Writer out, final List<ECKey> keys) throws IOException {
         final DateFormat format = Iso8601Format.newDateTimeFormatT();
 
-        out.write("# KEEP YOUR PRIVATE KEYS SAFE! Anyone who can read this can spend your "+ CoinDefinition.coinName+"s.\n");
+        out.write("# KEEP YOUR PRIVATE KEYS SAFE! Anyone who can read this can spend your Dash.\n");
 
         for (final ECKey key : keys) {
             out.write(key.getPrivateKeyEncoded(Constants.NETWORK_PARAMETERS).toString());
@@ -426,5 +342,90 @@ public class WalletUtils {
         if ("com.android.providers.downloads.documents".equals(host))
             return "internal storage";
         return null;
+    }
+
+    public static Date getTransactionDate(Transaction tx) {
+        Date date = tx.getUpdateTime();
+        if (tx.getConfidence() != null) {
+            Date sentAtTime = tx.getConfidence().getSentAt();
+            if (sentAtTime != null && sentAtTime.compareTo(date) < 0)
+                date = sentAtTime;
+        }
+        return date;
+    }
+
+    // This creates the TaxBit CSV format
+    public static String getTransactionHistory(Wallet wallet) {
+        Set<Transaction> txSet = wallet.getTransactions(false);
+        List<Transaction> txList = Arrays.asList(txSet.toArray(new Transaction[0]));
+
+        Collections.sort(txList, (o1, o2) -> {
+            Date tx1 = getTransactionDate(o1);
+            Date tx2 = getTransactionDate(o2);
+            return tx1.compareTo(tx2);
+        });
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Date and Time,Transaction Type,Sent Quantity,Sent Currency,Sending Source,Received Quantity,Received Currency,Receiving Destination,Fee,Fee Currency,Exchange Transaction ID,Blockchain Transaction Hash").append("\n");
+        @SuppressLint("SimpleDateFormat")
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        format.setTimeZone(tz);
+        for (Transaction tx : txList) {
+            if (TransactionUtils.INSTANCE.isEntirelySelf(tx, wallet))
+                continue;
+            Coin value = tx.getValue(wallet);
+
+            // Date and Time
+            Date time = getTransactionDate(tx);
+            stringBuilder.append(format.format(time)).append(",");
+            // Transaction Type
+            stringBuilder.append(value.isNegative() ? "Expense" : "Income").append(",");
+            // Sent Quantity / Blank for incoming transactions
+            if (value.isNegative()) {
+                stringBuilder.append(MonetaryFormat.BTC.noCode().format(value.negate()));
+            }
+            stringBuilder.append(",");
+            // Sent Currency / Blank for incoming transactions
+            if (value.isNegative()) {
+                stringBuilder.append(MonetaryFormat.BTC.code());
+            }
+            stringBuilder.append(",");
+            // Sending Source / Blank for incoming transactions
+            if (value.isNegative()) {
+                stringBuilder.append("DASH Wallet");
+            }
+            stringBuilder.append(",");
+            // Received Quantity / Blank for outgoing transactions
+            if (value.isPositive()) {
+                stringBuilder.append(MonetaryFormat.BTC.noCode().format(value));
+            }
+            stringBuilder.append(",");
+            // Received Currency / Blank for outgoing transactions
+            if (value.isPositive()) {
+                stringBuilder.append(MonetaryFormat.BTC.code());
+            }
+            stringBuilder.append(",");
+            // Receiving Destination / Blank for outgoing transactions
+            if (value.isPositive()) {
+                stringBuilder.append("DASH Wallet");
+            }
+            stringBuilder.append(",");
+
+            // Fee: always blank
+            stringBuilder.append(",");
+
+            // Fee Currency: always blank
+            stringBuilder.append(",");
+
+            // Exchange Transaction ID: Always blank
+            stringBuilder.append(",");
+
+            // Blockchain Transaction Hash
+            stringBuilder.append(tx.getTxId());
+
+            stringBuilder.append("\n");
+        }
+        return stringBuilder.toString();
     }
 }

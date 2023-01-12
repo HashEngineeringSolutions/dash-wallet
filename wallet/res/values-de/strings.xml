@@ -2,6 +2,7 @@
 <resources>
 
     <string name="toast_wallet_reset">Deine Wallet wurde zurückgesetzt,\ndies wird einige Zeit in Anspruch nehmen.</string>
+    <string name="toast_start_storage_provider_selector_failed">Es ist kein entsprechender Cloud-Speicheranbieter installiert.\nDu brauchst etwas wie \"Nextcloud\" oder \"Google Drive\".</string>
     <string name="wallet_disclaimer_fragment_remind_safety">Nutzung auf eigene Gefahr. Lies bitte die &lt;u&gt;Sicherheitshinweise&lt;/u&gt;.</string>
     <string name="wallet_disclaimer_fragment_remind_backup">Ein Backup muss erstellt werden!</string>
     <string name="blockchain_state_progress_hours">%1$s, hinkt %2$d Stunden hinterher</string>
@@ -65,8 +66,6 @@
     <string name="send_coins_fragment_pin_label">PIN eingeben</string>
     <string name="send_coins_fragment_hint_fee_economic">Eine Netzwerk-Gebühr von %szahlen.</string>
     <string name="send_coins_fragment_hint_fee_priority">Eine Vorzugs-Gebühr von %s zahlen. Wenn Dir eine geringe Gebühr wichtig ist, verwende diese Einstellung nur, wenn Du sehr schnell eine Bestätigung brauchst.</string>
-    <string name="send_coins_fragment_hint_dusty_send">Der Betrag ist zu klein zum Senden</string>
-    <string name="send_coins_fragment_hint_insufficient_money">Guthaben nicht ausreichend</string>
     <string name="send_coins_fragment_hint_empty_wallet_failed">Die Summe an winzigen Zahlungen in Deiner Wallet ist zu klein, um verschickt zu werden.</string>
     <string name="send_coins_fragment_hint_replaying">Da die Wallet momentan nicht mit dem Netzwerk synchronisiert ist, kann keine Zahlung durchgeführt werden.</string>
     <string name="send_coins_fragment_direct_payment_enable">Zahlung direkt an den Empfänger senden.</string>
@@ -117,7 +116,6 @@
     <string name="request_coins_fragment_initiate_request_qr">Laß diesen Code vom Sender scannen.</string>
     <string name="request_coins_fragment_initiate_request_nfc">Oder berühr\'s mit einem NFC-fähigen Gerät.</string>
     <string name="request_coins_clipboard_msg">Dash-Anfrage wurde ins Clipboard kopiert.</string>
-    <string name="request_coins_share_dialog_title">Anforderung veröffentlichen…</string>
     <string name="request_coins_no_local_app_msg">Keine weitere Dash-App gefunden</string>
     <string name="request_coins_options_local_app_title">Von lokaler App anfordern</string>
     <string name="address_book_activity_title">Adressbuch</string>
@@ -206,6 +204,7 @@
     <string name="import_keys_dialog_button_import">Wiederherstellen</string>
     <string name="restore_wallet_dialog_success">Wallet wurde wiederhergestellt.</string>
     <string name="restore_wallet_dialog_success_replay">Deine Wallet wurde erfolgreich wiederhergestellt. Jetzt wird das Guthaben ermittelt. Das wird einige Zeit dauern.</string>
+    <string name="restore_wallet_dialog_success_encrypted">Warnung: Deine Wallet ist durch eine Ausgabe-PIN geschützt. Vergewissere dich, dass du dich noch an diese erinnern kannst, bevor du Geld mit dieser Wallet empfängst.</string>
     <string name="import_keys_dialog_failure">Die Wallet konnte nicht wieder hergestellt werden:\n\n%s\n\nFalsches Passwort?</string>
     <string name="backup_wallet_permission_dialog_title">Schreibe-Erlaubnis fehlt</string>
     <string name="backup_wallet_permission_dialog_message">Damit ein Wallet-Backup auf Deinen externen Speicher geschrieben werden kann, musst Du eine Schreibe-Erlaubnis erteilen.</string>
@@ -213,7 +212,7 @@
     <string name="backup_wallet_dialog_message">Dein Backup wird mit dem gewählten Passwort verschlüsselt und auf dem externen Speicher gesichert.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Deine Wallet ist durch eine Ausgabe-PIN geschützt. Stell bitte sicher, dass Du die PIN, sowie das Backup-Passwort nicht vergisst!</string>
     <string name="export_keys_dialog_button_export">Exportieren</string>
-    <string name="export_keys_dialog_success"><![CDATA[<p>Deine Wallet wurde nach <tt>%s</tt> gesichert.</p><p>Wenn die SD-Karte deines Geräts wechselbar ist, <i>solltest</i> Du das Backup auf dieser Karte lagern. Entferne die Karte und bewahre sie an einem sicheren Ort auf. Wenn die Karte <i>nicht</i> wechselbar ist, musst Du das Backup an einem anderen Ort als auf dem Gerät archivieren.</p><p><b>Wenn Dein Backup nur auf Deinem Gerät lagert, läufst Du Gefahr beide zusammen zu verlieren!</b></p><p>Verwahre auf jeden Fall auch Dein Backup-Passwort an einem sicheren Ort. Möchtest Du Deine Wallet nun archivieren?</p>]]></string>
+    <string name="export_keys_dialog_success"><![CDATA[<p>Deine Wallet wurde gesichert nach <tt>%s</tt></p><p><b>Wenn das Backup dieser Wallet nur auf diesem Gerät gespeichert ist, besteht das Risiko, dass du beides gleichzeitig verlierst!</b></p><p>In jedem Fall solltest du sicher gehen, dass du dich an dein Backup-Passwort erinnerst.</p>]]></string>
     <string name="export_keys_dialog_failure">Deine Wallet konnte nicht gesichert werden:\n%s</string>
     <string name="export_keys_dialog_button_archive">Archivieren</string>
     <string name="export_keys_dialog_mail_subject">Dash Wallet Sicherung</string>
@@ -280,10 +279,10 @@
     <string name="preferences_show_disclaimer_title">Disclaimer anzeigen</string>
     <string name="preferences_show_disclaimer_summary">Hast du die Sicherheitshinweise wirklich gelesen? Hast du wirklich ein Backup für deine Wallet, das du an einem sicheren Ort aufbewahrst?</string>
     <string name="preferences_report_issue_title">Problem melden</string>
-    <string name="preferences_initiate_reset_title">Blockchain zurücksetzen</string>
-    <string name="preferences_initiate_reset_summary">Blockchain, Transaktionen und Guthaben werden zurückgesetzt. Das erneute Einspielen wird einige Zeit in Anspruch nehmen. Setze diesen Vorgang bitte nur fort, wenn Du weist warum.</string>
-    <string name="preferences_initiate_reset_dialog_message">Möchtest Du die Blockchain zurücksetzen und neu einspielen? Dabei wird Dein Guthabensstand zeitweise ausgeblendet und Deine Transaktionen werden entfernt. Beides wird während des Vorgangs wieder erscheinen. Stelle bitte sicher, dass Du über eine zuverlässige Internetverbindung verfügst.</string>
-    <string name="preferences_initiate_reset_dialog_positive">Zurücksetzen</string>
+    <string name="preferences_initiate_reset_title">Blockchain erneut scannen</string>
+    <string name="preferences_initiate_reset_summary">Blockchain, Transaktionen und Guthaben erneut scannen. Bitte beachte, dass dieser Vorgang einige Zeit in Anspruch nehmen wird.</string>
+    <string name="preferences_initiate_reset_dialog_message">Möchtest du die Blockchain erneut scannen?\n\nGuthaben und Transaktionen werden für einige Zeit nicht einsehbar sein. Mit dem Fortschreiten der Blockchain-Synchronisierung werden die Daten wieder sichtbar. Stelle sicher, dass du über eine gute Internetverbindung verfügst.</string>
+    <string name="preferences_initiate_reset_dialog_positive">Erneut scannen</string>
     <string name="preferences_extended_public_key_title">Xpub anzeigen</string>
     <string name="preferences_extended_public_key_summary">Zeigt den Extended Public Key Ihrer Wallet an, sodass er in andere Apps oder Dienste importiert werden kann. Sei dabei jedoch bitte vorsichtig, da dies Deine finanzielle Situation gegenüber jener anderen App offenlegen könnte.</string>
     <string name="bitmap_fragment_share">Teilen…</string>
@@ -302,6 +301,14 @@
     <string name="report_issue_dialog_collect_wallet_dump">Dump der Wallet anhängen</string>
     <string name="report_issue_dialog_mail_intent_chooser">Bericht senden mit…</string>
     <string name="report_issue_dialog_mail_intent_failed">Senden des Berichts fehlgeschlagen.</string>
+    <string name="report_transaction_history_export">Export</string>
+    <string name="report_transaction_history_title">CSV Export</string>
+    <string name="report_transaction_history_not_synced_title">CSV Export</string>
+    <string name="report_transaction_history_not_synced_message">Bitte warte, bis die Wallet vollständig synchronisiert ist, bevor du deinen Transaktionsverlauf exportierst.</string>
+    <string name="report_transaction_history_message">Der vollständige Transaktionsverlauf wird exportiert.\n\nAlle ausgehenden Transaktionen werden als Aufwand und alle eingehenden Transaktionen als Ertrag betrachtet. Der Eigentümer dieser Wallet ist dafür verantwortlich, alle Anpassungen der Kostenbasis in dem von ihm gewählten Steuermeldesystem vorzunehmen.</string>
+    <string name="report_transaction_history_mail_intent_chooser">Transaktionsverlauf senden mit...</string>
+    <string name="report_transaction_history_dialog_mail_intent_failed">Das Senden der Transaktionshistorie ist fehlgeschlagen.</string>
+
     <string name="about_title">Über</string>
     <string name="about_version_title">Version</string>
     <string name="about_copyright_title">Urheberrecht</string>
@@ -330,7 +337,6 @@
     <string name="button_ok">Ok</string>
     <string name="button_dismiss">Schließen</string>
     <string name="button_cancel">Abbrechen</string>
-    <string name="button_retry">Wiederholen</string>
     <string name="button_help">Hilfe</string>
     <string name="button_add">Hinzufügen</string>
     <string name="button_delete">Löschen</string>
@@ -340,7 +346,6 @@
     <string name="button_copy">Kopieren</string>
     <string name="button_copy_request">Anfrage kopieren</string>
     <string name="button_paste">Einfügen</string>
-    <string name="button_share">Teilen</string>
     <string name="button_set_as_default">Als Standard setzen</string>
     <string name="button_request_coins">Dash anfordern</string>
     <string name="button_send_coins">Dash senden</string>
@@ -379,8 +384,10 @@
     <string name="payment_protocol_insufficient_funds_error_message">Dein Guthaben reicht nicht aus, um diese Transaktion zu tätigen</string>
 
 
-
+    <string name="select_a_service_to_buy_and_sell_dash">Wähle einen Anbieter zum Kaufen und Verkaufen von Dash.</string>
     <string name="select_a_service">Dienst auswählen</string>
     <string name="activity_buy_and_sell_dash_filter">Filter</string>
     <string name="clear_filter">Filter leeren</string>
+    <string name="select_currency">Währung auswählen</string>
+    <string name="reason">Ursache</string>
 </resources>

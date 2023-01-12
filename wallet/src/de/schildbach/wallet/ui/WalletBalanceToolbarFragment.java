@@ -28,9 +28,6 @@ import androidx.loader.app.LoaderManager;
 import androidx.loader.content.Loader;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -41,6 +38,7 @@ import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.MasternodeSync;
 import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.utils.Fiat;
+import org.dash.wallet.common.data.ExchangeRate;
 import org.dash.wallet.common.ui.CurrencyTextView;
 
 import javax.annotation.Nullable;
@@ -48,9 +46,8 @@ import javax.annotation.Nullable;
 import org.dash.wallet.common.Configuration;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
-import de.schildbach.wallet.rates.ExchangeRate;
-import de.schildbach.wallet.rates.ExchangeRatesViewModel;
-import de.schildbach.wallet.util.BlockchainStateUtils;
+import de.schildbach.wallet.ui.rates.ExchangeRatesActivity;
+import de.schildbach.wallet.ui.rates.ExchangeRatesViewModel;
 import de.schildbach.wallet_test.R;
 
 /**
@@ -98,12 +95,6 @@ public final class WalletBalanceToolbarFragment extends Fragment {
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
 	}
-
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        MenuItem walletLockMenuItem = menu.findItem(R.id.wallet_options_lock);
-        super.onCreateOptionsMenu(menu, inflater);
-    }
 
     @Override
 	public void onAttach(final Activity activity)
@@ -171,9 +162,9 @@ public final class WalletBalanceToolbarFragment extends Fragment {
 		loaderManager.initLoader(ID_BALANCE_LOADER, null, balanceLoaderCallbacks);
 
 		exchangeRatesViewModel.getRate(config.getExchangeCurrencyCode()).observe(this,
-				new Observer<de.schildbach.wallet.rates.ExchangeRate>() {
+				new Observer<ExchangeRate>() {
 			@Override
-			public void onChanged(de.schildbach.wallet.rates.ExchangeRate rate) {
+			public void onChanged(ExchangeRate rate) {
 				if (rate != null) {
 					exchangeRate = rate;
 					updateView();
@@ -225,7 +216,7 @@ public final class WalletBalanceToolbarFragment extends Fragment {
 						final Fiat localValue = rate.coinToFiat(balance);
 						viewBalanceLocal.setVisibility(View.VISIBLE);
 						viewBalanceLocal.setFormat(Constants.LOCAL_FORMAT.code(0,
-								org.dash.wallet.common.Constants.PREFIX_ALMOST_EQUAL_TO + exchangeRate.getCurrencyCode()));
+								org.dash.wallet.common.util.Constants.PREFIX_ALMOST_EQUAL_TO + exchangeRate.getCurrencyCode()));
 						viewBalanceLocal.setAmount(localValue);
 					}
 					else

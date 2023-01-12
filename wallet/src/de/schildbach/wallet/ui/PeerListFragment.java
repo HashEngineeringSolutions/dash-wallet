@@ -65,7 +65,7 @@ import android.widget.ViewAnimator;
  * @author Andreas Schildbach
  */
 public final class PeerListFragment extends Fragment {
-    private AbstractWalletActivity activity;
+    private LockScreenActivity activity;
     private LoaderManager loaderManager;
 
     private BlockchainService service;
@@ -89,7 +89,7 @@ public final class PeerListFragment extends Fragment {
     public void onAttach(final Activity activity) {
         super.onAttach(activity);
 
-        this.activity = (AbstractWalletActivity) activity;
+        this.activity = (LockScreenActivity) activity;
         this.loaderManager = getLoaderManager();
     }
 
@@ -227,8 +227,8 @@ public final class PeerListFragment extends Fragment {
         @NonNull
         @Override
         public PeerViewHolder onCreateViewHolder(@NonNull final ViewGroup parent, final int viewType) {
-            defaultTypeFace = ResourcesCompat.getFont(parent.getContext(), R.font.montserrat_medium);
-            boldTypeFace = ResourcesCompat.getFont(parent.getContext(), R.font.montserrat_semibold);
+            defaultTypeFace = ResourcesCompat.getFont(parent.getContext(), R.font.inter_medium);
+            boldTypeFace = ResourcesCompat.getFont(parent.getContext(), R.font.inter_semibold);
             return new PeerViewHolder(inflater.inflate(R.layout.peer_list_row, parent, false));
         }
 

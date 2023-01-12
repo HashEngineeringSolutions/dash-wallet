@@ -7,6 +7,7 @@
     <string name="onboarding_load_wallet_error">¡No se puede cargar la billetera!</string>
 
     <string name="set_pin_create_new_wallet">Crear una Nueva Billetera</string>
+    <string name="set_pin_upgrade_wallet">Actualizar billetera</string>
     <string name="set_pin_restore_wallet">Restaurar Billetera</string>
     <string name="set_pin_enter_pin">Ingresa el PIN antiguo</string>
     <string name="set_pin_set_pin">Establecer PIN</string>
@@ -15,6 +16,7 @@
     <string name="set_pin_decrypting">Desencriptando billetera</string>
     <string name="set_pin_verifying_pin">Verificando PIN</string>
     <string name="set_pin_message">Este PIN será requerido para desbloquear tu app cada vez que la utilices.</string>
+    <string name="set_pin_confirm_pin_incorrect">PIN incorrecto</string>
 
     <string name="home_available_balance">Saldo disponible</string>
     <string name="home_balance_hidden">Saldo oculto</string>
@@ -61,12 +63,10 @@
     <string name="scan_to_pay_error_dialog_title">Escanear para Enviar</string>
     <string name="scan_to_pay_error_dialog_message">Dirección de Dash o solicitud de URL no válida en el portapapeles:\n\n%s</string>
     <string name="scan_to_pay_error_dialog_message_no_data">Dirección de Dash o solicitud de URL no válida en el portapapeles</string>
+    <string name="pay_to_confirm_address">¿Es esta la dirección de Dash a la que deseas enviar el pago?</string>
 
     <string name="receive_title">Recibir</string>
     <string name="receive_enter_amount_message">Especificar la cantidad a recibir</string>
-    <string name="receive_enter_amount_button">Especificar Monto</string>
-    <string name="receive_share_button">Compartir</string>
-    <string name="receive_copied">Copiado</string>
 
     <string name="pay_title">Enviar</string>
     <string name="history_title">Historial</string>
@@ -116,7 +116,6 @@
     <string name="import_export_keys_dialog_password_phrase">La frase de recuperación va aquí.</string>
     <string name="preferences_report_issue_summary">Reúne información sobre tu problema y envía un email a los desarrolladores con tu reporte.</string>
     <string name="navigation_configuration">Configuración</string>
-    <string name="button_copy_address">Copiar dirección</string>
     <string name="request_coins_clipboard_address_msg">Dirección Dash copiada en el portapapeles</string>
     <string name="backup_wallet_to_seed_show_recovery_phrase">Mostrar</string>
     <string name="restore_wallet_from_invalid_seed_warning_message">\"%s\" no es una palabra de la frase de recuperación</string>
@@ -145,19 +144,24 @@
     <string name="wallet_lock_try_again">Intente nuevamente en %1$d %2$s</string>
     <string name="wallet_lock_reset">Reiniciar</string>
     <string name="wallet_lock_wrong_pin">¡PIN incorrecto! %s</string>
+    <string name="wallet_last_attempt">Último intento de PIN</string>
+    <string name="wallet_last_attempt_message">Otro intento fallido requerirá mi frase de contraseña para recuperar mi billetera</string>
 
     <plurals name="wallet_lock_attempts_remaining">
         <item quantity="one">%d intento restante</item>
+        <item quantity="many">%d intentos restantes</item>
         <item quantity="other">%d intentos restantes</item>
     </plurals>
 
     <plurals name="minute">
         <item quantity="one">minuto</item>
+        <item quantity="many">minutos</item>
         <item quantity="other">minutos</item>
     </plurals>
 
     <plurals name="hour">
         <item quantity="one">hora</item>
+        <item quantity="many">horas</item>
         <item quantity="other">horas</item>
     </plurals>
 
@@ -179,6 +183,13 @@
     <string name="notification_transactions_channel_description">Recibir alerta sobre transacciones entrantes</string>
     <string name="notification_synchronization_channel_name">Sincronización</string>
     <string name="notification_synchronization_channel_description">Muestra una notificación cuando la app está sincronizando con la red.</string>
+    <string name="notification_generic_channel_name">Notificaciones genéricas</string>
+    <string name="notification_generic_channel_description">Otros eventos de la billetera de Dash </string>
+    <string name="notification_push_channel_name">Notificaciones push</string>
+    <string name="notification_push_channel_description">Muestra notificaciones push enviadas por Dash</string>
+    <string name="notification_settings_title">Notificaciones</string>
+    <string name="notification_explainer_title">La billetera de Dash desea enviarte notificaciones</string>
+    <string name="notification_explainer_message">Las notificaciones pueden incluir alertas, sonidos e íconos distintivos. Estos se pueden configurar en la configuración del teléfono.</string>
 
     <string name="net_type_indicator" />
 
@@ -197,14 +208,13 @@
     <string name="preferences_enable_payment_request_title">Escanear para pagar con BIP70</string>
 
     <string name="verify_continue">Continuar</string>
-    <string name="verify">Verificar</string>
     <string name="verify_backup_wallet">Hacer Backup de Billetera</string>
     <string name="verify_show_recovery_phrase">Mostrar Frase de Recuperación</string>
     <string name="verify_secure_now">Asegurar Billetera Ahora</string>
     <string name="verify_it_is_important">Es importante</string>
     <string name="verify_it_is_important_subtitle">Estamos a punto de mostrar la frase de recuperación de tu billetera.</string>
     <string name="verify_info_text_1">Esta frase de recuperación es tu acceso para los fondos en esta billetera.</string>
-    <string name="verify_info_text_2">Nosotros no guardamos esta frase de recuperación.</string>
+    <string name="verify_info_text_2">Nosotros NO almacenamos esta frase de recuperación.</string>
     <string name="verify_info_text_3">Necesitarás esta frase de recuperación para acceder a tus fondos si este dispositivo se pierde, daña o si la billetera de Dash se desinstala accidentalmente de este dispositivo.</string>
     <string name="verify_skip">Salta</string>
     <string name="verify_secure_now_btn">Asegurar ahora</string>
@@ -214,9 +224,24 @@
     <string name="verify_seed_buttons_tip">Por favor escribe las palabras de tu frase de recuperación en el orden correcto</string>
     <string name="verify_seed_success_title">Verificado Exitosamente</string>
     <string name="verify_seed_success_message">Tu billetera está segura ahora. Podrás utilizar tu frase de recuperación en cualquier momento para recuperar tu cuenta en otro dispositivo.</string>
+    <string name="verify_no_screenshot_title">No tome una captura de pantalla</string>
+    <string name="verify_no_screenshot_message">En su lugar, escribe la frase de recuperación en un lugar seguro.</string>
+    <string name="verify_why_no_screenshot">¿Por que no debo tomar una captura de pantalla?</string>
+    <string name="verify_warning_title">Aviso</string>
+    <string name="verify_warning_message">Esta frase de recuperación es tu acceso a los fondos en tu billetera.</string>
+    <string name="verify_warning_screenshots_title">NO tomes capturas de pantalla</string>
+    <string name="verify_warning_screenshots_message">Las capturas de pantalla son visibles para otras aplicaciones y dispositivos.</string>
+    <string name="verify_warning_do_not_show">NO permitas que nadie vea tu frase de recuperación.</string>
+    <string name="verify_warning_do_not_type">Nunca escribas tu frase de recuperación en administradores de contraseñas ni en ningún otro lugar.</string>
     <string name="view_seed_done">Hecho</string>
     <string name="view_seed_title">Frase de recuperación</string>
     <string name="transaction_result_view_on_explorer">Ver en el explorador de bloques</string>
+    <string name="transaction_result_tax_category">Categoría de impuestos</string>
+    <string name="transaction_result_tax_category_loading">Cargando…</string>
+    <string name="tax_category_income">Ingreso</string>
+    <string name="tax_category_expense">Gasto</string>
+    <string name="tax_category_transfer_in">Transferencia entrante</string>
+    <string name="tax_category_transfer_out">Transferencia de salida</string>
     <string name="transaction_result_paid_successfully">Enviado exitosamente</string>
     <string name="transaction_result_sent_to">Enviado para</string>
     <string name="transaction_date_and_time">Fecha</string>
@@ -228,6 +253,7 @@
     <string name="transaction_details_received_at">Recibido en</string>
     <string name="transaction_details_moved_from">Movido de</string>
     <string name="transaction_details_moved_internally_to">Movido internamente para</string>
+    <string name="transaction_failed_details">Transferencia fallida</string>
 
     <string name="authenticate_fingerprint_title">Autenticar</string>
     <string name="authenticate_fingerprint_message">Confirma la huella dactilar para continuar</string>
@@ -237,6 +263,8 @@
 
     <string name="menu_buy_and_sell_title">Comprar &amp; Vender Dash</string>
     <string name="menu_buy_and_sell_subtitle">Conectar con exchanges de terceros</string>
+    <string name="liquid_unavailable">La integración líquida con la billetera de Dash ya no está disponible</string>
+    <string name="liquid_unavailable_details">Si tienes alguna pregunta sobre tus tenencias de Dash en Liquid, comunícate con el centro de soporte de Liquid</string>
     <string name="menu_security_title">Seguridad</string>
     <string name="menu_security_subtitle">Ver frase de recuperación, hacer backup…</string>
     <string name="menu_settings_title">Ajustes</string>
@@ -247,18 +275,29 @@
     <string name="menu_rescan_blockchain">Reescanear la cadena de bloques</string>
     <string name="menu_contact_support_title">Contactar Soporte</string>
     <string name="menu_contact_support_subtitle">Reportar un problema</string>
+    <string name="menu_explore_title">Explorar</string>
+    <string name="menu_explore_subtitle">Compra con DASH en más de 155,000 comerciantes</string>
 
     <string name="tools_address_book">Libreta de direcciones</string>
     <string name="tools_import_private_key">Barrer billetera de papel</string>
     <string name="tools_network_monitor">Monitor de Red</string>
+    <string name="tools_show_xpub">Extender llave publica</string>
 
     <string name="about_help_us_improve">Ayúdanos a mejorar tu experiencia</string>
-    <string name="about_review_and_rate">Evaluar la app</string>
+    <string name="about_review_and_rate">Critica o evalúa la aplicación</string>
     <string name="about_contact_support">Contactar Soporte</string>
     <string name="about_fork_disclaimer">Esta es una aplicación de código abierto derivada de una billetera de Bitcoin</string>
-    <string name="about_copyright">Copyright © 2020 Dash Core</string>
+    <string name="about_copyright"> Dash Core 2022 Derechos reservados ©</string>
     <string name="about_license">Licencia pública general GNU v3.0</string>
     <string name="about_version_name">Billetera de Dash %s</string>
+    <string name="about_last_explore_device_sync">Última exploración de sincronización del dispositivo</string>
+    <string name="about_last_explore_server_update">Última actualización del servidor de exploración</string>
+    <string name="about_firebase_installation_id">Identificación de instalación de Firebase</string>
+    <string name="about_fcm_token">Token de mensajería en la nube de Firebase</string>
+    <string name="about_last_explore_dash_update_error">No se puede recuperar</string>
+    <string name="about_last_explore_dash_sync_never">Nunca</string>
+    <string name="about_explore_failed_sync">No se pudo sincronizar en %s</string>
+    <string name="about_explore_preloaded_on">Precargado en %s</string>
 
     <string name="block">Bloque</string>
     <string name="time">Tiempo</string>
@@ -304,7 +343,6 @@
     <string name="welcome_screen_subtitle_3">Ten control completo y configura tu billetera de acuerdo a tus necesidades</string>
 
     <string name="sync_status_wait">Por favor espera hasta que se complete la sincronización</string>
-    <string name="sync_status_syncing_title">Sincronizando %1$d</string>
     <string name="sync_status_syncing_sub_title">con la blockchain de Dash</string>
     <string name="sync_status_unable_to_connect">No fue posible conectarse</string>
     <string name="sync_status_check_connection">Verifica tu conección</string>
@@ -313,7 +351,6 @@
 
     <string name="appwidget_wallet_not_ready">Configura tu billetera por favor</string>
 
-    <string name="payment_request_please_wait_title">Por favor espera</string>
     <string name="payment_request_please_wait_message">Conectando al servidor de pago</string>
     <string name="payment_request_unable_to_connect">No se puede conectar</string>
     <string name="payment_request_unable_to_send">No se puede enviar</string>
@@ -332,10 +369,38 @@
     <string name="import_image_import_valid_private_key">Copie una clave privada válida para importar Dash desde ella</string>
     <string name="import_image_invalid_private">Clave Privada Inválida</string>
 
+    <string name="today">Hoy</string>
+    <string name="yesterday">Ayer</string>
+
     <string name="syncing">Sincronizando</string>
     <string name="syncing_balance">Sincronizando Balance </string>
-
+    <string name="transaction_count">%d transferencias</string>
     <string name="all_transactions">Todos</string>
     <string name="received_transactions">Recibido</string>
     <string name="sent_transactions">Enviado</string>
+    <string name="set_pin_error_missing_wallet_title"> Error de billetera inexistente</string>
+    <string name="set_pin_error_missing_wallet_message"> No existe la billetera. Por favor escribir al centro de soporte.</string>
+    <string name="wallet_encryption_error_title"> Error de creación de billetera</string>
+    <string name="wallet_encryption_error_message"> Hay un error en la creación de la billetera. Por favor reportar al centro de soporte.</string>
+    <string name="wallet_not_encrypted_error_message"> Hay un error en su billetera.\n\nIf si ud no posee Dash en está billetera. Por favor desinstale y reinstale está app. Luego cree una nueva billetera \n\n si ud tiene se frase de recuperación, o archivo de respaldo, entonces desinstale esta app y reinstale nuevamente. \n\n de ser un caso diferentes, por favor reporte al centro de soporte  </string>
+
+    <string name="reset_wallet_title">¿Estás seguro de que quieres restablecer la billetera?</string>
+    <string name="reset_wallet_message">Si reinicias tu billetera, la única forma de acceder a ella es recuperar la billetera con la frase de recuperación.</string>
+    <string name="positive_reset_text">Sí, restablecer billetera</string>
+    <string name="launch_reset_wallet_title">Tienes saldo positivo</string>
+    <string name="launch_reset_wallet_message">Si restableces tu billetera, perderás todos tus fondos si no has realizado una copia de seguridad de tu frase de recuperación.</string>
+    <string name="continue_reset">Continuar</string>
+    <string name="launch_reset_wallet_extra_message">Haz una copia de seguridad de tu frase de recuperación</string>
+    <string name="start_reset_wallet_title">Puedes perder %s</string>
+    <string name="reset_wallet_text">Reiniciar billetera</string>
+    <string name="reclassify_transactions_title">Reclasifica tus transacciones</string>
+    <string name="reclassify_transactions_title_message">Estas clasificaciones se reflejarán en la exportación CSV que se pueden usar para importar a los servicios de informes de impuestos.</string>
+    <string name="reclassify_transactions_question">¿Dónde puedo cambiar la categoría fiscal?</string>
+    <string name="reclassify_transactions_outgoing_title">Transacciones salientes</string>
+    <string name="reclassify_transactions_by_default_message">por defecto se marcará como</string>
+    <string name="reclassify_transactions_incoming_title">Transacciones entrantes</string>
+    <string name="reclassify_transactions_change_it_message">Puedes cambiarlo a</string>
+    <string name="reclassify_transactions_linked_accounts_title">Cuentas vinculadas</string>
+    <string name="reclassify_transactions_linked_accounts_message">de forma predeterminada, todas las transacciones hacia o desde tus cuentas vinculadas (intercambios, apuestas, etc.) se marcarán como transferencias.</string>
+    <string name="reclassify_transactions_change_explanation">Elije cualquier transacción de la página de inicio y cambia la categoría en la página de detalles de la transacción.</string>
 </resources>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:animateLayoutChanges="true"
+    android:background="@android:color/transparent"
+    tools:background="@color/dash_deep_blue"
+    tools:context="de.schildbach.wallet.ui.OnboardingActivity">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginTop="64dp"
+        android:src="@drawable/splash_activity_slogan" />
+
+    <LinearLayout
+        android:id="@+id/buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="59dp"
+            android:layout_marginBottom="59dp"
+            android:orientation="vertical"
+            android:background="@drawable/rounded_background"
+            android:theme="@style/SecondaryBackground">
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_error"
+                android:layout_marginTop="18dp"
+                android:layout_gravity="center" />
+
+            <TextView
+                android:id="@+id/action_title"
+                style="@style/Headline6"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginBottom="28dp"
+                android:text="@string/wallet_encryption_error_title"
+                android:textColor="@color/dash_gray" />
+
+            <TextView
+                android:id="@+id/action_message"
+                style="@style/Overline.Medium.Secondary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginBottom="28dp"
+                android:layout_marginStart="15dp"
+                android:layout_marginEnd="15dp"
+                android:text="@string/wallet_not_encrypted_error_message"
+                android:textAlignment="center" />
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/unencrypted_contact_support"
+            style="@style/Button.Primary.Large.Blue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/menu_contact_support_title" />
+
+        <Button
+            android:id="@+id/unencrypted_close_app"
+            style="@style/Button.Tertiary.Large.White"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/perm_lock_close_app" />
+
+    </LinearLayout>
+
+</FrameLayout>

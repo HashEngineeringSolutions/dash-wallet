@@ -22,10 +22,6 @@ import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
-import android.view.WindowManager
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import de.schildbach.wallet.Constants
@@ -38,11 +34,12 @@ import de.schildbach.wallet.ui.SET_PIN_REQUEST_CODE
 import de.schildbach.wallet.ui.widget.UpgradeWalletDisclaimerDialog
 import de.schildbach.wallet_test.R
 import org.bitcoinj.wallet.Wallet
-import org.dash.wallet.common.ui.DialogBuilder
+import org.dash.wallet.common.SecureActivity
+import org.dash.wallet.common.ui.BaseAlertDialogBuilder
 
 
 @SuppressLint("Registered")
-open class RestoreFromFileActivity : AppCompatActivity(), AbstractPINDialogFragment.WalletProvider {
+open class RestoreFromFileActivity : SecureActivity(), AbstractPINDialogFragment.WalletProvider {
 
     companion object {
         const val DIALOG_RESTORE_WALLET_PERMISSION = 1
@@ -73,20 +70,23 @@ open class RestoreFromFileActivity : AppCompatActivity(), AbstractPINDialogFragm
                 TextUtils.isEmpty(it.message) -> it.javaClass.simpleName
                 else -> it.message!!
             }
-            val dialog = DialogBuilder.warn(this, R.string.import_export_keys_dialog_failure_title,
-                getString(R.string.import_keys_dialog_failure, message))
-            dialog.setPositiveButton(R.string.button_dismiss, null)
-            dialog.setNegativeButton(R.string.button_retry) { _, _ ->
-                RestoreWalletFromSeedDialogFragment.show(supportFragmentManager)
-            }
-            dialog.show()
+
+            BaseAlertDialogBuilder(this).apply {
+                title = getString(R.string.import_export_keys_dialog_failure_title)
+                this.message = getString(R.string.import_keys_dialog_failure, message)
+                positiveText = getString(R.string.button_dismiss)
+                negativeText = getString(R.string.button_retry)
+                negativeAction = { RestoreWalletFromSeedDialogFragment.show(supportFragmentManager) }
+                showIcon = true
+            }.buildAlertDialog().show()
+
         })
-        viewModel.showUpgradeWalletAction.observe(this, Observer {
+        viewModel.showUpgradeWalletAction.observe(this, {
             walletBuffer = it
             EncryptNewKeyChainDialogFragment.show(supportFragmentManager, Constants.BIP44_PATH)
         })
         viewModel.showUpgradeDisclaimerAction.observe(this, Observer {
-            UpgradeWalletDisclaimerDialog.show(supportFragmentManager)
+            UpgradeWalletDisclaimerDialog.show(supportFragmentManager, false)
         })
         viewModel.startActivityAction.observe(this, Observer {
             startActivityForResult(it, SET_PIN_REQUEST_CODE)
@@ -114,8 +114,7 @@ open class RestoreFromFileActivity : AppCompatActivity(), AbstractPINDialogFragm
 
     private fun createRestoreWalletPermissionDialog(): Dialog {
         return RestoreFromFileHelper.createRestoreWalletPermissionDialog(
-            this
-        )
+            this, this, this)
     }
 
     override fun getWallet(): Wallet {
@@ -124,16 +123,6 @@ open class RestoreFromFileActivity : AppCompatActivity(), AbstractPINDialogFragm
 
     override fun onWalletUpgradeComplete(password: String) {
         viewModel.restoreWalletFromFile(walletBuffer, password)
-    }
-
-    override fun onPause() {
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        super.onPause()
-    }
-
-    override fun onResume() {
-        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        super.onResume()
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

@@ -2,6 +2,7 @@
 <resources>
 
     <string name="toast_wallet_reset">wallet ของคุณถูกรีเซ็ตแล้ว ใช้เวลาสักครู่ในการกู้คืน</string>
+    <string name="toast_start_storage_provider_selector_failed">ไม่มีการติดตั้งผู้ให้บริการเก็บข้อมูลบนคลาวด์ที่เหมาะสม \nคุณต้องติดตั้งบางอย่างเช่น \"NextCloud\" หรือ \"Google Drive\"</string>
     <string name="wallet_disclaimer_fragment_remind_safety">ใช้ความเสี่ยงด้วยตัวคุณเอง!  โปรดอ่าน &lt;u&gt;safety notes&lt;/u&gt;.</string>
     <string name="wallet_disclaimer_fragment_remind_backup">คุณจำเป็นต้อง สำรองข้อมูล wallet ของคุณ!</string>
     <string name="blockchain_state_progress_hours">%1$s,%2$d ชั่วโมงที่ผ่านมา</string>
@@ -64,8 +65,6 @@
     <string name="send_coins_fragment_pin_label">ใส่รหัส PIN</string>
     <string name="send_coins_fragment_hint_fee_economic">ค่าธรรมเนียมระบบเครือข่ายของ %s จะถูกจ่าย</string>
     <string name="send_coins_fragment_hint_fee_priority">ค่าธรรมเนียมพิเศษของ %s จะถูกจ่าย หากคุณสนใจค่าธรรมเนียมพิเศษนี้ โปรดใช้ \'priority\' เมื่อต้องการการยืนยันอย่างรวดเร็ว</string>
-    <string name="send_coins_fragment_hint_dusty_send">จำนวนเงินน้อยเกินไปที่จะส่ง</string>
-    <string name="send_coins_fragment_hint_insufficient_money">ยอดเงินไม่เพียงพอ</string>
     <string name="send_coins_fragment_hint_empty_wallet_failed">จำนวนเงินในการชำระเงิน wallet ของคุณ ไม่เพิ่มขึ้นที่จะสามารถส่งได้</string>
     <string name="send_coins_fragment_hint_replaying">ขณะนี้ยังไม่สามารถทำการชำระเงินได้เนื่องกระเป๋าสตางค์ยังไม่เชื่อมต่อกับเครือข่าย</string>
     <string name="send_coins_fragment_direct_payment_enable">ส่งการชำระเงินโดยตรงไปยังผู้รับเงิน</string>
@@ -116,7 +115,6 @@
     <string name="request_coins_fragment_initiate_request_qr">โค้ดนี้ถูกสแกนโดยผู้ส่ง</string>
     <string name="request_coins_fragment_initiate_request_nfc">หรือแตะเปิดใช้งาน NFC</string>
     <string name="request_coins_clipboard_msg">คำขอ Dash ถูกคัดลอกไปยังคลิปบอร์ดแล้ว</string>
-    <string name="request_coins_share_dialog_title">แชร์คำขอสำหรับ Dash</string>
     <string name="request_coins_no_local_app_msg">ไม่พบแอพพลิเคชั่น Dash อื่นๆ</string>
     <string name="request_coins_options_local_app_title">คำขอจากแอพพลิเคชั่นในเครื่อง</string>
     <string name="address_book_activity_title">สมุดที่อยู่</string>
@@ -205,6 +203,7 @@
     <string name="import_keys_dialog_button_import">กู้คืน</string>
     <string name="restore_wallet_dialog_success">wallet ถูกกู้คืนแล้ว</string>
     <string name="restore_wallet_dialog_success_replay">wallet ของคุณกู้คืนเรียบร้อยแล้ว ยอดคงเหลือจะถูกกำหนดในครั้งต่อไป การดำเนินการนี้จะใช้เวลาสักครู่ </string>
+    <string name="restore_wallet_dialog_success_encrypted">คำเตือน: กระเป๋าเงินของคุณได้รับการปกป้องโดย PIN การใช้จ่าย ตรวจสอบให้แน่ใจว่าคุณยังจำมันได้ก่อนที่คุณจะได้รับกระเป๋าเงินนี้</string>
     <string name="import_keys_dialog_failure">ไม่สามารถกู้คืน wallet ได้ :\n\n%s\n\n รหัสไม่ถูกต้อง?</string>
     <string name="backup_wallet_permission_dialog_title">ไม่พบสิทธิ์ในการเขียน</string>
     <string name="backup_wallet_permission_dialog_message">เพื่อให้สามารถค้นหา wallet ในที่จัดเก็บข้อมูลภายนอกได้ คุณต้องให้สิทธิ์ในการเขียน</string>
@@ -212,7 +211,7 @@
     <string name="backup_wallet_dialog_message">การสำรองของคุณจะได้รับการเข้ารหัสด้วยรหัสผ่านที่คุณเลือกและที่ถูกเขียนไว้ในพื้นที่เก็บข้อมูลภายนอก</string>
     <string name="backup_wallet_dialog_warning_encrypted">wallet ของคุณถูกป้องกันโดยการใช้ PIN  ตรวจสอบให้แน่ใจว่าคุณได้จำรหัส PIN ไว้นอกเหนือกจากรหัสสำรอง</string>
     <string name="export_keys_dialog_button_export">สำรองข้อมูล</string>
-    <string name="export_keys_dialog_success"><![CDATA[<p>wallet ของคุณได้สำรองข้อมูลไปยัง <tt>%s</tt></p><p> หากอุปกรณ์ของคุณมีการ์ด SD แบบถอดได้ การสำรองข้อมูลของคุณ <i>ควรจะ</i>อยู่ในการ์ดนั้น  ถอดการ์ดออกและเก็บไว้ในที่ปลอดภัย  หากการ์ด<i>ไม่</i>สามารถถอดออกได้ คุณต้องเก็บข้อมูลสำรองไว้ในที่อื่นนอกเหนือจากอุปกรณ์ของคุณ </p><p><b> หากพื้นที่สำรองของคุณอยู่ในอุปกรณ์ของคุณทั้งหมด คุณจะเสี่ยงต่อการสูญเสียทั้งสองอย่างในเวลาเดียวกัน! </b></p><p> ไม่ว่ากรณีใดก็ตาม ต้องแน่ใจว่าคุณจำรหัสการสำรองข้อมูลของคุณได้ คุณต้องการเก็บ wallet ของคุณตอนนี้หรือไม่?</p>]]></string>
+    <string name="export_keys_dialog_success"><![CDATA[<p> กระเป๋าเงินของคุณได้รับการสำรองไว้ <tt>%s</tt></p><p><b>หากจุดที่สำรองข้อมูลของคุณอยู่ในอุปกรณ์ของคุณเพียงที่เดียวคุณจะเสี่ยงต่อการสูญเสียทั้งสองในเวลาเดียวกัน!</b></p><p>ไม่ว่าในกรณีใด ๆ ตรวจสอบให้แน่ใจว่าคุณจำรหัสผ่านสำรองของคุณ</p>]]></string>
     <string name="export_keys_dialog_failure">wallet ของคุณไม่สามารถสำรองข้อมูลได้ :\n%s</string>
     <string name="export_keys_dialog_button_archive">เอกสารสำคัญ</string>
     <string name="export_keys_dialog_mail_subject">การสำรองข้อมูล Wallet Dash</string>
@@ -279,10 +278,10 @@
     <string name="preferences_show_disclaimer_title">แสดงการปฏิเสธความรับผิดชอบ</string>
     <string name="preferences_show_disclaimer_summary">คุณได้อ่านบันทึกความปลอดภัยหรือยัง?  คุณสำรอง wallet ของคุณไปยังที่ปลอดภัยหรือยัง?</string>
     <string name="preferences_report_issue_title">รายงานปัญหา</string>
-    <string name="preferences_initiate_reset_title">รีเซ็ต block chain</string>
-    <string name="preferences_initiate_reset_summary">รีเซ็ต block chain,  ธุรกรรม และ ยอดคงเหลือ wallet  การทำซ้ำนี้จะใช้เวลาสักพัก  ดังนั้นทำเมื่อทราบสาเหตุเท่านั้น</string>
-    <string name="preferences_initiate_reset_dialog_message">คุณต้องการจะรีเซ็ต block chain หรือไม่? \n\n นี่จะเป็นการซ่อนยอดคงเหลือของ wallet ของคุณไว้ชั่วคราวและลบธุรกรรมออก ทั้งสองอย่างจะคืนสภาพอย่าการซิ้งค์ block chain   ตรวจสอบให้แน่ใจว่าคุณมีการเชื่อมต่ออินเทอร์เน็ตที่เชื่อถือได้</string>
-    <string name="preferences_initiate_reset_dialog_positive">ตั้งค่า</string>
+    <string name="preferences_initiate_reset_title">สแกน blockchain อีกครั้ง</string>
+    <string name="preferences_initiate_reset_summary">การสแกนการตรวจสอบบล็อกเชน, ธุรกรรม และยอดคงเหลือซ้ำ ๆ นั้นจะใช้เวลาสักพักดังนั้นคุณควรทำในกรณีที่มีความจำเป็นเท่านั้น</string>
+    <string name="preferences_initiate_reset_dialog_message">คุณต้องการจะตรวจสอบบล็อกเชนอีกครั้ง?\n\nซึ่งจะมีการซ่อนยอดคงเหลือของกระเป๋าเงินของคุณชั่วคราวและลบธุรกรรมทั้งหมด ทั้งสองจะกู้คืนอีกครั้งเมื่อมีการซิงค์กับบล็อกเชน กรุณาตรวจสอบให้แน่ใจว่าคุณมีการเชื่อมต่อที่เชื่อถือได้กับอินเทอร์เน็ตที่คุณใช้งานอยู่</string>
+    <string name="preferences_initiate_reset_dialog_positive">สแกนอีกครั้ง</string>
     <string name="preferences_extended_public_key_title">แสดง xpub</string>
     <string name="preferences_extended_public_key_summary">ดูส่วนขยาย public key  wallet ของคุณ  มันสามารถนำเข้าไปยังแอพพลิเคชั่นและบริการอื่น ๆ ได้   โปรดระวัง: การทำเช่นนี้จะเป็นการเปิดเผยข้อมูลทางการเงินส่วนบุคคลของคุณไปยังแอพพลิเคชั่นนั้น</string>
     <string name="bitmap_fragment_share">แบ่งปัน...</string>
@@ -301,6 +300,14 @@
     <string name="report_issue_dialog_collect_wallet_dump">ผนวกการถ่ายโอนข้อมูล wallet </string>
     <string name="report_issue_dialog_mail_intent_chooser">ส่งรายงานโดยใช้...</string>
     <string name="report_issue_dialog_mail_intent_failed">การส่งรายงานล้มเหลว</string>
+    <string name="report_transaction_history_export">ส่งออก</string>
+    <string name="report_transaction_history_title">ส่งออก CSV </string>
+    <string name="report_transaction_history_not_synced_title">ส่งออก CSV </string>
+    <string name="report_transaction_history_not_synced_message">โปรดรอจนกว่ากระเป๋าเงินจะถูกซิงค์ก่อนที่จะส่งออกประวัติการทำธุรกรรมของคุณ</string>
+    <string name="report_transaction_history_message">ประวัติการทำธุรกรรมเต็มรูปแบบจะถูกส่งออก.\n\n การชำระเงินจะได้รับการพิจารณาว่าเป็นค่าใช้จ่ายและการทำธุรกรรมที่เข้ามาทั้งหมดจะเป็นรายได้ เจ้าของกระเป๋าเงินนี้มีหน้าที่ในการปรับค่าใช้จ่ายพื้นฐานใด ๆ ในระบบการรายงานภาษีที่เลือก</string>
+    <string name="report_transaction_history_mail_intent_chooser">ส่งประวัติการทำธุรกรรมโดยใช้ ...</string>
+    <string name="report_transaction_history_dialog_mail_intent_failed">การส่งประวัติธุรกรรมล้มเหลว</string>
+
     <string name="about_title">เกี่ยวกับ</string>
     <string name="about_version_title">เวอร์ชั่น</string>
     <string name="about_copyright_title">ลิขสิทธิ์</string>
@@ -329,7 +336,6 @@
     <string name="button_ok">โอเค</string>
     <string name="button_dismiss">ยกเลิก</string>
     <string name="button_cancel">ยกเลิก</string>
-    <string name="button_retry">ลองอีกครั้ง</string>
     <string name="button_help">ช่วยเหลือ</string>
     <string name="button_add">เพิ่ม</string>
     <string name="button_delete">ลบ</string>
@@ -339,7 +345,6 @@
     <string name="button_copy">คัดลอก</string>
     <string name="button_copy_request">คัดลอกคำขอ</string>
     <string name="button_paste">วาง</string>
-    <string name="button_share">แบ่งปัน</string>
     <string name="button_set_as_default">ตั้งเป็นค่าเริ่มต้น</string>
     <string name="button_request_coins">Dash ที่ต้องการ</string>
     <string name="button_send_coins">ส่ง Dash </string>
@@ -378,8 +383,10 @@
     <string name="payment_protocol_insufficient_funds_error_message">คุณมีเงินทุนไม่เพียงพอที่จะดำเนินการทางธุรกรรมได้สำเร็จ</string>
 
 
-
+    <string name="select_a_service_to_buy_and_sell_dash">เลือกบริการที่จะซื้อและขาย Dash</string>
     <string name="select_a_service">เลือกบริการ</string>
     <string name="activity_buy_and_sell_dash_filter">กรอง</string>
     <string name="clear_filter">ล้างตัวกรอง</string>
+    <string name="select_currency">เลือกสกุลเงิน</string>
+    <string name="reason">เหตุผล</string>
 </resources>

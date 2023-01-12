@@ -17,13 +17,11 @@
 
 package org.dash.wallet.common.ui;
 
-import javax.annotation.Nullable;
-
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Monetary;
 import org.bitcoinj.utils.MonetaryFormat;
-import org.dash.wallet.common.Constants;
 import org.dash.wallet.common.R;
+import org.dash.wallet.common.util.Constants;
 import org.dash.wallet.common.util.GenericUtils;
 import org.dash.wallet.common.util.MonetarySpannable;
 
@@ -34,6 +32,8 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Parcelable;
+
+import androidx.annotation.Nullable;
 import androidx.core.content.res.ResourcesCompat;
 import android.text.Editable;
 import android.text.InputType;
@@ -141,7 +141,7 @@ public final class CurrencyAmountView extends FrameLayout {
             final String currencySymbol = GenericUtils.currencySymbol(currencyCode);
             final float textSize = textView.getTextSize();
             final float smallerTextSize = textSize * 0.85f;
-            Typeface typeface = ResourcesCompat.getFont(getContext(), R.font.montserrat_semibold);
+            Typeface typeface = ResourcesCompat.getFont(getContext(), R.font.inter_semibold);
             currencySymbolDrawable = new CurrencySymbolDrawable(currencySymbol,
                     typeface, smallerTextSize, colorPrimary, smallerTextSize * 0.41f);
             localCurrencyCode = currencyCode;
@@ -250,7 +250,7 @@ public final class CurrencyAmountView extends FrameLayout {
                 final Monetary amount;
                 if (localCurrencyCode == null) {
                     amount = inputFormat.parse(str);
-                    if (((Coin) amount).isGreaterThan(Constants.MAX_MONEY))
+                    if (((Coin) amount).isGreaterThan(Constants.INSTANCE.getMAX_MONEY()))
                         return false;
                 } else {
                     amount = inputFormat.parseFiat(localCurrencyCode, str);

@@ -7,6 +7,7 @@
     <string name="onboarding_load_wallet_error">غير قادر على تحميل المحفظة!</string>
 
     <string name="set_pin_create_new_wallet">انشاء محفظة جديدة</string>
+    <string name="set_pin_upgrade_wallet">ترقية المحفظة</string>
     <string name="set_pin_restore_wallet">استعادة المحفظة</string>
     <string name="set_pin_enter_pin">أدخل الرقم السري الشخصي القديم</string>
     <string name="set_pin_set_pin">قم بتعيين الرقم السري</string>
@@ -15,6 +16,7 @@
     <string name="set_pin_decrypting">فك تشفير المحفظة</string>
     <string name="set_pin_verifying_pin">تأكيد الرقم السري</string>
     <string name="set_pin_message">سيكون الرقم  السري هذا مطلوبًا لإلغاء قفل تطبيقك في كل مرة تستخدمه.</string>
+    <string name="set_pin_confirm_pin_incorrect">رقم التعريف الشخصي غير صحيح</string>
 
     <string name="home_available_balance">الرصيد المتاح</string>
     <string name="home_balance_hidden">الرصيد مخفي</string>
@@ -61,12 +63,10 @@
     <string name="scan_to_pay_error_dialog_title">مسح للإرسال</string>
     <string name="scan_to_pay_error_dialog_message">عنوان داش أو عنوان URL غير صالح في الحافظة:\n\n%s</string>
     <string name="scan_to_pay_error_dialog_message_no_data">عنوان داش أو عنوان URL غير صالح في الحافظة.</string>
+    <string name="pay_to_confirm_address">هل هذا هو عنوان داش الذي تريد إرسال الدفعة إليه؟</string>
 
     <string name="receive_title">إستقبال</string>
     <string name="receive_enter_amount_message">حدد المبلغ المراد استلامه</string>
-    <string name="receive_enter_amount_button">حدد المبلغ</string>
-    <string name="receive_share_button">مشاركة</string>
-    <string name="receive_copied">تم النسخ</string>
 
     <string name="pay_title">إرسال</string>
     <string name="history_title">التاريخ</string>
@@ -116,7 +116,6 @@
     <string name="import_export_keys_dialog_password_phrase">عبارة الإستراد تذهب هنا.</string>
     <string name="preferences_report_issue_summary">اجمع معلومات حول مشكلتك وأرسل تقريرك بالبريد الإلكتروني إلى المطورين.</string>
     <string name="navigation_configuration">ترتيب</string>
-    <string name="button_copy_address">نسخ العنوان</string>
     <string name="request_coins_clipboard_address_msg">تم نسخ عنوان داش الى الحافظة</string>
     <string name="backup_wallet_to_seed_show_recovery_phrase">إظهار</string>
     <string name="restore_wallet_from_invalid_seed_warning_message">\"%s\" ليست كلمة عبارة استرداد</string>
@@ -145,8 +144,11 @@
     <string name="wallet_lock_try_again">أعد المحاولة في %1$d%2$s</string>
     <string name="wallet_lock_reset">إعادة تعيين</string>
     <string name="wallet_lock_wrong_pin">رقم سري خاطئ %s</string>
+    <string name="wallet_last_attempt">آخر محاولة رقم التعريف الشخصي</string>
+    <string name="wallet_last_attempt_message">ستتطلب المحاولة الفاشلة الأخرى عبارة المرور الخاصة بي لاستعادة محفظتي</string>
 
     <plurals name="wallet_lock_attempts_remaining">
+        <item quantity="zero">%dالمحاولات المتبقية</item>
         <item quantity="one">%dالمحاولات المتبقية</item>
         <item quantity="two">%dالمحاولات المتبقية</item>
         <item quantity="few">%dالمحاولات المتبقية</item>
@@ -155,6 +157,7 @@
     </plurals>
 
     <plurals name="minute">
+        <item quantity="zero">دقائق</item>
         <item quantity="one">دقائق</item>
         <item quantity="two">دقائق</item>
         <item quantity="few">دقائق</item>
@@ -163,6 +166,7 @@
     </plurals>
 
     <plurals name="hour">
+        <item quantity="zero">ساعات</item>
         <item quantity="one">ساعات</item>
         <item quantity="two">ساعات</item>
         <item quantity="few">ساعات</item>
@@ -188,6 +192,13 @@
     <string name="notification_transactions_channel_description">تلقي تنبيهات حول المعاملات الواردة.</string>
     <string name="notification_synchronization_channel_name">التزامن</string>
     <string name="notification_synchronization_channel_description">يعرض إشعارًا عندما يكون التطبيق متزامنًا مع الشبكة.</string>
+    <string name="notification_generic_channel_name">الاشعارات العامة</string>
+    <string name="notification_generic_channel_description">أحداث محفظة داش الأخرى</string>
+    <string name="notification_push_channel_name">الاشعارات المنبثقة</string>
+    <string name="notification_push_channel_description">تظهر الاشعارات المنبثقة المرسلة لك من قبل داش</string>
+    <string name="notification_settings_title">الاشعارات</string>
+    <string name="notification_explainer_title">تود Dash Wallet إرسال إشعارات إليك</string>
+    <string name="notification_explainer_message">قد تتضمن الإخطارات التنبيهات والأصوات وشارات الرموز. يمكن تهيئتها في إعدادات الهاتف.</string>
 
     <string name="net_type_indicator" />
 
@@ -206,7 +217,6 @@
     <string name="preferences_enable_payment_request_title">BIP70 للمسح للدفع</string>
 
     <string name="verify_continue">استمر</string>
-    <string name="verify">تحقق</string>
     <string name="verify_backup_wallet">نسخ احتياطي للمحفظة</string>
     <string name="verify_show_recovery_phrase">اظهر جملة الاسترداد</string>
     <string name="verify_secure_now">تأمين المحفظة الآن</string>
@@ -223,9 +233,24 @@
     <string name="verify_seed_buttons_tip">يرجى النقر على الكلمات من عبارة الاسترداد بالترتيب الصحيح</string>
     <string name="verify_seed_success_title">تم التحقق بنجاح</string>
     <string name="verify_seed_success_message">محفظتك مؤمنة الآن. يمكنك استخدام عبارة الاسترداد في أي وقت لاسترداد حسابك على جهاز آخر.</string>
+    <string name="verify_no_screenshot_title">لا تأخذ لقطة شاشة</string>
+    <string name="verify_no_screenshot_message">بدلاً من ذلك ، اكتب عبارة الاسترداد في مكان آمن.</string>
+    <string name="verify_why_no_screenshot">لماذا لا يجب علي التقاط لقطة شاشة؟</string>
+    <string name="verify_warning_title">تحذير</string>
+    <string name="verify_warning_message">عبارة الاسترداد هذه هي وصولك إلى الأموال الموجودة في محفظتك.</string>
+    <string name="verify_warning_screenshots_title">لا تأخذ لقطة شاشة</string>
+    <string name="verify_warning_screenshots_message">تكون لقطات الشاشة مرئية للتطبيقات الأخرى والأجهزة</string>
+    <string name="verify_warning_do_not_show">لا تدع أي شخص يرى عبارة الاسترداد الخاصة بك.</string>
+    <string name="verify_warning_do_not_type">لا تكتب عبارة الاسترداد مطلقًا في مديري كلمات المرور أو في أي مكان آخر.</string>
     <string name="view_seed_done">تم</string>
     <string name="view_seed_title">عبارة الاسترداد</string>
     <string name="transaction_result_view_on_explorer">عرض في بلوك إكسبلورر</string>
+    <string name="transaction_result_tax_category">فئة الضريبة</string>
+    <string name="transaction_result_tax_category_loading">جار التحميل…</string>
+    <string name="tax_category_income">دخل</string>
+    <string name="tax_category_expense">مصروف</string>
+    <string name="tax_category_transfer_in">نقل في</string>
+    <string name="tax_category_transfer_out">انقله خارجا</string>
     <string name="transaction_result_paid_successfully">أرسلت بنجاح</string>
     <string name="transaction_result_sent_to">أرسلت الى</string>
     <string name="transaction_date_and_time">تاريخ</string>
@@ -237,6 +262,7 @@
     <string name="transaction_details_received_at">تم الاستلام في</string>
     <string name="transaction_details_moved_from">تم النقل من</string>
     <string name="transaction_details_moved_internally_to">تم النقل الداخلي إلى</string>
+    <string name="transaction_failed_details">فشل الاجراء</string>
 
     <string name="authenticate_fingerprint_title">المصادقة</string>
     <string name="authenticate_fingerprint_message">تأكيد بصمة الإصبع للمتابعة</string>
@@ -246,6 +272,8 @@
 
     <string name="menu_buy_and_sell_title">شراء &amp; بيع داش</string>
     <string name="menu_buy_and_sell_subtitle">اتصال مع منصات الطرف الثالث</string>
+    <string name="liquid_unavailable">لم يعد تكامل Liquid مع محفظة داش متاحًا</string>
+    <string name="liquid_unavailable_details">إذا كانت لديك أي أسئلة بخصوص مقتنيات داش الخاصة بك في Liquid ، فيرجى الاتصال بمركز دعم Liquid</string>
     <string name="menu_security_title">أمان</string>
     <string name="menu_security_subtitle">عرض عبارة المرور ، المحفظة الاحتياطية ...</string>
     <string name="menu_settings_title">الإعدادات</string>
@@ -256,18 +284,29 @@
     <string name="menu_rescan_blockchain">اعادة نسخ بلوكشين</string>
     <string name="menu_contact_support_title">اتصل بالدعم</string>
     <string name="menu_contact_support_subtitle">بلغ عن خطأ</string>
+    <string name="menu_explore_title">اكتشف </string>
+    <string name="menu_explore_subtitle">تسوق مع داش لدى أكثر من 155000 تاجر</string>
 
     <string name="tools_address_book">دليل العناوين</string>
     <string name="tools_import_private_key">استيراد مفتاح خاص</string>
     <string name="tools_network_monitor">مراقب الشبكة</string>
+    <string name="tools_show_xpub">مفتاح عام ممتد</string>
 
     <string name="about_help_us_improve">ساعدنا على تحسين تجربتك</string>
-    <string name="about_review_and_rate">مراجعة &amp; تقييم التطبيق</string>
+    <string name="about_review_and_rate">مراجعة وتقييم التطبيق</string>
     <string name="about_contact_support">اتصل بالدعم</string>
     <string name="about_fork_disclaimer">هذا هو تطبيق مفتوح المصدر متفرع من محفظة بيتكوين</string>
-    <string name="about_copyright">حقوق النشر © 2020 داش كور</string>
+    <string name="about_copyright">حقوق النشر © 2022 داش كور</string>
     <string name="about_license">رخصة GNUالعمومية العامة الإصدار 3.0</string>
     <string name="about_version_name">محفظة داش %s</string>
+    <string name="about_last_explore_device_sync">آخر استكشاف مزامنة الجهاز</string>
+    <string name="about_last_explore_server_update">آخر تحديث لاستكشاف الخادم</string>
+    <string name="about_firebase_installation_id">معرّف تثبيت Firebase</string>
+    <string name="about_fcm_token">رمز Firebase للرسائل السحابية</string>
+    <string name="about_last_explore_dash_update_error">لا يمكن جلبه</string>
+    <string name="about_last_explore_dash_sync_never">مطلقا</string>
+    <string name="about_explore_failed_sync">فشلت المزامنة في %s</string>
+    <string name="about_explore_preloaded_on">تم التحميل مسبقًا %s</string>
 
     <string name="block">بلوك</string>
     <string name="time">وقت</string>
@@ -313,7 +352,6 @@
     <string name="welcome_screen_subtitle_3">تمتع بالتحكم الكامل وتخصيص محفظتك بناءً على احتياجاتك</string>
 
     <string name="sync_status_wait">يرجى الانتظار حتى تكتمل المزامنة</string>
-    <string name="sync_status_syncing_title">يتم المزامنة%1$d</string>
     <string name="sync_status_syncing_sub_title">مع بلوكشين داش</string>
     <string name="sync_status_unable_to_connect">غير قادر على الاتصال</string>
     <string name="sync_status_check_connection">افحص اتصالك</string>
@@ -322,7 +360,6 @@
 
     <string name="appwidget_wallet_not_ready">يرجى إعداد محفظتك</string>
 
-    <string name="payment_request_please_wait_title">الرجاء الانتظار</string>
     <string name="payment_request_please_wait_message">الاتصال بخادم الدفع</string>
     <string name="payment_request_unable_to_connect">غير قادر على الاتصال</string>
     <string name="payment_request_unable_to_send">غير قادر على الارسال</string>
@@ -341,10 +378,38 @@
     <string name="import_image_import_valid_private_key">انسخ مفتاحًا خاصًا صالحًا لاستيراد داش منه</string>
     <string name="import_image_invalid_private">مفتاح خاص غير صالح</string>
 
+    <string name="today">اليوم</string>
+    <string name="yesterday">في الامس</string>
+
     <string name="syncing">يتم المزامنة</string>
     <string name="syncing_balance">يتم مزامنة الرصيد ...</string>
-
+    <string name="transaction_count">%d المعاملات</string>
     <string name="all_transactions">الكل</string>
     <string name="received_transactions">تم الاستلام</string>
     <string name="sent_transactions">أرسلت </string>
+    <string name="set_pin_error_missing_wallet_title">خطأ المحفظة مفقود</string>
+    <string name="set_pin_error_missing_wallet_message">المحفظة مفقودة. يرجى إبلاغ مكتب الدعم بهذا.</string>
+    <string name="wallet_encryption_error_title">خطأ في إنشاء المحفظة</string>
+    <string name="wallet_encryption_error_message">هناك مشكلة في إنشاء المحفظة. يرجى إبلاغ مكتب الدعم بهذا.</string>
+    <string name="wallet_not_encrypted_error_message">توجد مشكلة في محفظتك.\n\nإذا لم يكن لديك داش في هذه المحفظة ، فقم بإلغاء تثبيت هذا التطبيق وإعادة تثبيته. ثم أنشئ محفظة جديدة. \n\nإذا كانت لديك عبارة استرداد أو ملف نسخ احتياطي ، فقم بإلغاء تثبيت هذا التطبيق وإعادة تثبيته.\n\nوإلا ، يرجى إبلاغ مكتب الدعم.</string>
+
+    <string name="reset_wallet_title">هل أنت متأكد أنك تريد إعادة تعيين المحفظة؟</string>
+    <string name="reset_wallet_message">إذا قمت بإعادة ضبط محفظتك ، فإن الطريقة الوحيدة للوصول إليها هي استرداد المحفظة باستخدام عبارة الاسترداد.</string>
+    <string name="positive_reset_text">نعم ، أعد تعيين المحفظة</string>
+    <string name="launch_reset_wallet_title">لديك رصيد إيجابي</string>
+    <string name="launch_reset_wallet_message">إذا قمت بإعادة تعيين محفظتك ، فستفقد جميع أموالك إذا لم تقم بعمل نسخة احتياطية من عبارة الاسترداد الخاصة بك.</string>
+    <string name="continue_reset">استمر</string>
+    <string name="launch_reset_wallet_extra_message">نسخة احتياطية من عبارة الاسترداد الخاصة بك</string>
+    <string name="start_reset_wallet_title">قد تفقد %s </string>
+    <string name="reset_wallet_text">إعادة تعيين المحفظة</string>
+    <string name="reclassify_transactions_title">أعد تصنيف معاملاتك</string>
+    <string name="reclassify_transactions_title_message">ستنعكس هذه التصنيفات في تصدير CSV الذي يمكن استخدامه للاستيراد إلى خدمات إعداد التقارير الضريبية.</string>
+    <string name="reclassify_transactions_question">أين يمكنني تغيير فئة الضريبة؟</string>
+    <string name="reclassify_transactions_outgoing_title">المعاملات الصادرة</string>
+    <string name="reclassify_transactions_by_default_message">بشكل افتراضي سيتم وضع علامة على أنها</string>
+    <string name="reclassify_transactions_incoming_title">المعاملات الواردة</string>
+    <string name="reclassify_transactions_change_it_message">يمكنك تغييره إلى</string>
+    <string name="reclassify_transactions_linked_accounts_title">حسابات متصلة</string>
+    <string name="reclassify_transactions_linked_accounts_message">بشكل افتراضي ، سيتم تمييز جميع المعاملات من وإلى حساباتك المرتبطة (التبادلات ، Staking ، إلخ) على أنها تحويلات.</string>
+    <string name="reclassify_transactions_change_explanation">اختر أي معاملة من الصفحة الرئيسية وقم بتغيير الفئة في صفحة تفاصيل المعاملة.</string>
 </resources>

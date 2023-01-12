@@ -17,19 +17,21 @@
 package de.schildbach.wallet.livedata
 
 import android.annotation.SuppressLint
-import android.app.Application
 import android.os.AsyncTask
 import androidx.lifecycle.MutableLiveData
 import de.schildbach.wallet.Constants
 import de.schildbach.wallet.WalletApplication
-import de.schildbach.wallet.ui.security.SecurityGuard
-import de.schildbach.wallet.util.FingerprintHelper
+import de.schildbach.wallet.security.BiometricHelper
+import de.schildbach.wallet.security.SecurityGuard
 import org.bitcoinj.crypto.KeyCrypterException
 import org.bitcoinj.crypto.KeyCrypterScrypt
 import org.bitcoinj.wallet.Wallet
 import org.slf4j.LoggerFactory
 
-class EncryptWalletLiveData(application: Application) : MutableLiveData<Resource<Wallet>>() {
+class EncryptWalletLiveData(
+    private val walletApplication: WalletApplication,
+    private val biometricHelper: BiometricHelper
+) : MutableLiveData<Resource<Wallet>>() {
 
     private val log = LoggerFactory.getLogger(EncryptWalletLiveData::class.java)
 
@@ -37,9 +39,6 @@ class EncryptWalletLiveData(application: Application) : MutableLiveData<Resource
     private var decryptWalletTask: DecryptWalletTask? = null
 
     private var scryptIterationsTarget: Int = Constants.SCRYPT_ITERATIONS_TARGET
-    private var walletApplication = application as WalletApplication
-    private var fingerprintHelper = FingerprintHelper(application)
-
     private val securityGuard = SecurityGuard()
 
     fun savePin(pin: String) {
@@ -65,7 +64,7 @@ class EncryptWalletLiveData(application: Application) : MutableLiveData<Resource
     fun changePassword(oldPin: String, newPin: String) {
         value = if (securityGuard.checkPin(oldPin)) {
             securityGuard.savePin(newPin)
-            fingerprintHelper.clear()
+            biometricHelper.clearBiometricInfo()
             Resource.success(walletApplication.wallet)
         } else {
             Resource.error("", null)
@@ -81,7 +80,7 @@ class EncryptWalletLiveData(application: Application) : MutableLiveData<Resource
 
         override fun doInBackground(vararg args: Any): Resource<Wallet> {
             val initialize = args[0] as Boolean
-            val wallet = walletApplication.wallet
+            val wallet = walletApplication.wallet!!
 
             val password = securityGuard.generateRandomPassword()
 
@@ -92,7 +91,7 @@ class EncryptWalletLiveData(application: Application) : MutableLiveData<Resource
                 val newKey = keyCrypter.deriveKey(password)
                 wallet.encrypt(keyCrypter, newKey)
 
-                if(initialize) {
+                if (initialize) {
                     walletApplication.saveWalletAndFinalizeInitialization()
                 }
 
@@ -102,7 +101,13 @@ class EncryptWalletLiveData(application: Application) : MutableLiveData<Resource
 
                 Resource.success(wallet)
             } catch (x: KeyCrypterException) {
-                Resource.error(x.message!!, null)
+                log.error("There was a problem encrypting the wallet", x)
+                Resource.error(x.message ?: "Unknown encryption error")
+            } catch (x: Exception) {
+                log.error("There was a problem creating the wallet", x)
+                Resource.error(
+                    x.message ?: "Unknown error when encrypting wallet during onboarding"
+                )
             }
         }
 
@@ -121,7 +126,7 @@ class EncryptWalletLiveData(application: Application) : MutableLiveData<Resource
 
         override fun doInBackground(vararg args: String): Resource<Wallet> {
             val password = args[0]
-            val wallet = walletApplication.wallet
+            val wallet = walletApplication.wallet!!
             return try {
                 org.bitcoinj.core.Context.propagate(Constants.CONTEXT)
                 val key = wallet.keyCrypter!!.deriveKey(password)

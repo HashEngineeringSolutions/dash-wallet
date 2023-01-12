@@ -1,17 +1,18 @@
 /*
- * Copyright 2019 Dash Core Group
+ * Copyright 2019 Dash Core Group.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package de.schildbach.wallet.ui
@@ -28,28 +29,61 @@ import android.text.TextUtils
 import android.view.View
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
+import androidx.lifecycle.ViewModelProvider
+import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet.WalletApplication
 import de.schildbach.wallet.ui.backup.RestoreFromFileActivity
+import de.schildbach.wallet.ui.main.WalletActivity
 import de.schildbach.wallet.ui.preference.PinRetryController
-import de.schildbach.wallet.ui.security.SecurityGuard
+import de.schildbach.wallet.security.SecurityGuard
 import de.schildbach.wallet_test.R
 import kotlinx.android.synthetic.main.activity_onboarding.*
 import kotlinx.android.synthetic.main.activity_onboarding_perm_lock.*
-import org.dash.wallet.common.ui.DialogBuilder
+import org.dash.wallet.common.services.analytics.AnalyticsService
+import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
+import org.dash.wallet.common.util.getMainTask
+import org.slf4j.LoggerFactory
+import javax.inject.Inject
 
 private const val REGULAR_FLOW_TUTORIAL_REQUEST_CODE = 0
 const val SET_PIN_REQUEST_CODE = 1
 private const val RESTORE_PHRASE_REQUEST_CODE = 2
 private const val RESTORE_FILE_REQUEST_CODE = 3
+private const val UPGRADE_NONENCRYPTED_FLOW_TUTORIAL_REQUEST_CODE = 4
 
+@AndroidEntryPoint
 class OnboardingActivity : RestoreFromFileActivity() {
 
     companion object {
+        private val log = LoggerFactory.getLogger(OnboardingActivity::class.java)
+        private const val EXTRA_UPGRADE = "upgrade"
         @JvmStatic
-        fun createIntent(context: Context): Intent {
-            return Intent(context, OnboardingActivity::class.java)
+        @JvmOverloads
+        fun createIntent(context: Context, upgrade: Boolean = false): Intent {
+            return Intent(context, OnboardingActivity::class.java).apply {
+                putExtra(EXTRA_UPGRADE, upgrade)
+            }
+        }
+
+        // this function removes the previous task which may still be running after an
+        // app upgrade
+        private fun removePreviousTask(activity: AppCompatActivity) {
+            log.info("do we need to remove the previous task")
+            val mainTask = activity.getMainTask()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (mainTask.taskInfo.taskId != activity.taskId) {
+                    log.info("removing previous task")
+                    mainTask.finishAndRemoveTask()
+                }
+            } else {
+                // when installing over 6.6.6 or lower, topActivity is null
+                if (mainTask.taskInfo.topActivity?.className != this::class.java.name) {
+                    log.info("removing previous task < Android Q")
+                    mainTask.finishAndRemoveTask()
+                }
+            }
         }
     }
 
@@ -57,12 +91,12 @@ class OnboardingActivity : RestoreFromFileActivity() {
 
     private lateinit var walletApplication: WalletApplication
 
-    override fun onStart() {
-        super.onStart()
-    }
+    @Inject
+    lateinit var analytics: AnalyticsService
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        walletApplication = (application as WalletApplication)
 
         if (PinRetryController.getInstance().isLockedForever) {
             setContentView(R.layout.activity_onboarding_perm_lock)
@@ -80,17 +114,26 @@ class OnboardingActivity : RestoreFromFileActivity() {
         setContentView(R.layout.activity_onboarding)
         slogan.setPadding(slogan.paddingLeft, slogan.paddingTop, slogan.paddingRight, getStatusBarHeightPx())
 
-        viewModel = ViewModelProviders.of(this).get(OnboardingViewModel::class.java)
+        viewModel = ViewModelProvider(this)[OnboardingViewModel::class.java]
 
-        walletApplication = (application as WalletApplication)
-
+        // TODO: we should decouple the logic from view interactions
+        // and move some of this to the viewModel, wrapping it in tests.
+        // The viewModel already has some related events
         if (walletApplication.walletFileExists()) {
-            regularFlow()
+            if (!walletApplication.wallet!!.isEncrypted) {
+                unencryptedFlow()
+            } else {
+                if (walletApplication.isWalletUpgradedToBIP44) {
+                    regularFlow()
+                } else {
+                    upgradeToBIP44Flow()
+                }
+            }
         } else {
             if (walletApplication.wallet == null) {
                 onboarding()
             } else {
-                if (walletApplication.wallet.isEncrypted) {
+                if (walletApplication.wallet!!.isEncrypted) {
                     walletApplication.fullInitialization()
                     regularFlow()
                 } else {
@@ -98,6 +141,36 @@ class OnboardingActivity : RestoreFromFileActivity() {
                 }
             }
         }
+        // during an upgrade, for some reason the previous screen is still in the recent app list
+        // this will find it and close it
+        if (intent.extras?.getBoolean(EXTRA_UPGRADE) == true) {
+            removePreviousTask(this)
+        }
+    }
+
+    // This is due to a wallet being created in an invalid way
+    // such that the wallet is not encrypted
+    private fun unencryptedFlow() {
+        log.info("the wallet is not encrypted -- the wallet will be upgraded")
+        if (walletApplication.configuration.v7TutorialCompleted) {
+            upgradeUnencryptedWallet()
+        } else {
+            startActivityForResult(Intent(this, WelcomeActivity::class.java),
+                UPGRADE_NONENCRYPTED_FLOW_TUTORIAL_REQUEST_CODE)
+            overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+        }
+    }
+
+    private fun upgradeUnencryptedWallet() {
+        viewModel.finishUnecryptedWalletUpgradeAction.observe(this) {
+            startActivityForResult(SetPinActivity.createIntent(application, R.string.set_pin_upgrade_wallet, upgradingWallet = true), SET_PIN_REQUEST_CODE)
+        }
+        viewModel.upgradeUnencryptedWallet()
+    }
+
+    private fun upgradeToBIP44Flow() {
+        // for now do nothing extra, it will be handled in WalletActivity
+        regularFlow()
     }
 
     private fun regularFlow() {
@@ -156,17 +229,22 @@ class OnboardingActivity : RestoreFromFileActivity() {
                 TextUtils.isEmpty(it.message) -> it.javaClass.simpleName
                 else -> it.message!!
             }
-            val dialog = DialogBuilder.warn(this, R.string.import_export_keys_dialog_failure_title)
-            dialog.setMessage(getString(R.string.import_keys_dialog_failure, message))
-            dialog.setPositiveButton(R.string.button_dismiss, null)
-            dialog.setNegativeButton(R.string.button_retry) { _, _ ->
-                RestoreWalletFromSeedDialogFragment.show(supportFragmentManager)
+
+            AdaptiveDialog.create(
+                R.drawable.ic_error,
+                title = getString(R.string.import_export_keys_dialog_failure_title),
+                message = getString(R.string.import_keys_dialog_failure, message),
+                positiveButtonText = getString(R.string.button_dismiss),
+                negativeButtonText = getString(R.string.retry)
+            ).show(this) { dismiss ->
+                if (dismiss == false) {
+                    RestoreWalletFromSeedDialogFragment.show(supportFragmentManager)
+                }
             }
-            dialog.show()
         })
-        viewModel.startActivityAction.observe(this, Observer {
-            startActivityForResult(it, SET_PIN_REQUEST_CODE)
-        })
+        viewModel.finishCreateNewWalletAction.observe(this) {
+            startActivityForResult(SetPinActivity.createIntent(application, R.string.set_pin_create_new_wallet), SET_PIN_REQUEST_CODE)
+        }
     }
 
     private fun showButtonsDelayed() {
@@ -177,10 +255,8 @@ class OnboardingActivity : RestoreFromFileActivity() {
     }
 
     private fun hideSlogan() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            val sloganDrawable = (window.decorView.background as LayerDrawable).getDrawable(1)
-            sloganDrawable.mutate().alpha = 0
-        }
+        val sloganDrawable = (window.decorView.background as LayerDrawable).getDrawable(1)
+        sloganDrawable.mutate().alpha = 0
     }
 
     private fun getStatusBarHeightPx(): Int {
@@ -201,12 +277,10 @@ class OnboardingActivity : RestoreFromFileActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REGULAR_FLOW_TUTORIAL_REQUEST_CODE) {
             upgradeOrStartMainActivity()
+        } else if (requestCode == UPGRADE_NONENCRYPTED_FLOW_TUTORIAL_REQUEST_CODE) {
+            upgradeUnencryptedWallet()
         } else if ((requestCode == SET_PIN_REQUEST_CODE || requestCode == RESTORE_PHRASE_REQUEST_CODE) && resultCode == Activity.RESULT_OK) {
             finish()
         }
-    }
-
-    fun getWalletApplication() : WalletApplication {
-        return walletApplication
     }
 }

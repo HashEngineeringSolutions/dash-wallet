@@ -21,8 +21,6 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
@@ -30,15 +28,14 @@ import com.google.zxing.*
 import com.google.zxing.common.HybridBinarizer
 import de.schildbach.wallet.WalletApplication
 import de.schildbach.wallet.data.PaymentIntent
-import de.schildbach.wallet.ui.InputParser.StringInputParser
-import de.schildbach.wallet.ui.send.SendCoinsInternalActivity
-import de.schildbach.wallet.ui.send.SweepWalletActivity
+import de.schildbach.wallet.ui.util.InputParser.StringInputParser
+import de.schildbach.wallet.ui.payments.SweepWalletActivity
+import de.schildbach.wallet.ui.send.SendCoinsActivity
 import de.schildbach.wallet_test.R
 import org.bitcoinj.core.PrefixedChecksummedBytes
 import org.bitcoinj.core.Transaction
 import org.bitcoinj.core.VerificationException
-import org.dash.wallet.common.ui.FancyAlertDialog
-import org.dash.wallet.common.ui.FancyAlertDialogViewModel
+import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
 import org.slf4j.LoggerFactory
 
 /**
@@ -117,15 +114,12 @@ class ImportSharedImageActivity : AppCompatActivity() {
     }
 
     private fun showErrorDialog(title: Int, msg: Int, image: Int) {
-        val errorDialog = FancyAlertDialog.newInstance(title, msg, image, R.string.button_ok, 0)
-        errorDialog.show(supportFragmentManager, "error_dialog")
-        val errorDialogViewModel = ViewModelProvider(this)[FancyAlertDialogViewModel::class.java]
-        errorDialogViewModel.onPositiveButtonClick.observe(this, Observer {
-            finish()
-        })
-        errorDialogViewModel.onNegativeButtonClick.observe(this, Observer {
-            finish()
-        })
+        AdaptiveDialog.create(
+            image,
+            getString(title),
+            getString(msg),
+            getString(R.string.button_ok)
+        ).show(this)
     }
 
     /**
@@ -159,7 +153,7 @@ class ImportSharedImageActivity : AppCompatActivity() {
     private fun handleQRCode(input: String) {
         object : StringInputParser(input, true) {
             override fun handlePaymentIntent(paymentIntent: PaymentIntent) {
-                SendCoinsInternalActivity.start(this@ImportSharedImageActivity, intent.action, paymentIntent, false, true)
+                SendCoinsActivity.start(this@ImportSharedImageActivity, intent.action, paymentIntent, true)
                 finish()
             }
 

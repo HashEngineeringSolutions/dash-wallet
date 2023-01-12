@@ -58,7 +58,6 @@
     <string name="send_coins_fragment_pin_label">Introdu codul PIN</string>
     <string name="send_coins_fragment_hint_fee_economic">O taxă de rețea de %s va fi plătită.</string>
     <string name="send_coins_fragment_hint_fee_priority">O taxă de prioritate de %s va fi plătită. Dacă vrei taxe reduse, utilizează "prioritate" numai dacă ai nevoie de confirmare cât mai curând posibil.</string>
-    <string name="send_coins_fragment_hint_insufficient_money">Fonduri nesuficiente</string>
     <string name="send_coins_fragment_hint_empty_wallet_failed">Suma plăților minuscule din portofel tău nu reprezintă o valoare care poate fi trimisă.</string>
     <string name="send_coins_fragment_direct_payment_enable">Trimite plata direct beneficiarului.</string>
     <string name="send_coins_fragment_direct_payment_ack">Plata ta directă a fost trimisă cu succes. </string>
@@ -106,7 +105,6 @@
     <string name="request_coins_fragment_initiate_request_qr">Te rog să ai acest cod scanat de către expeditor.</string>
     <string name="request_coins_fragment_initiate_request_nfc">Sau atinge un dispozitiv compatibil NFC.</string>
     <string name="request_coins_clipboard_msg">Cerere Dash copiată în clipboard</string>
-    <string name="request_coins_share_dialog_title">Trimite solicitarea pentru Dash...</string>
     <string name="request_coins_no_local_app_msg">Nu a fost găsită nici o altă aplicație Dash</string>
     <string name="request_coins_options_local_app_title">Cere din aplicația locală</string>
     <string name="address_book_activity_title">Carte de adrese</string>
@@ -180,7 +178,6 @@
     <string name="backup_wallet_dialog_message">Backup-ul tău va fi securizat cu parola aleasă și scrisă pe spațiul de stocare extern.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Portofelul tău este protejat de un PIN de cheltuieli. Asigură-te că îți amintiți codul PIN pe lângă parola de backup!</string>
     <string name="export_keys_dialog_button_export">Efectuează backup</string>
-    <string name="export_keys_dialog_success"><![CDATA[<p>Portofelul tau are un backup pe <tt>%s</tt></p><p>Dacă dispozitivul tău are o cartelă SD detașabilă, copia de backup <i>ar trebui să fie</i> pe această cartelă. Scoteți-o și păstrați-o într-un loc sigur. Dacă această cartelă <i>nu este</i> detașabilă, trebuie să arhivezi backup-ul în alt loc decât acest dispozitiv.</p><p><b>Dacă singurul loc unde există backup-ul este pe dispozitiv, riști să le pierzi pe amândouă în același timp!</b></p><p>În orice caz, asigură-te că îți amintești parola de backup. Dorești să arhivezi acum portofelul?</p>]]></string>
     <string name="export_keys_dialog_failure">Backup-ul pentru portofelul tău nu a putut fi efectuat:\n%s</string>
     <string name="export_keys_dialog_button_archive">Arhivă</string>
     <string name="export_keys_dialog_mail_subject">Backup pentru portofelul Dash</string>
@@ -246,10 +243,8 @@
     <string name="preferences_show_disclaimer_title">Afișează declarația de exonerare a răspunderii</string>
     <string name="preferences_show_disclaimer_summary">Ești sigur că ai citit notele de siguranță? Ai efectuat deja un back up al portofelului tău?</string>
     <string name="preferences_report_issue_title">Raportează problema</string>
-    <string name="preferences_initiate_reset_title">Resetează blockchain-ul</string>
-    <string name="preferences_initiate_reset_summary">Resetează blockchain-ul, tranzacțiile si soldul portofelului. Replay-ul va dura o perioada, deci resetează doar dacă ai un motiv. </string>
-    <string name="preferences_initiate_reset_dialog_message">Dorești să resetezi si sa replay blockchain-ul?\n\nAcest lucru va ascunde temporar soldul portofelului și va elimina tranzacțiile. Ambele se vor recupera pe măsură ce blockchain-ul este sincronizat. Asigură-te că ai o conexiune bună la internet.</string>
-    <string name="preferences_initiate_reset_dialog_positive">Resetează</string>
+    <string name="preferences_initiate_reset_title">scanează din nou blockchain-ul</string>
+    <string name="preferences_initiate_reset_dialog_positive">Scanează din nou</string>
     <string name="preferences_extended_public_key_title">Arată xpub</string>
     <string name="preferences_extended_public_key_summary">Arată Cheia Publică Extinsă a portofelului tau, pentru a putea fi importată in alte aplicaţii și servicii. Ai grijă: acest lucru va dezvălui confidențialitatea ta monetară aplicației respective.</string>
     <string name="bitmap_fragment_share">Distribuie...</string>
@@ -296,7 +291,6 @@
     <string name="button_ok">OK</string>
     <string name="button_dismiss">Renunță</string>
     <string name="button_cancel">Anulează</string>
-    <string name="button_retry">Încearcă din nou</string>
     <string name="button_help">Ajutor</string>
     <string name="button_add">Adaugă</string>
     <string name="button_delete">Şterge</string>
@@ -306,7 +300,6 @@
     <string name="button_copy">Copiază</string>
     <string name="button_copy_request">Copiază cererea</string>
     <string name="button_paste">Lipește</string>
-    <string name="button_share">Distribuie</string>
     <string name="button_set_as_default">Setează ca si default</string>
     <string name="button_request_coins">Cere Dash</string>
     <string name="button_send_coins">Trimite Dash</string>

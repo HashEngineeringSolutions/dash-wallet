@@ -17,28 +17,49 @@
 
 package org.dash.wallet.common
 
-import android.app.Activity
-import androidx.lifecycle.LiveData
-import org.bitcoinj.core.Address
-import org.bitcoinj.core.Coin
-import org.bitcoinj.core.Transaction
-import org.dash.wallet.common.data.ExchangeRate
-import org.dash.wallet.common.data.Resource
+import kotlinx.coroutines.flow.Flow
+import org.bitcoinj.core.*
+import org.bitcoinj.wallet.CoinSelector
+import org.bitcoinj.wallet.Wallet
+import org.dash.wallet.common.services.LeftoverBalanceException
+import org.dash.wallet.common.transactions.filters.TransactionFilter
+import org.dash.wallet.common.transactions.TransactionWrapper
+import kotlin.jvm.Throws
 
 interface WalletDataProvider {
+    // The wallet is in here temporary. In the feature modules, use transactionBag instead.
+    val wallet: Wallet?
+
+    val transactionBag: TransactionBag
+
+    val networkParameters: NetworkParameters
 
     fun freshReceiveAddress(): Address
 
-    fun getExchangeRate(currencyCode: String): LiveData<ExchangeRate>
+    fun getWalletBalance(): Coin
 
-    fun getExchangeRates(): LiveData<List<ExchangeRate>>
+    fun observeWalletChanged(): Flow<Unit>
 
-    fun currencyCodes(): LiveData<List<String>>
+    fun observeBalance(
+        balanceType: Wallet.BalanceType = Wallet.BalanceType.ESTIMATED,
+        coinSelector: CoinSelector? = null
+    ): Flow<Coin>
 
-    fun defaultCurrencyCode(): String
+    // Treat @withConfidence with care - it may produce a lot of events and affect performance.
+    fun observeTransactions(withConfidence: Boolean = false, vararg filters: TransactionFilter): Flow<Transaction>
 
-    fun sendCoins(address: Address, amount: Coin): LiveData<Resource<Transaction>>
+    fun getTransactions(vararg filters: TransactionFilter): Collection<Transaction>
 
-    fun startSendCoinsForResult(activity: Activity, requestCode: Int, address: Address, amount: Coin?)
+    fun wrapAllTransactions(vararg wrappers: TransactionWrapper): Collection<TransactionWrapper>
 
+    fun attachOnWalletWipedListener(listener: () -> Unit)
+
+    fun detachOnWalletWipedListener(listener: () -> Unit)
+
+    fun processDirectTransaction(tx: Transaction)
+
+    @Throws(LeftoverBalanceException::class)
+    fun checkSendingConditions(address: Address?, amount: Coin)
+
+    fun observeMostRecentTransaction(): Flow<Transaction>
 }

@@ -1,9 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <!-- Generic titles/messages -->
     <string name="loading">Nagkakarga...</string>
     <string name="loading_error">May kamaliang naganap. Pakiusap ulitin ito mamaya.</string>
+    <string name="please_wait_title">Mangyaring maghintay</string>
     <string name="dash_available">%1$s magagamit</string>
+    <string name="network_unavailable_title">Hindi Magagamit ang Network</string>
+    <string name="network_unavailable_check_connection">Mangyaring suriin ang iyong koneksyon sa network</string>
+    <string name="network_unavailable_balance_not_accurate">Ang balanse ay maaaring hindi tama dahil sa nawala na koneksyon</string>
+    <string name="buy_dash">Bumili ng Dash</string>
+    <string name="copied">Kinopya</string>
+    <string name="staking_title">Staking</string>
+    <string name="email">Email</string>
+    <string name="email_placeholder">hal. juandelacruz@gmail.com</string>
+    <string name="error">Mali</string>
+    <string name="select_a_coin">Pumili ng barya</string>
+    <string name="request_coins_share_dialog_title">Ipamahagi ang hiling na Dash...</string>
+    <string name="buy_with_fiat">Bumili ng Dash gamit ang fiat</string>
+    <string name="buy_and_convert">Bumili at i-convert ang Dash gamit ang isa pang crypto</string>
+    <string name="transfer_dash">Ilipat ang Dash</string>
+    <string name="login_error_title">Hindi makapag-log in sa iyong %s account</string>
+    <string name="login_error_message">May naganap na error habang nagla-log in sa iyong%s account.</string>
+    <string name="balance">Balanse:</string>
 
     <!-- Local Currency List: GGP -->
     <string name="currency_GGP">Guernsey Pound</string>
@@ -23,4 +41,42 @@
     <string name="currency_PAX">Paxos Standard</string>
     <!-- Local Currency List: GUSD is a stablecoin that is pegged to the United States dollar -->
     <string name="currency_GUSD">Gemini Dollar</string>
+
+    <!-- Generic buttons -->
+    <string name="button_dismiss">Buwagin</string>
+    <string name="network_unavailable_return">Bumalik sa Wallet</string>
+    <string name="button_continue">Ipagpatuloy</string>
+    <string name="get_quote">Kumuha ng Quote</string>
+    <string name="button_close">Sarado</string>
+    <string name="button_retry">Subukang muli</string>
+    <string name="button_send_report">Magpadala ng ulat</string>
+    <string name="button_info">impormasyon</string>
+    <string name="button_copy_address">Kopyahin ang address</string>
+    <string name="button_understand">Naiintindihan ko</string>
+    <string name="button_okay">Okay</string>
+    <string name="button_share">Ibahagi</string>
+    <string name="share_address">Ibahagi ang Address</string>
+    <string name="verify">Kumpirmahin</string>
+    <string name="receive_enter_amount_button">Tukuyin ang halaga</string>
+
+    <!-- Design system UI elements -->
+    <string name="search_hint">Maghanap</string>
+    <string name="permission_allow">Payagan</string>
+    <string name="permission_deny">Tanggihan</string>
+    <string name="pay_with">Magbayad gamit ang</string>
+    <string name="choose_payment_method">Piliin ang Paraan ng Pagbabayad</string>
+    <string name="debit_credit_card">Debit/Credit card</string>
+    <string name="max">Max</string>
+    <string name="select_the_coin">Piliin ang barya</string>
+    <string name="dash">Dash</string>
+    <string name="dash_wallet_name">Dash Wallet</string>
+    <string name="from">mula kay:</string>
+    <string name="to">para kay:</string>
+    <string name="select_currency">Piliin ang Pera</string>
+    <string name="send_coins_error_dusty_send">Ang halaga ay sobrang liit para maipadala</string>
+    <string name="send_coins_error_insufficient_money">Hindi sapat na pondo</string>
+
+    <string name="empty_wallet_warning_title">Mukhang inubos mo ang laman ng iyong Dash Wallet</string>
+    <string name="empty_wallet_crowdnode_warning">Pakitandaan, hindi mo mai-withdraw ang iyong mga pondo mula sa CrowdNode patungo sa wallet na ito hanggang sa mapataas mo ang iyong balanse sa 0.0003 Dash.</string>
+    <string name="syncing">Nagsi-sync</string>
 </resources>

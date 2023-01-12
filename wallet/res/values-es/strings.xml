@@ -2,6 +2,7 @@
 <resources>
 
     <string name="toast_wallet_reset">¡Tu billetera se ha reiniciado!\nTardará un tiempo en recuperarse.</string>
+    <string name="toast_start_storage_provider_selector_failed">No hay un proveedor de almacenamiento en la nube adecuado instalado. \nNecesitas algo como \"Nextcloud\" o \"Google Drive\".</string>
     <string name="wallet_disclaimer_fragment_remind_safety">Utilízalo bajo tu propio riesgo. Lee las &lt;u&gt;notas de seguridad&lt;/u&gt;.</string>
     <string name="wallet_disclaimer_fragment_remind_backup">Necesitas hacer backup de tu billetera!</string>
     <string name="blockchain_state_progress_hours">%1$s, %2$d horas atrás</string>
@@ -64,8 +65,6 @@
     <string name="send_coins_fragment_pin_label">Ingresar PIN</string>
     <string name="send_coins_fragment_hint_fee_economic">Una comisión de red de %s será pagada.</string>
     <string name="send_coins_fragment_hint_fee_priority">Una comisión prioritaria de %s será pagada. Si te importan las comisiones bajas, usa "Prioritaria" solo si necesitas confirmación lo más pronto posible.</string>
-    <string name="send_coins_fragment_hint_dusty_send">La cantidad es demasiado pequeña para ser enviada</string>
-    <string name="send_coins_fragment_hint_insufficient_money">Fondos insuficientes</string>
     <string name="send_coins_fragment_hint_empty_wallet_failed">La cantidad de pequeños pagos en tu billetera no es suficiente para poder enviarlos.</string>
     <string name="send_coins_fragment_hint_replaying">Actualmente, pagos no son posibles porque la billetera no está completamente sincronizada con la red</string>
     <string name="send_coins_fragment_direct_payment_enable">Enviar pago directamente al receptor.</string>
@@ -116,7 +115,6 @@
     <string name="request_coins_fragment_initiate_request_qr">Pide al pagador que escanee este código.</string>
     <string name="request_coins_fragment_initiate_request_nfc">O toca un dispositivo dotado de NFC.</string>
     <string name="request_coins_clipboard_msg">Solicitud de Dash copiada al portapapeles</string>
-    <string name="request_coins_share_dialog_title">Compartir solicitud de Dash…</string>
     <string name="request_coins_no_local_app_msg">No se encontró otra app de Dash</string>
     <string name="request_coins_options_local_app_title">Petición desde aplicación local</string>
     <string name="address_book_activity_title">Libreta de direcciones</string>
@@ -205,6 +203,7 @@
     <string name="import_keys_dialog_button_import">Restaurar</string>
     <string name="restore_wallet_dialog_success">La billetera ha sido restaurada.</string>
     <string name="restore_wallet_dialog_success_replay">Tu billetera fue restaurada satisfactoriamente. El balance será determinado a continuación. Esto llevará algún tiempo.</string>
+    <string name="restore_wallet_dialog_success_encrypted">Advertencia: tu billetera está protegida por un PIN. Asegúrate de recordarlo antes de recibir fondos en esta billetera.</string>
     <string name="import_keys_dialog_failure">La billetera no pudo ser restaurada:\n\n%s\n\n¿Contraseña errónea?</string>
     <string name="backup_wallet_permission_dialog_title">Permisos de escritura no encontrados</string>
     <string name="backup_wallet_permission_dialog_message">Para respaldar tu billetera a un medio externo, necesitas dar permisos de escritura.</string>
@@ -212,7 +211,7 @@
     <string name="backup_wallet_dialog_message">Tu copia de seguridad será encriptada con la contraseña que elijas y guardada en una unidad de almacenamiento externo.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Tu cartera está protegida con un PIN de pagos. ¡Asegúrate de recordar el PIN, además de la contraseña de tu copia de seguridad!</string>
     <string name="export_keys_dialog_button_export">Copia de seguridad</string>
-    <string name="export_keys_dialog_success"><![CDATA[<p>Tu billetera ha sido copiada en <tt>%s</tt></p><p>Si tu dispositivo tiene una tarjeta SD, la copia <i>debería</i> estar ahí. Extraela y manténla en un sitio seguro. Si la tarjeta <i>no</i> es extraíble, necesitas guardar la copia en otro lugar distinto a tu dispositivo.</p><p><b>Si el único sitio en el que existe una copia es en tu dispositivo, ¡corres el riesgo de perder las dos al mismo tiempo!</b></p><p>En cualquier caso, asegúrate de recordar la contraseña de la copia. ¿Deseas archivar tu billetera ahora?</p>]]></string>
+    <string name="export_keys_dialog_success"><![CDATA[<p>Se ha realizado una copia de seguridad de tu billetera en <tt>%s</tt></p><p><b>Si el único lugar donde existe tu copia de seguridad es en tu dispositivo, corres el riesgo de perder ambos al mismo tiempo.</b></p><p>En cualquier caso, asegúrate de recordar tu contraseña de respaldo.</p>]]></string>
     <string name="export_keys_dialog_failure">No se pudo realizar la copia de seguridad de tu billetera:\n%s</string>
     <string name="export_keys_dialog_button_archive">Archivo</string>
     <string name="export_keys_dialog_mail_subject">Copia de seguridad de Dash Wallet</string>
@@ -279,10 +278,10 @@
     <string name="preferences_show_disclaimer_title">Mostrar descargo de responsabilidad</string>
     <string name="preferences_show_disclaimer_summary">¿Has leído las notas de seguridad? ¿Ya hiciste backup de tu billetera a un lugar seguro?</string>
     <string name="preferences_report_issue_title">Reportar problema</string>
-    <string name="preferences_initiate_reset_title">Restaurar cadena de bloques</string>
-    <string name="preferences_initiate_reset_summary">Restaurar la cadena de bloques, transacciones y balance de la billetera. La reproducción tomará un tiempo, solo haz esto si sabes porqué.</string>
-    <string name="preferences_initiate_reset_dialog_message">Deseas restaurar y restablecer la cadena de bloques?\n\nEsto ocultará temporalmente tu balance de la billetera y removerá transacciones. Ambas se recoperarán en la medida en que la sincronización de la cadena de bloques progrese. Asegurate de tener una conexión a Internet confiable.</string>
-    <string name="preferences_initiate_reset_dialog_positive">Reiniciar</string>
+    <string name="preferences_initiate_reset_title">Escanear de nuevo la cadena de bloques</string>
+    <string name="preferences_initiate_reset_summary">Vuelve a escanear la cadena de bloques, las transacciones y el saldo de la billetera. La reproducción tardará un rato, así que hazlo solo si sabes por qué.</string>
+    <string name="preferences_initiate_reset_dialog_message">¿te gustaría volver a escanear la cadena de bloques?\n\nEsto ocultará temporalmente el saldo de tu billetera y eliminará las transacciones. Ambos se recuperarán a medida que avance la sincronización de la cadena de bloques. Asegúrate de tener una conexión confiable a Internet.</string>
+    <string name="preferences_initiate_reset_dialog_positive">Escanear nuevamente</string>
     <string name="preferences_extended_public_key_title">Mostrar xpub</string>
     <string name="preferences_extended_public_key_summary">Ve la llave publica extendida de tu billetera, para que pueda ser importada hacia otras apps y servicios ten cuidado: hacer esto dara a conocer tu privacidad monetaria a esa app.</string>
     <string name="bitmap_fragment_share">Comparte…</string>
@@ -301,6 +300,14 @@
     <string name="report_issue_dialog_collect_wallet_dump">Añadir el volcado de datos de la billetera</string>
     <string name="report_issue_dialog_mail_intent_chooser">Enviar informe mediante…</string>
     <string name="report_issue_dialog_mail_intent_failed">Ha fallado el envío del informe.</string>
+    <string name="report_transaction_history_export">Exportar</string>
+    <string name="report_transaction_history_title">Exportar CSV</string>
+    <string name="report_transaction_history_not_synced_title">Exportar CSV</string>
+    <string name="report_transaction_history_not_synced_message">Por favor espera hasta que la billetera esté completamente sincronizada antes de exportar tu historial de transacciones.</string>
+    <string name="report_transaction_history_message">Se exportará el historial completo de transacciones.\n\nTodos los pagos se considerarán como una venta y todas las transacciones entrantes serán ingresos. El propietario de esta billetera es responsable de realizar cualquier ajuste de base de costos en su sistema de declaración de impuestos elegido.</string>
+    <string name="report_transaction_history_mail_intent_chooser">Enviar historial de transacciones usando…</string>
+    <string name="report_transaction_history_dialog_mail_intent_failed">Error al enviar el historial de transacciones.</string>
+
     <string name="about_title">Acerca de</string>
     <string name="about_version_title">Versión</string>
     <string name="about_copyright_title">Copyright</string>
@@ -329,7 +336,6 @@
     <string name="button_ok">Aceptar</string>
     <string name="button_dismiss">Rechazar</string>
     <string name="button_cancel">Cancelar</string>
-    <string name="button_retry">Reintentar</string>
     <string name="button_help">Ayuda</string>
     <string name="button_add">Añadir</string>
     <string name="button_delete">Eliminar</string>
@@ -339,7 +345,6 @@
     <string name="button_copy">Copiar</string>
     <string name="button_copy_request">Copiar solicitud</string>
     <string name="button_paste">Pegar</string>
-    <string name="button_share">Compartir</string>
     <string name="button_set_as_default">Establecer como predeterminado</string>
     <string name="button_request_coins">Recibir Dash</string>
     <string name="button_send_coins">Enviar Dash</string>
@@ -378,8 +383,10 @@
     <string name="payment_protocol_insufficient_funds_error_message">No tienes fondos suficientes para completar esta transacción.</string>
 
 
-
+    <string name="select_a_service_to_buy_and_sell_dash">Seleccione un servicio para comprar y vender Dash.</string>
     <string name="select_a_service">Seleccionar un servicio</string>
     <string name="activity_buy_and_sell_dash_filter">Filtrar</string>
     <string name="clear_filter">Borrar filtro</string>
+    <string name="select_currency">Selecciona el tipo de moneda</string>
+    <string name="reason">Razón</string>
 </resources>

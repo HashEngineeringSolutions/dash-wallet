@@ -24,11 +24,11 @@ import android.text.format.DateUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.BaseEncoding;
 
-import org.bitcoinj.core.CoinDefinition;
+import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Context;
+import org.bitcoinj.core.MasternodeSync;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.crypto.ChildNumber;
-import org.bitcoinj.params.DevNetParams;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.utils.MonetaryFormat;
@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
 
 import de.schildbach.wallet_test.BuildConfig;
@@ -61,17 +62,21 @@ public final class Constants {
 
     public static final boolean IS_PROD_BUILD;
 
+    public static final EnumSet<MasternodeSync.SYNC_FLAGS> SYNC_FLAGS = MasternodeSync.SYNC_DEFAULT_SPV;
+    public static final EnumSet<MasternodeSync.VERIFY_FLAGS> VERIFY_FLAGS = MasternodeSync.VERIFY_DEFAULT_SPV;
+
     static {
         switch (BuildConfig.FLAVOR) {
             case "prod":
-            case "foss":
-            case "beta": {
+            case "foss": {
                 DNS_SEED = new String[]{"dnsseed.dash.org", "dnsseed.dashdot.io"};
                 BIP44_PATH = DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH;
                 NETWORK_PARAMETERS = MainNetParams.get();
                 IS_PROD_BUILD = true;
                 FILENAME_NETWORK_SUFFIX = "";
                 WALLET_NAME_CURRENCY_CODE = "dash";
+                org.dash.wallet.common.util.Constants.INSTANCE.setEXPLORE_GC_FILE_PATH("explore/explore.db");
+                SYNC_FLAGS.add(MasternodeSync.SYNC_FLAGS.SYNC_HEADERS_MN_LIST_FIRST);
                 break;
             }
             case "_testNet3": {
@@ -81,29 +86,15 @@ public final class Constants {
                 IS_PROD_BUILD = false;
                 FILENAME_NETWORK_SUFFIX = "-testnet";
                 WALLET_NAME_CURRENCY_CODE = "tdash";
+                org.dash.wallet.common.util.Constants.INSTANCE.setEXPLORE_GC_FILE_PATH("explore/explore-testnet.db");
+                SYNC_FLAGS.add(MasternodeSync.SYNC_FLAGS.SYNC_HEADERS_MN_LIST_FIRST);
                 break;
-            }
-            case "devNet": {
-                DNS_SEED = new String[]{
-                        "devnet-maithai.thephez.com",
-                        "54.187.113.35", "54.200.201.200", "34.216.233.163",
-                        "34.221.188.185", "54.189.63.67", "52.40.117.135",
-                        "54.187.111.107", "34.212.68.164", "18.237.142.23",
-                        "54.202.73.177"
-                };
-                BIP44_PATH = DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH_TESTNET;
-                NETWORK_PARAMETERS = DevNetParams.get("maithai", "yMtULrhoxd8vRZrsnFobWgRTidtjg2Rnjm", 20001, DNS_SEED);
-                IS_PROD_BUILD = false;
-                FILENAME_NETWORK_SUFFIX = "-devnet";
-                WALLET_NAME_CURRENCY_CODE = "tdash";
-                break;
-
             }
             default: {
                 throw new IllegalStateException("Unsupported flavor " + BuildConfig.FLAVOR);
             }
         }
-        org.dash.wallet.common.Constants.MAX_MONEY = NETWORK_PARAMETERS.getMaxMoney();
+        org.dash.wallet.common.util.Constants.INSTANCE.setMAX_MONEY(NETWORK_PARAMETERS.getMaxMoney());
     }
 
     /** Bitcoinj global context. */
@@ -123,6 +114,9 @@ public final class Constants {
         /** Filename of the automatic wallet backup. */
         public static final String WALLET_KEY_BACKUP_PROTOBUF = "key-backup-protobuf" + FILENAME_NETWORK_SUFFIX;
 
+        /** Folder with datastore preferences. */
+        public static final String DATASTORE_PREFS_DIRECTORY = "datastore";
+
         /** Path to external storage */
         public static final File EXTERNAL_STORAGE_DIR = Environment.getExternalStorageDirectory();
 
@@ -131,18 +125,25 @@ public final class Constants {
                 .getExternalStorageDirectory(), Environment.DIRECTORY_DOWNLOADS);
 
         /** Filename of the manual key backup (old format, can only be read). */
-        public static final String EXTERNAL_WALLET_KEY_BACKUP = CoinDefinition.coinName.toLowerCase()+"-wallet-keys" + FILENAME_NETWORK_SUFFIX;
+        public static final String EXTERNAL_WALLET_KEY_BACKUP = "dash-wallet-keys" + FILENAME_NETWORK_SUFFIX;
 
         /** Filename of the manual wallet backup. */
-        public static final String EXTERNAL_WALLET_BACKUP = CoinDefinition.coinName +"-wallet-backup" + FILENAME_NETWORK_SUFFIX;
+        public static final String EXTERNAL_WALLET_BACKUP = "dash-wallet-backup" + FILENAME_NETWORK_SUFFIX;
 
         /** Filename of the block store for storing the chain. */
         public static final String BLOCKCHAIN_FILENAME = "blockchain" + FILENAME_NETWORK_SUFFIX;
 
+        /** Filename of the block store for storing the headers. */
+        public static final String HEADERS_FILENAME = "headers" + FILENAME_NETWORK_SUFFIX;
+
         /** Filename of the block checkpoints file. */
         public static final String CHECKPOINTS_FILENAME = "checkpoints" + FILENAME_NETWORK_SUFFIX + ".txt";
 
+        /** Filename of the bootstrap masternode list diff file. */
         public static final String MNLIST_BOOTSTRAP_FILENAME = "mnlistdiff" + FILENAME_NETWORK_SUFFIX + ".dat";
+
+        /** Filename of the bootstrap qrinfo file. */
+        public static final String QRINFO_BOOTSTRAP_FILENAME = "qrinfo" + FILENAME_NETWORK_SUFFIX + ".dat";
 
         /** Filename of the fees files. */
         public static final String FEES_FILENAME = "fees" + FILENAME_NETWORK_SUFFIX + ".txt";
@@ -154,46 +155,28 @@ public final class Constants {
     /** Maximum size of backups. Files larger will be rejected. */
     public static final long BACKUP_MAX_CHARS = 10000000;
 
-    private static final String EXPLORE_BASE_URL_PROD = CoinDefinition.BLOCKEXPLORER_BASE_URL_PROD;
-    private static final String EXPLORE_BASE_URL_TEST = CoinDefinition.BLOCKEXPLORER_BASE_URL_TEST;
-
-    /** Base URL for browsing transactions, blocks or addresses. */
-    public static final String EXPLORE_BASE_URL = NETWORK_PARAMETERS.getId().equals(NetworkParameters.ID_MAINNET) ? EXPLORE_BASE_URL_PROD
-            : EXPLORE_BASE_URL_TEST;
-    public static final String EXPLORE_ADDRESS_PATH  = CoinDefinition.BLOCKEXPLORER_ADDRESS_PATH;
-    public static final String EXPLORE_TRANSACTION_PATH  = CoinDefinition.BLOCKEXPLORER_TRANSACTION_PATH;
-    public static final String EXPLORE_BLOCK_PATH  = CoinDefinition.BLOCKEXPLORER_BLOCK_PATH;
-
-    public static final String MIMETYPE_BACKUP_PRIVATE_KEYS = "x-"+CoinDefinition.coinName.toLowerCase()+"/private-keys";
-
-    private static final String BITEASY_API_URL_PROD = CoinDefinition.UNSPENT_API_URL;//"https://api.biteasy.com/blockchain/v1/";
-    private static final String BITEASY_API_URL_TEST = "https://api.biteasy.com/testnet/v1/";
-    /** Base URL for blockchain API. */
-    public static final String BITEASY_API_URL = NETWORK_PARAMETERS.getId().equals(NetworkParameters.ID_MAINNET) ? BITEASY_API_URL_PROD
-            : BITEASY_API_URL_TEST;
-
     /** URL to fetch version alerts from. */
     public static final HttpUrl VERSION_URL = HttpUrl.parse("https://wallet.schildbach.de/version");
     /** URL to fetch dynamic fees from. */
     public static final HttpUrl DYNAMIC_FEES_URL = HttpUrl.parse("https://wallet.schildbach.de/fees");
 
     /** MIME type used for transmitting single transactions. */
-    public static final String MIMETYPE_TRANSACTION = "application/x-" + CoinDefinition.coinTicker.toLowerCase() + "tx";
+    public static final String MIMETYPE_TRANSACTION = "application/x-dashtx";
 
     /** MIME type used for transmitting wallet backups. */
-    public static final String MIMETYPE_WALLET_BACKUP = "application/x-"+CoinDefinition.coinName.toLowerCase()+"-wallet-backup";
+    public static final String MIMETYPE_WALLET_BACKUP = "application/x-dash-wallet-backup";
 
     /** Number of confirmations until a transaction is fully confirmed. */
     public static final int MAX_NUM_CONFIRMATIONS = 6;
 
     /** User-agent to use for network access. */
-    public static final String USER_AGENT = CoinDefinition.coinName +" Wallet";
+    public static final String USER_AGENT = "Dash Wallet";
 
     /** Default currency to use if all default mechanisms fail. */
     public static final String DEFAULT_EXCHANGE_CURRENCY = "USD";
 
     /** Recipient e-mail address for reports. */
-    public static final String REPORT_EMAIL = "support@dash.org";
+    public static final String REPORT_EMAIL = BuildConfig.SUPPORT_EMAIL;
 
     /** Subject line for manually reported issues. */
     public static final String REPORT_SUBJECT_BEGIN = "Android Dash Wallet:  ";
@@ -210,11 +193,10 @@ public final class Constants {
     public static final String ADDRESS_FORMAT_SECTION_SEPARATOR = "…";
 
     public static final MonetaryFormat LOCAL_FORMAT = new MonetaryFormat().noCode().minDecimals(2).optionalDecimals();
-
     public static final BaseEncoding HEX = BaseEncoding.base16().lowerCase();
 
-    public static final String SOURCE_URL = "https://github.com/HashEngineering/" + CoinDefinition.coinName.toLowerCase() + "-wallet";
-    public static final String BINARY_URL = "https://github.com/HashEngineering/" + CoinDefinition.coinName.toLowerCase() + "-wallet/releases";
+    public static final String SOURCE_URL = "https://github.com/dashevo/dash-wallet";
+    public static final String BINARY_URL = "https://github.com/dashevo/dash-wallet/releases";
     public static final String MARKET_APP_URL = "market://details?id=%s";
     public static final String WEBMARKET_APP_URL = "https://play.google.com/store/apps/details?id=%s";
 
@@ -227,7 +209,7 @@ public final class Constants {
 
     public static final long DELAYED_TRANSACTION_THRESHOLD_MS = 2 * DateUtils.HOUR_IN_MILLIS;
 
-    public static final int SDK_DEPRECATED_BELOW = Build.VERSION_CODES.JELLY_BEAN;
+    public static final int SDK_DEPRECATED_BELOW = Build.VERSION_CODES.M;
 
     public static final int MEMORY_CLASS_LOWEND = 64;
 
@@ -239,6 +221,7 @@ public final class Constants {
 
     public static String NOTIFICATION_CHANNEL_ID_TRANSACTIONS = "dash.notifications.transactions";
     public static String NOTIFICATION_CHANNEL_ID_ONGOING = "dash.notifications.ongoing";
+    public static String NOTIFICATION_CHANNEL_ID_GENERIC = "dash.notifications.generic";
 
     /** Desired number of scrypt iterations for deriving the spending PIN */
     public static final int SCRYPT_ITERATIONS_TARGET = 65536;

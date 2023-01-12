@@ -1,9 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <!-- Generic titles/messages -->
     <string name="loading">Laden...</string>
     <string name="loading_error">Er is een fout opgetreden. Probeer het later nog eens.</string>
+    <string name="please_wait_title">Even wachten a.u.b.</string>
     <string name="dash_available">%1$s beschikbaar</string>
+    <string name="network_unavailable_title">Netwerk niet beschikbaar</string>
+    <string name="network_unavailable_check_connection">Controleer de netwerkverbinding</string>
+    <string name="network_unavailable_balance_not_accurate">Het saldo is mogelijk niet correct vanwege de verbroken verbinding</string>
+    <string name="buy_dash">Koop Dash</string>
+    <string name="copied">Gekopieerd</string>
+    <string name="staking_title">Staking</string>
+    <string name="email">E-mail</string>
+    <string name="email_placeholder">bijvoorbeeld jan@mail.com</string>
+    <string name="error">Fout</string>
+    <string name="select_a_coin">Selecteer een munt</string>
+    <string name="request_coins_share_dialog_title">Deel Dashverzoek...</string>
+    <string name="buy_with_fiat">Koop Dash met fiat geld</string>
+    <string name="buy_and_convert">Koop en converteer Dash met een andere cryptovaluta</string>
+    <string name="transfer_dash">Dash overzetten</string>
+    <string name="login_error_title">Kan niet inloggen op je %s account</string>
+    <string name="login_error_message">Er is een fout opgetreden tijdens het inloggen op je %s account.</string>
+    <string name="balance">Saldo:</string>
 
     <!-- Local Currency List: GGP -->
     <string name="currency_GGP">Guernsey Pound</string>
@@ -23,4 +41,42 @@
     <string name="currency_PAX">Paxos Standard</string>
     <!-- Local Currency List: GUSD is a stablecoin that is pegged to the United States dollar -->
     <string name="currency_GUSD">Gemini Dollar</string>
+
+    <!-- Generic buttons -->
+    <string name="button_dismiss">Annuleren</string>
+    <string name="network_unavailable_return">Keer terug naar portemonnee</string>
+    <string name="button_continue">Doorgaan</string>
+    <string name="get_quote">Offerte aanvragen</string>
+    <string name="button_close">Sluit</string>
+    <string name="button_retry">Probeer opnieuw</string>
+    <string name="button_send_report">Verstuur rapport</string>
+    <string name="button_info">info</string>
+    <string name="button_copy_address">Kopieer adres</string>
+    <string name="button_understand">ik snap het</string>
+    <string name="button_okay">Oké</string>
+    <string name="button_share">Deel</string>
+    <string name="share_address">Deel adres</string>
+    <string name="verify">Verifiëren</string>
+    <string name="receive_enter_amount_button">Specificeer bedrag</string>
+
+    <!-- Design system UI elements -->
+    <string name="search_hint">Zoek</string>
+    <string name="permission_allow">Sta toe</string>
+    <string name="permission_deny">Weiger</string>
+    <string name="pay_with">Betaal met</string>
+    <string name="choose_payment_method">Kies betalingsmethode</string>
+    <string name="debit_credit_card">Debit/Creditcard</string>
+    <string name="max">Max</string>
+    <string name="select_the_coin">Selecteer de munt</string>
+    <string name="dash">Dash</string>
+    <string name="dash_wallet_name">Dash portemonnee</string>
+    <string name="from">van</string>
+    <string name="to">naar</string>
+    <string name="select_currency">Selecteer valuta</string>
+    <string name="send_coins_error_dusty_send">bedrag is te klein om te versturen</string>
+    <string name="send_coins_error_insufficient_money">Ontoereikende fondsen</string>
+
+    <string name="empty_wallet_warning_title">Het ziet er naar uit dat je je Dashportemonee leeg aan het maken bent</string>
+    <string name="empty_wallet_crowdnode_warning">Let op, je zal geen geld kunnen opnemen van CrowdNode naar deze portemonnee totdat je je saldo verhoogt tot 0,0003 Dash.</string>
+    <string name="syncing">Aan het synchroniseren</string>
 </resources>

@@ -23,6 +23,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import de.schildbach.wallet.Constants
 import de.schildbach.wallet.WalletApplication
+import de.schildbach.wallet.ui.util.SingleLiveEvent
 import de.schildbach.wallet_test.R
 import org.bitcoinj.crypto.MnemonicException
 import org.bitcoinj.wallet.Wallet
@@ -50,7 +51,7 @@ class RestoreWalletFromFileViewModel(application: Application) : AndroidViewMode
         if (!wallet.hasKeyChain(Constants.BIP44_PATH) && wallet.isEncrypted) {
             showUpgradeWalletAction.call(wallet)
         } else {
-            walletApplication.wallet = wallet
+            walletApplication.setWallet(wallet)
             log.info("successfully restored wallet from file")
             walletApplication.resetBlockchainState()
             startActivityAction.call(SetPinActivity.createIntent(getApplication(),

@@ -7,6 +7,7 @@
     <string name="onboarding_load_wallet_error">امکان بارگذاری کیف پول وجود ندارد!</string>
 
     <string name="set_pin_create_new_wallet">ایجاد یک کیف پول جدید</string>
+    <string name="set_pin_upgrade_wallet">ارتقای کیف پول</string>
     <string name="set_pin_restore_wallet">بازگردانی کیف پول</string>
     <string name="set_pin_enter_pin">پین کد قبلی را وارد کنید</string>
     <string name="set_pin_set_pin">پین کد را تعیین کنید</string>
@@ -15,6 +16,7 @@
     <string name="set_pin_decrypting">در حال رمزگشایی کیف پول</string>
     <string name="set_pin_verifying_pin">در حال تائید پین کد</string>
     <string name="set_pin_message">برای هر بار باز کردن قفل اپلیکیشن در مواقع استفاده، به این پین کد نیاز خواهید داشت.</string>
+    <string name="set_pin_confirm_pin_incorrect">رمز نادرست بود</string>
 
     <string name="home_available_balance">موجودی در دسترس</string>
     <string name="home_balance_hidden">موجودی مخفی</string>
@@ -63,12 +65,10 @@
 درخواست در کلیپ‌برد: \n\n %s</string>
     <string name="scan_to_pay_error_dialog_message_no_data">نشانی دش یا نشانی اینترنتی نامعتبر
 درخواست در کلیپ‌برد</string>
+    <string name="pay_to_confirm_address">مطمئن هستید این همان آدرسی است که می‌خواهید دش برایش ارسال کنید؟ </string>
 
     <string name="receive_title">دریافت</string>
     <string name="receive_enter_amount_message">مبلغ مورد نظر برای دریافت را مشخص کنید</string>
-    <string name="receive_enter_amount_button">مبلغ را مشخص کنید</string>
-    <string name="receive_share_button">به اشتراک گذاری</string>
-    <string name="receive_copied">کپی شد</string>
 
     <string name="pay_title">ارسال</string>
     <string name="history_title">سابقه</string>
@@ -118,7 +118,6 @@
     <string name="import_export_keys_dialog_password_phrase">عبارت بازیابی اینجا قرار می‌گیرد.</string>
     <string name="preferences_report_issue_summary">جمع‌آوری اطلاعات درباره مشکلی که با آن روبرو بودید و ارسال گزارش مربوط به آن به توسعه‌دهندگان</string>
     <string name="navigation_configuration">تنظیمات</string>
-    <string name="button_copy_address">کپی نشانی</string>
     <string name="request_coins_clipboard_address_msg">نشانی دش کپی شد</string>
     <string name="backup_wallet_to_seed_show_recovery_phrase">نمایش</string>
     <string name="restore_wallet_from_invalid_seed_warning_message">«%s» جزو کلمات عبارت بازیابی نیست</string>
@@ -147,6 +146,8 @@
     <string name="wallet_lock_try_again">در %1$d %2$s دیگر دوباره تلاش کنید.</string>
     <string name="wallet_lock_reset">بازنشانی</string>
     <string name="wallet_lock_wrong_pin">رمز نادرست است! %s</string>
+    <string name="wallet_last_attempt">آخرین امکان وارد کردن رمز</string>
+    <string name="wallet_last_attempt_message">اگر یک بار دیگر، رمز به صورت اشتباه وارد شود، باید از عبارت‌ورودی برای بازگرداندن کیف پول استفاده کنید</string>
 
     <plurals name="wallet_lock_attempts_remaining">
         <item quantity="one">%d بار دیگر می‌توانید تلاش کنید</item>
@@ -181,6 +182,13 @@
     <string name="notification_transactions_channel_description">دریافت پیعام درباره تراکنش‌های دریافتی</string>
     <string name="notification_synchronization_channel_name">همزمان‌سازی</string>
     <string name="notification_synchronization_channel_description">وقتی اولیکیشن در حال همزمان‌سازی خود با شبکه است، پیغامی را نشان بده.</string>
+    <string name="notification_generic_channel_name">نوتیفیکشن‌های عمومی</string>
+    <string name="notification_generic_channel_description">سایر رویدادهای مربوط به دش والت</string>
+    <string name="notification_push_channel_name">نوتیفیکیشن</string>
+    <string name="notification_push_channel_description">نوتیفیکشن‌های دش را نشان بده</string>
+    <string name="notification_settings_title">نوتیفیکیشن‌ها</string>
+    <string name="notification_explainer_title">دش والت می‌خواهد برایتان نوتیفیکیشن بفرستد</string>
+    <string name="notification_explainer_message">نوتیفیکیشن شامل هشدار، صدا و آیکون هستند. همه اینها را می‌توان در بخش تنظیمات گوشی مشخص کرد. </string>
 
     <string name="net_type_indicator" />
 
@@ -199,14 +207,13 @@
     <string name="preferences_enable_payment_request_title">بی‌آی‌پی۷۰  برای اسکن به منظور پرداخت</string>
 
     <string name="verify_continue">ادامه</string>
-    <string name="verify">تائید</string>
     <string name="verify_backup_wallet">کیف پول پشتیبان</string>
     <string name="verify_show_recovery_phrase">نشان دادن عبارت بازیابی</string>
     <string name="verify_secure_now">کیف پول اکنون امن است</string>
     <string name="verify_it_is_important">مهم</string>
     <string name="verify_it_is_important_subtitle">می‌خواهیم کلید مخفی برای باز کردن کیف پول‌تان را نشان دهیم.</string>
     <string name="verify_info_text_1">داشتن این عبارت بازیابی، به معنای دسترسی به موجودی کیف پول‌تان است.</string>
-    <string name="verify_info_text_2">ما این عبارت بازیابی را ذخیره نمی‌کنیم. </string>
+    <string name="verify_info_text_2">ما عبارت بازیابی را ذخیره نمی‌کنیم. </string>
     <string name="verify_info_text_3">اگر دستگاه‌تان گم شود یا آسیب ببیند یا دش والت به صورت تصادفی از روی دستگاه‌تان پاک شود، برای دسترسی به موجودی‌تان به این عبارت بازیابی نیاز خواهید داشت. </string>
     <string name="verify_skip">رد کردن</string>
     <string name="verify_secure_now_btn">اکنون امن است</string>
@@ -216,9 +223,24 @@
     <string name="verify_seed_buttons_tip">لطفا این کلمات را بر اساس ترتیب کلمات در عبارت بازیابی، به ترتیب انتخاب کنید. </string>
     <string name="verify_seed_success_title">با موفقیت تائید شد</string>
     <string name="verify_seed_success_message">کیف پول‌تان اکنون امن است. هر گاه خواستید می‌توانید از این عبارت بازیابی برای بازگرداندن حساب‌تان روی دستگاهی دیگر استفاده کنید. </string>
+    <string name="verify_no_screenshot_title">اسکرین‌شات نگیرید</string>
+    <string name="verify_no_screenshot_message">به جای این کار، عبارت بازیابی را در جایی امن یادداشت کنید. </string>
+    <string name="verify_why_no_screenshot">چرا نباید اسکرین‌شات بگیریم؟ </string>
+    <string name="verify_warning_title">هشدار</string>
+    <string name="verify_warning_message">این عبارت بازیابی، دسترسی‌تان به موجودی در کیف پول را فراهم می‌سازد. </string>
+    <string name="verify_warning_screenshots_title">اسکرین‌شات نگیرید</string>
+    <string name="verify_warning_screenshots_message">اسکرین‌شات توسط سایر اپلیکیشن‌ها و دستگاه‌ها قابل مشاهده است. </string>
+    <string name="verify_warning_do_not_show">نگذارید کسی عبارت بازیابی شما را مشاهده کند. </string>
+    <string name="verify_warning_do_not_type">هرگز عبارت بازیابی را در اپلیکیشن مدیریت گذرواژه یا جای دیگر یادداشت نکنید. </string>
     <string name="view_seed_done">انجام شد</string>
     <string name="view_seed_title">عبارت بازیابی</string>
     <string name="transaction_result_view_on_explorer">مشاهده در مرورگر بلاک</string>
+    <string name="transaction_result_tax_category">دسته‌بندی مالیاتی</string>
+    <string name="transaction_result_tax_category_loading">در حال بارگذاری...</string>
+    <string name="tax_category_income">درآمد</string>
+    <string name="tax_category_expense">هزینه</string>
+    <string name="tax_category_transfer_in">انتقال به حساب</string>
+    <string name="tax_category_transfer_out">انتقال از حساب</string>
     <string name="transaction_result_paid_successfully">با موفقیت ارسال شد</string>
     <string name="transaction_result_sent_to">ارسال شد به</string>
     <string name="transaction_date_and_time">تاریخ</string>
@@ -230,6 +252,7 @@
     <string name="transaction_details_received_at">دریافت شد در</string>
     <string name="transaction_details_moved_from">منتقل شد از</string>
     <string name="transaction_details_moved_internally_to">به صورت داخلی منتقل شد به</string>
+    <string name="transaction_failed_details">تراکنش ناموفق</string>
 
     <string name="authenticate_fingerprint_title">تائید</string>
     <string name="authenticate_fingerprint_message">برای ادامه، اثرانگشت‌ را تائید کنید</string>
@@ -239,6 +262,8 @@
 
     <string name="menu_buy_and_sell_title">خرید &amp;؛ فروش دش </string>
     <string name="menu_buy_and_sell_subtitle">ارتباط با صرافی‌های طرف سوم</string>
+    <string name="liquid_unavailable">امکان ادغام لیکوئید با دش والت دیگر امکان‌پذیر نیست</string>
+    <string name="liquid_unavailable_details">اگر هر سئوالی درباره موجودی دش‌‌تان در لیکوئید دارید، لطفا با مرکز پشتیبانی لیکوئید تماس بگیرید. </string>
     <string name="menu_security_title">امنیت</string>
     <string name="menu_security_subtitle">مشاهده گذرواژه، کیف پول پشتیبان ...</string>
     <string name="menu_settings_title">تنظیمات</string>
@@ -249,18 +274,29 @@
     <string name="menu_rescan_blockchain">اسکن دوباره بلاکچین</string>
     <string name="menu_contact_support_title">تماس با پشتیبانی</string>
     <string name="menu_contact_support_subtitle">گزارش مشکل</string>
+    <string name="menu_explore_title">کاوش</string>
+    <string name="menu_explore_subtitle">از بیش از ۱۵۵،۰۰۰ فروشنده با دش خرید کنید</string>
 
     <string name="tools_address_book">دفترچه نشانی‌ها</string>
     <string name="tools_import_private_key">وارد کردن کلید خصوصی</string>
     <string name="tools_network_monitor">پایش شبکه</string>
+    <string name="tools_show_xpub">کلید عمومی جامع</string>
 
     <string name="about_help_us_improve">به ما برای بهبود تجربه‌تان کمک کنید</string>
-    <string name="about_review_and_rate">نقد و بررسی &amp;؛ نمره‌دهی به اپلیکیشن</string>
+    <string name="about_review_and_rate">امتیاز‌دهی و نوشتن نقدونظر برای این اپلیکیشن</string>
     <string name="about_contact_support">تماس با پشتیبانی</string>
     <string name="about_fork_disclaimer">این یک اپلیکیشن متن‌ باز است که از بیت کوین والت انشعاب گرفته است</string>
-    <string name="about_copyright">کپی رایت © ۲۰۲۰ دش کر</string>
+    <string name="about_copyright">Copyright © 2022 Dash Core</string>
     <string name="about_license">GNU General Public License v3.0</string>
     <string name="about_version_name">دش والت %s</string>
+    <string name="about_last_explore_device_sync">آخرین کاوش همگام‌سازی دستگاه </string>
+    <string name="about_last_explore_server_update">آخرین کاوش به‌روزرسانی سرور</string>
+    <string name="about_firebase_installation_id">شناسه نصب فایربیس</string>
+    <string name="about_fcm_token">توکن پیام‌دهی ابری فایربیس</string>
+    <string name="about_last_explore_dash_update_error">امکان دریافت وجود ندارد</string>
+    <string name="about_last_explore_dash_sync_never">هرگز</string>
+    <string name="about_explore_failed_sync">عدم موفقیت برای همگام‌سازی روی %s</string>
+    <string name="about_explore_preloaded_on">پیش‌بارگذاری‌شده روی %s</string>
 
     <string name="block">بلاک</string>
     <string name="time">زمان</string>
@@ -314,7 +350,6 @@
 
     <string name="appwidget_wallet_not_ready">لطفا تنظیم اولیه کیف پول‌تان را انجام دهید</string>
 
-    <string name="payment_request_please_wait_title">لطفا منتظر بمانید</string>
     <string name="payment_request_please_wait_message">در حال اتصال به سرور پرداخت</string>
     <string name="payment_request_unable_to_connect">امکان اتصال وجود ندارد</string>
     <string name="payment_request_unable_to_send">امکان ارسال وجود ندارد</string>
@@ -333,8 +368,38 @@
     <string name="import_image_import_valid_private_key">کلید خصوصی را برای برداشت دش از آن کپی کنید</string>
     <string name="import_image_invalid_private">کلید خصوصی نامعتبر است</string>
 
+    <string name="today">امروز</string>
+    <string name="yesterday">دیروز</string>
+
     <string name="syncing">در حال همزمان‌سازی</string>
+    <string name="syncing_balance">در حال همزمان‌سازی موجودی </string>
+    <string name="transaction_count">%dتراکنش</string>
     <string name="all_transactions">همه</string>
     <string name="received_transactions">دریافتی</string>
     <string name="sent_transactions">ارسالی</string>
+    <string name="set_pin_error_missing_wallet_title">خطای عدم دسترسی به کیف پول</string>
+    <string name="set_pin_error_missing_wallet_message">کیف پول در دسترس نیست. این موضوع را به بخش پشتیبانی اطلاع دهید. </string>
+    <string name="wallet_encryption_error_title">خطای ایجاد کیف پول</string>
+    <string name="wallet_encryption_error_message">مشکلی در ایجاد کیف پول صورت گرفته است. لطفا موضوع را به بخش پشتیبانی اطلاع دهید. </string>
+    <string name="wallet_not_encrypted_error_message">مشکلی در رابطه با کیف پول‌تان روی داده. \n\n اگر مقداری دش در کیف پول‌تان دارید، اپلیکیشن کیف پول را حذف کرده و دوباره آن را نصب کنید. سپس یک کیف پول جدید ایجاد کنید. \n\n اگر عبارت بازیابی یا فایل پشتیبان دارید، اپلیکیشن را حذف کرده و دوباره نصب کنید. \n\n در غیر این صورت، لطفا موضوع را به بخش پشتیابنی اطلاع دهید. </string>
+
+    <string name="reset_wallet_title">آیا مطمئن هستید می‌خواهید کیف پول‌تان را ریست کنید؟ </string>
+    <string name="reset_wallet_message">اگر کیف پول‌تان را ریست کنید، تنها راه برای دسترسی به آن، استفاده از عبارت بازیابی خواهد بود. </string>
+    <string name="positive_reset_text">بله. کیف پول را ریست کن</string>
+    <string name="launch_reset_wallet_title">موجودی‌تان مثبت است</string>
+    <string name="launch_reset_wallet_message">اگر کیف پول‌تان را ریست کنید، در صورتی که عبارت بازیابی را نداشته باشید، همه موجودی‌تان از بین می‌رود.</string>
+    <string name="continue_reset">ادامه</string>
+    <string name="launch_reset_wallet_extra_message">گرفتن نسخه پشتیبان از عبارت بازیابی</string>
+    <string name="start_reset_wallet_title">ممکن است %s از دست بدهید</string>
+    <string name="reset_wallet_text">ریست کیف پول</string>
+    <string name="reclassify_transactions_title">دسته‌بندی دوباره تراکنش‌ها </string>
+    <string name="reclassify_transactions_title_message">این دسته‌بندی‌ها در فایل CSV خروجی مشخص خواهد بود و از آن می‌توانید برای اظهارنامه مالیاتی‌تان استفاده کنید. </string>
+    <string name="reclassify_transactions_question">کجا می‌توانم دسته‌بندی مالیاتی را تغییر دهم؟ </string>
+    <string name="reclassify_transactions_outgoing_title">تراکنش‌های خروجی</string>
+    <string name="reclassify_transactions_by_default_message">به صورت پیشفرض با این عنوان خواهد بود:  </string>
+    <string name="reclassify_transactions_incoming_title">تراکنش‌های ورودی</string>
+    <string name="reclassify_transactions_change_it_message">می‌توانید این را تغییر دهید به: </string>
+    <string name="reclassify_transactions_linked_accounts_title">حساب‌های متصل</string>
+    <string name="reclassify_transactions_linked_accounts_message">به صورت پیشفرض، همه تراکنش‌‌ها به یا از حساب‌های متصل (صرافی‌ها، استیکینگ و ...) به عنوان تراکنش در نظر گرفته می‌شوند. </string>
+    <string name="reclassify_transactions_change_explanation">هر تراکنشی که خواستید را از صفحه اصلی انتخاب کنید و دسته‌بندی آن را در صفحه جزئیات تغییر دهید. </string>
 </resources>

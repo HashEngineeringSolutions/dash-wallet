@@ -7,6 +7,7 @@
     <string name="onboarding_load_wallet_error">Hindi makakarga sa pitaka</string>
 
     <string name="set_pin_create_new_wallet">Gumawa ng bagong pitaka</string>
+    <string name="set_pin_upgrade_wallet">I-upgrade ang Wallet</string>
     <string name="set_pin_restore_wallet">Ibalik ang pitaka</string>
     <string name="set_pin_enter_pin">I-enter and dating PIN</string>
     <string name="set_pin_set_pin">Mag-set ng PIN</string>
@@ -15,6 +16,7 @@
     <string name="set_pin_decrypting">Nagde-decrypt ng pitaka</string>
     <string name="set_pin_verifying_pin">Pagpapatunay ng PIN</string>
     <string name="set_pin_message">Ang PIN na ito ay kailangan upang i-unlock ang iyong app kapag nais gamitin.</string>
+    <string name="set_pin_confirm_pin_incorrect">Maling PIN</string>
 
     <string name="home_available_balance">Magagamit na balanse</string>
     <string name="home_balance_hidden">Nakatagong balanse</string>
@@ -61,12 +63,10 @@
     <string name="scan_to_pay_error_dialog_title">I-scan para magpadala</string>
     <string name="scan_to_pay_error_dialog_message">Hindi wastong Dash Address or hiling na URL sa clipboard:\n\n%s</string>
     <string name="scan_to_pay_error_dialog_message_no_data">Hindi wastong Dash Address or hiling na URL sa clipboard.</string>
+    <string name="pay_to_confirm_address">Ito ba ang Dash address na gusto mong padalhan ng bayad?</string>
 
     <string name="receive_title">Tumanggap</string>
     <string name="receive_enter_amount_message">Tukuyin ang halaga na matatanggap</string>
-    <string name="receive_enter_amount_button">Tukuyin ang halaga</string>
-    <string name="receive_share_button">Ibahagi</string>
-    <string name="receive_copied">Kinopya</string>
 
     <string name="pay_title">Ipadala</string>
     <string name="history_title">Kasaysayan</string>
@@ -116,7 +116,6 @@
     <string name="import_export_keys_dialog_password_phrase">Ang parirala ng muling pagbawi ay napupunta dito.</string>
     <string name="preferences_report_issue_summary">Tipunin ang mga impormasyon tungkol sa iyong suliranin at ipadala ang reklamo sa mga developer.</string>
     <string name="navigation_configuration">Pagsasaayos</string>
-    <string name="button_copy_address">Kopyahin ang address</string>
     <string name="request_coins_clipboard_address_msg">Ang Dash address ay nakopya na sa clipboard</string>
     <string name="backup_wallet_to_seed_show_recovery_phrase">Ipakita</string>
     <string name="restore_wallet_from_invalid_seed_warning_message">\"%s\" ay hindi isang recovery phrase na salita</string>
@@ -145,6 +144,8 @@
     <string name="wallet_lock_try_again">Subukan ulit sa loob ng %1$d %2$s</string>
     <string name="wallet_lock_reset">I-reset</string>
     <string name="wallet_lock_wrong_pin">Maling PIN! %s</string>
+    <string name="wallet_last_attempt">Huling pagsubok sa PIN</string>
+    <string name="wallet_last_attempt_message">Ang isa pang nabigong pagtatangka ay mangangailangan ng aking passphrase upang mabawi ang aking wallet</string>
 
     <plurals name="wallet_lock_attempts_remaining">
         <item quantity="one">%d subok nalang ang nalalabi</item>
@@ -179,6 +180,13 @@
     <string name="notification_transactions_channel_description">Makatanggap ng alerto tungkol sa parating na mga transaksyon.</string>
     <string name="notification_synchronization_channel_name">Pagtutugma</string>
     <string name="notification_synchronization_channel_description">Magpakita ng notipikasyon kapag ang app ay tumugma sa network.</string>
+    <string name="notification_generic_channel_name">Pangkalahatang abiso</string>
+    <string name="notification_generic_channel_description">Iba pang mga kaganapan sa Dash Wallet</string>
+    <string name="notification_push_channel_name">Mga Push Notification</string>
+    <string name="notification_push_channel_description">Nagpapakita ng mga push notification na ipinadala sa iyo ni Dash</string>
+    <string name="notification_settings_title">Mga Notipikasyon</string>
+    <string name="notification_explainer_title">Gustong magpadala sa iyo ng mga notification ang Dash Wallet</string>
+    <string name="notification_explainer_message">Maaaring kasama sa mga notification ang mga alerto, tunog, at icon na mga badge. Maaaring i-configure ang mga ito sa Mga Setting ng telepono.</string>
 
     <string name="net_type_indicator" />
 
@@ -197,14 +205,13 @@
     <string name="preferences_enable_payment_request_title">BIP70 para sa scan-to-pay</string>
 
     <string name="verify_continue">Ipagpatuloy</string>
-    <string name="verify">Kumpirmahin</string>
     <string name="verify_backup_wallet">Backup na Pitaka</string>
     <string name="verify_show_recovery_phrase">Ipakita ang recovery phrase</string>
     <string name="verify_secure_now">Protektahan ang iyong wallet ngayon</string>
     <string name="verify_it_is_important">Ito ay importante</string>
     <string name="verify_it_is_important_subtitle">Ngayon ay ipapakita namin sa iyo ang sekretong susi ng iyong wallet.</string>
     <string name="verify_info_text_1">Ang recovery phrase na ito ay kinakailangan upang ma-access ang pondo sa wallet.</string>
-    <string name="verify_info_text_2">Hindi namim itatabi ang iyong recovery phrase</string>
+    <string name="verify_info_text_2">HINDI namim itatabi ang iyong recovery phrase.</string>
     <string name="verify_info_text_3">Kakailanganin mo ang recovery phrase para mabuksan ang iyong pondo kung sakaling mawala ang device, masira o kaya hindi sinasadyang ma-uninstall mo sa deviceang Dash Wallet.</string>
     <string name="verify_skip">Laktawan</string>
     <string name="verify_secure_now_btn">Protektahan ngayon</string>
@@ -214,9 +221,24 @@
     <string name="verify_seed_buttons_tip">Paki-pindot ang mga salita mula sa iyong recovery phrase sa tamang pagkakasunod-sunod.</string>
     <string name="verify_seed_success_title">Matagumpay na na-beripika</string>
     <string name="verify_seed_success_message">Ang iyong pitaka ay ligtas na. Maari mong magamit ang recovery phrase kahit kailan upanh marekober ang account sa ibang device.</string>
+    <string name="verify_no_screenshot_title">Huwag kumuha ng screenshot</string>
+    <string name="verify_no_screenshot_message">Sa halip, isulat ang recovery phrase sa isang ligtas na lugar.</string>
+    <string name="verify_why_no_screenshot">Bakit hindi ako dapat kumuha ng screenshot?</string>
+    <string name="verify_warning_title">Babala</string>
+    <string name="verify_warning_message">Ang recovery phrase na ito ay kinakailangan upang ma-access ang pondo sa wallet.</string>
+    <string name="verify_warning_screenshots_title">HUWAG kumuha ng screenshot</string>
+    <string name="verify_warning_screenshots_message">Ang mga screenshot ay nakikita sa ibang apps o device.</string>
+    <string name="verify_warning_do_not_show">HUWAG hayaan ang sinuman na makita ang iyong recovery phrase.</string>
+    <string name="verify_warning_do_not_type">Huwag i-type ang iyong recovery phrase sa mga tagapamahala ng password o saanman.</string>
     <string name="view_seed_done">Tapos</string>
     <string name="view_seed_title">Recovery phrase</string>
     <string name="transaction_result_view_on_explorer">Tingnan sa block explorer</string>
+    <string name="transaction_result_tax_category">Kategorya ng Buwis</string>
+    <string name="transaction_result_tax_category_loading">Nagkakarga...</string>
+    <string name="tax_category_income">Kita</string>
+    <string name="tax_category_expense">Gastos</string>
+    <string name="tax_category_transfer_in">Paglipat-loob</string>
+    <string name="tax_category_transfer_out">Paglipat-labas</string>
     <string name="transaction_result_paid_successfully">Matagumpay na naipadala</string>
     <string name="transaction_result_sent_to">Pinadala kay</string>
     <string name="transaction_date_and_time">Petsa</string>
@@ -228,6 +250,7 @@
     <string name="transaction_details_received_at">Natanggap sa</string>
     <string name="transaction_details_moved_from">Ilipat mula</string>
     <string name="transaction_details_moved_internally_to">Internally ilipat sa</string>
+    <string name="transaction_failed_details">Nabigo ang Paglipat</string>
 
     <string name="authenticate_fingerprint_title">Patunayan</string>
     <string name="authenticate_fingerprint_message">Kumpirmahin ang fingerprint para magpatuloy</string>
@@ -237,6 +260,8 @@
 
     <string name="menu_buy_and_sell_title">Bumili at magbenta ng Dash</string>
     <string name="menu_buy_and_sell_subtitle">Ikonekta sa mga third party na palitan</string>
+    <string name="liquid_unavailable">Hindi na available ang liquid integration sa Dash Wallet</string>
+    <string name="liquid_unavailable_details">Kung mayroon kang anumang mga tanong tungkol sa iyong mga hawak sa Dash sa Liquid, mangyaring makipag-ugnayan sa Liquid support center</string>
     <string name="menu_security_title">Seguridad</string>
     <string name="menu_security_subtitle">Ipakita ang passphrase, backup wallet…</string>
     <string name="menu_settings_title">Settings</string>
@@ -247,18 +272,29 @@
     <string name="menu_rescan_blockchain">Muling i-scan ang blockchain </string>
     <string name="menu_contact_support_title">Contact Support</string>
     <string name="menu_contact_support_subtitle">I-report ang Isyu</string>
+    <string name="menu_explore_title">Galugarin</string>
+    <string name="menu_explore_subtitle">Mamili gamit ang DASH sa mahigit 155,000 merchant</string>
 
     <string name="tools_address_book">Adresbuk</string>
     <string name="tools_import_private_key">I-import ang private key</string>
     <string name="tools_network_monitor">Network monitor</string>
+    <string name="tools_show_xpub">Pinalawak na Public Key</string>
 
     <string name="about_help_us_improve">Tulungan kaming mapabuti ang iyong karanasan</string>
-    <string name="about_review_and_rate">I-rebyu at bigyang marka ang app</string>
+    <string name="about_review_and_rate">Suriin at i-rate ang app</string>
     <string name="about_contact_support">Contact Support</string>
     <string name="about_fork_disclaimer">Ito ay open source app forked mula sa Bitcoin Wallet</string>
-    <string name="about_copyright">Copyright © 2020 Dash Core</string>
+    <string name="about_copyright">Copyright © 2022 Dash Core</string>
     <string name="about_license">GNU General Public License v3.0</string>
     <string name="about_version_name">Dash Wallet %s</string>
+    <string name="about_last_explore_device_sync">Pag-sync ng device sa huling Explore</string>
+    <string name="about_last_explore_server_update">Huling pag-update ng server ng Explore</string>
+    <string name="about_firebase_installation_id">Firebase installation ID</string>
+    <string name="about_fcm_token">Firebase cloud messaging token</string>
+    <string name="about_last_explore_dash_update_error">hindi makuha</string>
+    <string name="about_last_explore_dash_sync_never">hindi kailanman</string>
+    <string name="about_explore_failed_sync">Nabigong mag-sync sa %s</string>
+    <string name="about_explore_preloaded_on">Pre-loaded sa %s</string>
 
     <string name="block">Block</string>
     <string name="time">Oras</string>
@@ -304,7 +340,6 @@
     <string name="welcome_screen_subtitle_3">Magkaroon ng kumpletong kontrol at pinasadyang pitaka base sa iyong nais</string>
 
     <string name="sync_status_wait">Pakihintay na mag-sync upang makumpleto</string>
-    <string name="sync_status_syncing_title">Syncing %1$d</string>
     <string name="sync_status_syncing_sub_title">kasama ang Dash blockchain</string>
     <string name="sync_status_unable_to_connect">Hindi maka-konekta</string>
     <string name="sync_status_check_connection">Suriin ang koneksyon</string>
@@ -313,7 +348,6 @@
 
     <string name="appwidget_wallet_not_ready">Paki setup ang iyong pitaka</string>
 
-    <string name="payment_request_please_wait_title">Mangyaring maghintay</string>
     <string name="payment_request_please_wait_message">Pagkonekta sa Server ng pagbabayad</string>
     <string name="payment_request_unable_to_connect">Hindi maka-konekta</string>
     <string name="payment_request_unable_to_send">Hindi maipadala</string>
@@ -332,10 +366,38 @@
     <string name="import_image_import_valid_private_key">Kopyahin ang isang wastong private key upang mai-import ang Dash mula rito</string>
     <string name="import_image_invalid_private">Di-wastong Private Key</string>
 
+    <string name="today">Ngayon</string>
+    <string name="yesterday">Kahapon</string>
+
     <string name="syncing">Nagsi-sync</string>
     <string name="syncing_balance">Syncing Balance</string>
-
+    <string name="transaction_count">%d mga transaksyon</string>
     <string name="all_transactions">Lahat</string>
     <string name="received_transactions">Natanggap</string>
     <string name="sent_transactions">Ipinadala</string>
+    <string name="set_pin_error_missing_wallet_title">Nawawalang Wallet Error</string>
+    <string name="set_pin_error_missing_wallet_message">Nawawala ang wallet. Mangyaring iulat ito sa Support Desk.</string>
+    <string name="wallet_encryption_error_title">Error sa Paggawa ng Wallet</string>
+    <string name="wallet_encryption_error_message">May problema sa paggawa ng wallet. Mangyaring iulat ito sa Support Desk.</string>
+    <string name="wallet_not_encrypted_error_message">May problema sa iyong wallet.\n\nKung wala kang Dash sa wallet na ito, i-uninstall at muling i-install ang app na ito. Pagkatapos ay gumawa ng bagong wallet.\n\nKung mayroon kang recovery phrase o backup na file, i-uninstall ang app na ito at muling i-install ito.\n\nKung hindi, mangyaring iulat ito sa Support Desk.</string>
+
+    <string name="reset_wallet_title">Sigurado ka bang gusto mong i-reset ang wallet?</string>
+    <string name="reset_wallet_message">Kung ni-reset mo ang iyong wallet ang tanging paraan upang makakuha ng access dito ay ang pagbawi ng wallet na may recovery phrase.</string>
+    <string name="positive_reset_text">Oo, I-reset ang Wallet</string>
+    <string name="launch_reset_wallet_title">You have a positive balance</string>
+    <string name="launch_reset_wallet_message">Kung ni-reset mo ang iyong wallet, mawawala ang lahat ng iyong pondo kung hindi mo na-back up ang iyong recovery phrase.</string>
+    <string name="continue_reset">Ipagpatuloy</string>
+    <string name="launch_reset_wallet_extra_message">I-back up ang iyong recovery phrase</string>
+    <string name="start_reset_wallet_title">Baka matalo ka ng %s</string>
+    <string name="reset_wallet_text">I-reset ang pitaka</string>
+    <string name="reclassify_transactions_title">I-reclassify ang Iyong mga Transaksyon</string>
+    <string name="reclassify_transactions_title_message">Ang mga klasipikasyong ito ay makikita sa CSV Export na maaaring magamit upang mag-import sa mga serbisyo sa pag-uulat ng buwis.</string>
+    <string name="reclassify_transactions_question">Saan ko maaaring baguhin ang kategorya ng buwis?</string>
+    <string name="reclassify_transactions_outgoing_title">Mga papalabas na transaksyon</string>
+    <string name="reclassify_transactions_by_default_message">bilang default ay mamarkahan bilang</string>
+    <string name="reclassify_transactions_incoming_title">Mga papasok na transaksyon</string>
+    <string name="reclassify_transactions_change_it_message">Maaari mo itong palitan ng</string>
+    <string name="reclassify_transactions_linked_accounts_title">Mga naka-link na account</string>
+    <string name="reclassify_transactions_linked_accounts_message">bilang default lahat ng mga transaksyon papunta o mula sa iyong mga naka-link na account (palitan, staking, atbp) ay mamarkahan bilang mga paglilipat.</string>
+    <string name="reclassify_transactions_change_explanation">Pumili ng anumang transaksyon mula sa homepage at baguhin ang kategorya sa pahina ng mga detalye ng transaksyon.</string>
 </resources>

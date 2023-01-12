@@ -1,9 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <!-- Generic titles/messages -->
     <string name="loading">Chargement...</string>
     <string name="loading_error">Une erreur est survenue. Veuillez réessayer plus tard.</string>
+    <string name="please_wait_title">Veuillez patienter</string>
     <string name="dash_available">%1$s disponibles</string>
+    <string name="network_unavailable_title">Réseau non disponible</string>
+    <string name="network_unavailable_check_connection">Veuillez vérifier votre connexion réseau</string>
+    <string name="network_unavailable_balance_not_accurate">Le solde peut être imprécis en raison de la connexion perdue</string>
+    <string name="buy_dash">Acheter Dash</string>
+    <string name="copied">Copié</string>
+    <string name="staking_title">Récompenses</string>
+    <string name="email">E-mail</string>
+    <string name="email_placeholder">par exemple johndoe@mail.com</string>
+    <string name="error">Erreur</string>
+    <string name="select_a_coin">Choisir des pièces</string>
+    <string name="request_coins_share_dialog_title">Partager la demande de dashs…</string>
+    <string name="buy_with_fiat">Acheter des dashs avec de la monnaie fiduciaire</string>
+    <string name="buy_and_convert">Acheter et convertir des dashs avec une autre crypto</string>
+    <string name="transfer_dash">Transférer des dashs</string>
+    <string name="login_error_title">Impossible de se connecter à votre compte %s </string>
+    <string name="login_error_message">Une erreur est apparue lors de la connexion à votre compte %s.</string>
+    <string name="balance">Solde :</string>
 
     <!-- Local Currency List: GGP -->
     <string name="currency_GGP">livre de Guernesey</string>
@@ -23,4 +41,42 @@
     <string name="currency_PAX">Paxos Standard</string>
     <!-- Local Currency List: GUSD is a stablecoin that is pegged to the United States dollar -->
     <string name="currency_GUSD">Gemini Dollar</string>
+
+    <!-- Generic buttons -->
+    <string name="button_dismiss">Ignorer</string>
+    <string name="network_unavailable_return">Retourner au portefeuille</string>
+    <string name="button_continue">Continuer</string>
+    <string name="get_quote">Obtenir un devis</string>
+    <string name="button_close">Fermer</string>
+    <string name="button_retry">Réessayer</string>
+    <string name="button_send_report">Envoyer un rapport</string>
+    <string name="button_info">info</string>
+    <string name="button_copy_address">Copiez addrese</string>
+    <string name="button_understand">Je comprends</string>
+    <string name="button_okay">OK</string>
+    <string name="button_share">Partager</string>
+    <string name="share_address">Partager adresse</string>
+    <string name="verify">Vérifier</string>
+    <string name="receive_enter_amount_button">Indiquez le montant</string>
+
+    <!-- Design system UI elements -->
+    <string name="search_hint">Chercher</string>
+    <string name="permission_allow">Autoriser</string>
+    <string name="permission_deny">Refuser</string>
+    <string name="pay_with">Payer avec</string>
+    <string name="choose_payment_method">Choisir une méthode de paiement</string>
+    <string name="debit_credit_card">Carte de débit ou de crédit</string>
+    <string name="max">Maximum</string>
+    <string name="select_the_coin">Choisir les pièces</string>
+    <string name="dash">Dash</string>
+    <string name="dash_wallet_name">Portefeuille Dash</string>
+    <string name="from">depuis</string>
+    <string name="to">vers</string>
+    <string name="select_currency">Choisir la monnaie</string>
+    <string name="send_coins_error_dusty_send">Le montant est trop faible pour être envoyé</string>
+    <string name="send_coins_error_insufficient_money">Fonds insuffisants</string>
+
+    <string name="empty_wallet_warning_title">Il semble que vous videz votre Dash Wallet</string>
+    <string name="empty_wallet_crowdnode_warning">Veuillez noter que vous ne pourrez pas retirer vos fonds de CrowdNode vers ce portefeuille, sans que vous ayez un solde minimum de 0,0003 dashs.</string>
+    <string name="syncing">En synchronisation</string>
 </resources>

@@ -172,6 +172,12 @@ public final class PaymentIntent implements Parcelable {
         useInstantX = set;
     }
 
+    public boolean shouldConfirmAddress = false;
+
+    public void setShouldConfirmAddress(boolean confirm) {
+        shouldConfirmAddress = confirm;
+    }
+
     private static final Logger log = LoggerFactory.getLogger(PaymentIntent.class);
 
     public PaymentIntent(@Nullable final Standard standard, @Nullable final String payeeName,
@@ -235,11 +241,10 @@ public final class PaymentIntent implements Parcelable {
         final String bluetoothMac = (String) bitcoinUri.getParameterByName(Bluetooth.MAC_URI_PARAM);
         final String paymentRequestHashStr = (String) bitcoinUri.getParameterByName("h");
         final byte[] paymentRequestHash = paymentRequestHashStr != null ? base64UrlDecode(paymentRequestHashStr) : null;
-        boolean useInstantSend = bitcoinUri.getRequestInstantSend();
 
         return new PaymentIntent(PaymentIntent.Standard.BIP21, null, null, outputs, bitcoinUri.getLabel(),
                 bluetoothMac != null ? "bt:" + bluetoothMac : null, null, bitcoinUri.getPaymentRequestUrl(),
-                paymentRequestHash, useInstantSend);
+                paymentRequestHash, false);
     }
 
     private static final BaseEncoding BASE64URL = BaseEncoding.base64Url().omitPadding();

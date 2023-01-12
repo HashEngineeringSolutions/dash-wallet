@@ -16,38 +16,52 @@
 
 package de.schildbach.wallet.ui
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import de.schildbach.wallet.WalletApplication
-import de.schildbach.wallet.livedata.CheckPinLiveData
 import de.schildbach.wallet.livedata.EncryptWalletLiveData
+import de.schildbach.wallet.security.BiometricHelper
+import de.schildbach.wallet.security.SecurityFunctions
+import de.schildbach.wallet.ui.preference.PinRetryController
+import de.schildbach.wallet.ui.util.SingleLiveEvent
+import org.dash.wallet.common.Configuration
+import org.dash.wallet.common.WalletDataProvider
+import org.dash.wallet.common.services.analytics.AnalyticsService
 import org.slf4j.LoggerFactory
+import javax.inject.Inject
 
-class SetPinViewModel(application: Application) : AndroidViewModel(application) {
+@HiltViewModel
+class SetPinViewModel @Inject constructor(
+    val walletApplication: WalletApplication,
+    walletData: WalletDataProvider,
+    configuration: Configuration,
+    pinRetryController: PinRetryController,
+    biometricHelper: BiometricHelper,
+    analytics: AnalyticsService,
+    private val securityFunctions: SecurityFunctions
+): CheckPinViewModel(walletData, configuration, pinRetryController, biometricHelper, analytics) {
 
     private val log = LoggerFactory.getLogger(SetPinViewModel::class.java)
 
-    private val walletApplication = application as WalletApplication
-
-    val pin = arrayListOf<Int>()
+    val pinArray = arrayListOf<Int>()
     var oldPinCache: String? = null
+    val isWalletEncrypted
+        get() = walletData.wallet!!.isEncrypted
 
     internal val startNextActivity = SingleLiveEvent<Boolean>()
-    internal val encryptWalletLiveData = EncryptWalletLiveData(application)
-    internal val checkPinLiveData = CheckPinLiveData(application)
+    internal val encryptWalletLiveData = EncryptWalletLiveData(walletApplication, biometricHelper)
 
     fun setPin(pin: ArrayList<Int>) {
-        this.pin.clear()
-        this.pin.addAll(pin)
+        this.pinArray.clear()
+        this.pinArray.addAll(pin)
     }
 
     fun getPinAsString(): String {
-        return pin.joinToString("")
+        return pinArray.joinToString("")
     }
 
-    fun savePinAndEncrypt() {
+    fun savePinAndEncrypt(initialize: Boolean) {
         val pin = getPinAsString()
-        savePinAndEncrypt(pin, true)
+        savePinAndEncrypt(pin, initialize)
     }
 
     fun savePinAndEncrypt(pin: String, initialize: Boolean) {
@@ -56,8 +70,8 @@ class SetPinViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     private fun encryptWallet(initialize: Boolean) {
-        if (!walletApplication.wallet.isEncrypted) {
-            encryptWalletLiveData.encrypt(walletApplication.scryptIterationsTarget(), initialize)
+        if (!walletData.wallet!!.isEncrypted) {
+            encryptWalletLiveData.encrypt(securityFunctions.scryptIterationsTarget, initialize)
         } else {
             log.warn("Trying to encrypt already encrypted wallet")
         }
@@ -68,7 +82,7 @@ class SetPinViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun decryptKeys(password: String?) {
-        if (walletApplication.wallet.isEncrypted) {
+        if (walletData.wallet!!.isEncrypted) {
             encryptWalletLiveData.decrypt(password)
         } else {
             log.warn("Trying to decrypt unencrypted wallet")
@@ -76,7 +90,7 @@ class SetPinViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun initWallet() {
-        startNextActivity.call(walletApplication.configuration.remindBackupSeed)
+        startNextActivity.call(configuration.remindBackupSeed)
     }
 
     fun checkPin() {
@@ -87,6 +101,6 @@ class SetPinViewModel(application: Application) : AndroidViewModel(application) 
     fun changePin() {
         val newPassword = getPinAsString()
         encryptWalletLiveData.changePassword(oldPinCache!!, newPassword)
-        walletApplication.configuration.updateLastEncryptKeysTime()
+        configuration.updateLastEncryptKeysTime()
     }
 }

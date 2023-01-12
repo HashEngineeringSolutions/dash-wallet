@@ -1,9 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
+    <!-- Generic titles/messages -->
     <string name="loading">Laden...</string>
     <string name="loading_error">Ein Fehler ist aufgetreten. Bitte versuche es später noch einmal.</string>
+    <string name="please_wait_title">Bitte warten</string>
     <string name="dash_available">%1$s verfügbar</string>
+    <string name="network_unavailable_title">Netzwerk nicht verfügbar</string>
+    <string name="network_unavailable_check_connection">Bitte überprüfe deine Netzwerksverbindung</string>
+    <string name="network_unavailable_balance_not_accurate">Die Guthabensanzeige ist möglicherweise inakkurat, da keine Verbindung besteht</string>
+    <string name="buy_dash">Dash kaufen</string>
+    <string name="copied">Kopiert</string>
+    <string name="staking_title">Staking</string>
+    <string name="email">E-Mail</string>
+    <string name="email_placeholder">z.B. maxmustermann@mail.com</string>
+    <string name="error">Fehler</string>
+    <string name="select_a_coin">Wähle einen Coin aus</string>
+    <string name="request_coins_share_dialog_title">Anforderung veröffentlichen…</string>
+    <string name="buy_with_fiat">Dash mit Fiatwährung kaufen</string>
+    <string name="buy_and_convert">Kaufe und konvertiere Dash in eine andere Kryptowährung</string>
+    <string name="transfer_dash">Dash übertragen</string>
+    <string name="login_error_title">Du kannst dich nicht in dein %s Konto einloggen.</string>
+    <string name="login_error_message">Beim Einloggen in dein %s Konto ist ein Fehler aufgetreten.</string>
+    <string name="balance">Guthaben:</string>
 
     <!-- Local Currency List: GGP -->
     <string name="currency_GGP">Guernsey Pfund</string>
@@ -23,4 +41,42 @@
     <string name="currency_PAX">Paxos Standard</string>
     <!-- Local Currency List: GUSD is a stablecoin that is pegged to the United States dollar -->
     <string name="currency_GUSD">Gemini Dollar</string>
+
+    <!-- Generic buttons -->
+    <string name="button_dismiss">Schließen</string>
+    <string name="network_unavailable_return">Zur Wallet zurückkehren</string>
+    <string name="button_continue">Fortfahren</string>
+    <string name="get_quote">Angebot einholen</string>
+    <string name="button_close">Schließen</string>
+    <string name="button_retry">Wiederholen</string>
+    <string name="button_send_report">Bericht senden</string>
+    <string name="button_info">Info</string>
+    <string name="button_copy_address">Adresse kopieren</string>
+    <string name="button_understand">Ich verstehe</string>
+    <string name="button_okay">OK</string>
+    <string name="button_share">Teilen</string>
+    <string name="share_address">Adresse teilen</string>
+    <string name="verify">Verifizieren</string>
+    <string name="receive_enter_amount_button">Betrag festsetzen</string>
+
+    <!-- Design system UI elements -->
+    <string name="search_hint">Suchen</string>
+    <string name="permission_allow">Erlauben</string>
+    <string name="permission_deny">Ablehnen</string>
+    <string name="pay_with">Bezahle mit</string>
+    <string name="choose_payment_method">Wähle eine Zahlungsmethode aus</string>
+    <string name="debit_credit_card">Debit-/Kreditkarte</string>
+    <string name="max">Max</string>
+    <string name="select_the_coin">Wähle einen Coin aus</string>
+    <string name="dash">Dash</string>
+    <string name="dash_wallet_name">Dash Wallet</string>
+    <string name="from">von</string>
+    <string name="to">nach</string>
+    <string name="select_currency">Währung auswählen</string>
+    <string name="send_coins_error_dusty_send">Der Betrag ist zu klein zum Senden</string>
+    <string name="send_coins_error_insufficient_money">Guthaben nicht ausreichend</string>
+
+    <string name="empty_wallet_warning_title">Es scheint als würdest du deine Dash Wallet leeren</string>
+    <string name="empty_wallet_crowdnode_warning">Bitte beachte, dass du dein Guthaben nicht von CrowdNode abheben kannst solange dies niedriger als 0.0003 Dash ist.</string>
+    <string name="syncing">Synchronisiere</string>
 </resources>

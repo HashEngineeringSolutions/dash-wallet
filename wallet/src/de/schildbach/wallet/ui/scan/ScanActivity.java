@@ -21,8 +21,10 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 
-import org.dash.wallet.common.ui.DialogBuilder;
+import org.dash.wallet.common.ui.BaseAlertDialogBuilder;
+import org.dash.wallet.common.ui.BaseDialogFragment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,9 +39,11 @@ import com.google.zxing.ResultPointCallback;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
 
-import de.schildbach.wallet.ui.AbstractWalletActivity;
+import dagger.hilt.android.AndroidEntryPoint;
+import de.schildbach.wallet.ui.LockScreenActivity;
 import de.schildbach.wallet.util.OnFirstPreDraw;
 import de.schildbach.wallet_test.R;
+import kotlin.Unit;
 
 import android.Manifest;
 import android.animation.Animator;
@@ -50,7 +54,6 @@ import android.app.ActivityOptions;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -76,9 +79,10 @@ import android.view.ViewAnimationUtils;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Observer;
@@ -88,31 +92,43 @@ import androidx.lifecycle.ViewModelProviders;
  * @author Andreas Schildbach
  */
 @SuppressWarnings("deprecation")
-public final class ScanActivity extends AbstractWalletActivity
+@AndroidEntryPoint
+public final class ScanActivity extends LockScreenActivity
         implements SurfaceTextureListener, ActivityCompat.OnRequestPermissionsResultCallback {
     private static final String INTENT_EXTRA_SCENE_TRANSITION_X = "scene_transition_x";
     private static final String INTENT_EXTRA_SCENE_TRANSITION_Y = "scene_transition_y";
     public static final String INTENT_EXTRA_RESULT = "result";
 
     public static void startForResult(final Activity activity, @Nullable final View clickView, final int requestCode) {
-        if (clickView != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            final int[] clickViewLocation = new int[2];
-            clickView.getLocationOnScreen(clickViewLocation);
-            final Intent intent = new Intent(activity, ScanActivity.class);
-            intent.putExtra(ScanActivity.INTENT_EXTRA_SCENE_TRANSITION_X,
-                    (int) (clickViewLocation[0] + clickView.getWidth() / 2));
-            intent.putExtra(ScanActivity.INTENT_EXTRA_SCENE_TRANSITION_Y,
-                    (int) (clickViewLocation[1] + clickView.getHeight() / 2));
-            final ActivityOptions options = ActivityOptions.makeSceneTransitionAnimation(activity, clickView,
-                    "transition");
+        if (clickView != null) {
+            ActivityOptionsCompat options = getLaunchOptions(activity, clickView);
+            Intent intent = getTransitionIntent(activity, clickView);
             activity.startActivityForResult(intent, requestCode, options.toBundle());
         } else {
-            startForResult(activity, requestCode);
+            Intent intent = getIntent(activity);
+            activity.startActivityForResult(intent, requestCode);
         }
     }
 
-    public static void startForResult(final Activity activity, final int resultCode) {
-        activity.startActivityForResult(new Intent(activity, ScanActivity.class), resultCode);
+    public static Intent getIntent(final Activity activity) {
+        return new Intent(activity, ScanActivity.class);
+    }
+
+    public static Intent getTransitionIntent(final Activity activity, @NonNull final View clickView) {
+        final Intent intent = new Intent(activity, ScanActivity.class);
+
+        final int[] clickViewLocation = new int[2];
+        clickView.getLocationOnScreen(clickViewLocation);
+        intent.putExtra(ScanActivity.INTENT_EXTRA_SCENE_TRANSITION_X,
+                clickViewLocation[0] + clickView.getWidth() / 2);
+        intent.putExtra(ScanActivity.INTENT_EXTRA_SCENE_TRANSITION_Y,
+                clickViewLocation[1] + clickView.getHeight() / 2);
+
+        return intent;
+    }
+
+    public static ActivityOptionsCompat getLaunchOptions(final Activity activity, @NonNull final View clickView) {
+        return ActivityOptionsCompat.makeSceneTransitionAnimation(activity, clickView, "transition");
     }
 
     public static void startForResult(final Fragment fragment, final Activity activity, final int resultCode) {
@@ -164,13 +180,10 @@ public final class ScanActivity extends AbstractWalletActivity
         // Stick to the orientation the activity was started with. We cannot declare this in the
         // AndroidManifest.xml, because it's not allowed in combination with the windowIsTranslucent=true
         // theme attribute.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
-        }
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         // Draw under navigation and status bars.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
 
         getIntent().putExtra(INTENT_EXTRA_KEEP_UNLOCKED, true);
         setContentView(R.layout.scan_activity);
@@ -186,7 +199,7 @@ public final class ScanActivity extends AbstractWalletActivity
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)
             ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.CAMERA }, 0);
 
-        if (savedInstanceState == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (savedInstanceState == null) {
             final Intent intent = getIntent();
             final int x = intent.getIntExtra(INTENT_EXTRA_SCENE_TRANSITION_X, -1);
             final int y = intent.getIntExtra(INTENT_EXTRA_SCENE_TRANSITION_Y, -1);
@@ -260,6 +273,7 @@ public final class ScanActivity extends AbstractWalletActivity
     @Override
     public void onRequestPermissionsResult(final int requestCode, final String[] permissions,
             final int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
             maybeOpenCamera();
         else
@@ -488,9 +502,9 @@ public final class ScanActivity extends AbstractWalletActivity
         }
     };
 
-    public static class WarnDialogFragment extends DialogFragment {
+    @AndroidEntryPoint
+    public static class WarnDialogFragment extends BaseDialogFragment {
         private static final String FRAGMENT_TAG = WarnDialogFragment.class.getName();
-
         public static void show(final FragmentManager fm, final int titleResId, final String message) {
             final WarnDialogFragment newFragment = new WarnDialogFragment();
             final Bundle args = new Bundle();
@@ -503,15 +517,18 @@ public final class ScanActivity extends AbstractWalletActivity
         @Override
         public Dialog onCreateDialog(final Bundle savedInstanceState) {
             final Bundle args = getArguments();
-            final DialogBuilder dialog = DialogBuilder.warn(getActivity(), args.getInt("title"));
-            dialog.setMessage(args.getString("message"));
-            dialog.singleDismissButton(new OnClickListener() {
-                @Override
-                public void onClick(final DialogInterface dialog, final int which) {
-                    getActivity().finish();
-                }
-            });
-            return dialog.create();
+            baseAlertDialogBuilder.setTitle(getString(args.getInt("title")));
+            baseAlertDialogBuilder.setMessage((args.getString("message")));
+            baseAlertDialogBuilder.setNeutralText(getString(R.string.button_dismiss));
+            baseAlertDialogBuilder.setNeutralAction(
+                    () -> {
+                        getActivity().finish();
+                        return Unit.INSTANCE;
+                    }
+            );
+            baseAlertDialogBuilder.setShowIcon(true);
+            alertDialog = baseAlertDialogBuilder.buildAlertDialog();
+            return super.onCreateDialog(savedInstanceState);
         }
 
         @Override

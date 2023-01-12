@@ -43,7 +43,6 @@ import android.text.format.DateUtils;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleService;
-import androidx.lifecycle.Observer;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.common.base.Stopwatch;
@@ -63,9 +62,9 @@ import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
 import org.bitcoinj.core.Utils;
 import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.core.listeners.PeerConnectedEventListener;
-import org.bitcoinj.core.listeners.PeerDataEventListener;
 import org.bitcoinj.core.listeners.PeerDisconnectedEventListener;
 import org.bitcoinj.evolution.SimplifiedMasternodeList;
+import org.bitcoinj.evolution.SimplifiedMasternodeListDiff;
 import org.bitcoinj.evolution.SimplifiedMasternodeListManager;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.net.discovery.MasternodePeerDiscovery;
@@ -79,8 +78,20 @@ import org.bitcoinj.store.SPVBlockStore;
 import org.bitcoinj.utils.ExchangeRate;
 import org.bitcoinj.utils.MonetaryFormat;
 import org.bitcoinj.utils.Threading;
+import org.bitcoinj.wallet.DefaultRiskAnalysis;
 import org.bitcoinj.wallet.Wallet;
 import org.dash.wallet.common.Configuration;
+import org.dash.wallet.common.services.NotificationService;
+import org.dash.wallet.common.transactions.filters.NotFromAddressTxFilter;
+import org.dash.wallet.common.transactions.filters.TransactionFilter;
+import org.dash.wallet.common.services.TransactionMetadataProvider;
+import org.dash.wallet.common.transactions.TransactionUtils;
+import org.dash.wallet.integrations.crowdnode.api.CrowdNodeAPIConfirmationHandler;
+import org.dash.wallet.integrations.crowdnode.api.CrowdNodeBlockchainApi;
+import org.dash.wallet.integrations.crowdnode.transactions.CrowdNodeDepositReceivedResponse;
+import org.dash.wallet.integrations.crowdnode.transactions.CrowdNodeWithdrawalReceivedTx;
+import org.dash.wallet.integrations.crowdnode.utils.CrowdNodeConfig;
+import org.dash.wallet.integrations.crowdnode.utils.CrowdNodeConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,40 +114,55 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 
-import de.schildbach.wallet.AppDatabase;
+import dagger.hilt.android.AndroidEntryPoint;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.WalletBalanceWidgetProvider;
 import de.schildbach.wallet.data.AddressBookProvider;
-import de.schildbach.wallet.data.BlockchainState;
+import org.dash.wallet.common.data.BlockchainState;
 import de.schildbach.wallet.data.BlockchainStateDao;
+import de.schildbach.wallet.rates.ExchangeRatesDao;
 import de.schildbach.wallet.ui.OnboardingActivity;
+import de.schildbach.wallet.ui.staking.StakingActivity;
+import de.schildbach.wallet.util.AllowLockTimeRiskAnalysis;
 import de.schildbach.wallet.util.BlockchainStateUtils;
 import de.schildbach.wallet.util.CrashReporter;
 import de.schildbach.wallet.util.ThrottlingWalletChangeListener;
-import de.schildbach.wallet.util.WalletUtils;
 import de.schildbach.wallet_test.R;
 
-import static org.dash.wallet.common.Constants.PREFIX_ALMOST_EQUAL_TO;
+import static org.dash.wallet.common.util.Constants.PREFIX_ALMOST_EQUAL_TO;
 
 /**
  * @author Andreas Schildbach
  */
+@AndroidEntryPoint
 public class BlockchainServiceImpl extends LifecycleService implements BlockchainService {
 
-    private WalletApplication application;
-    private Configuration config;
+    @Inject WalletApplication application;
+    @Inject Configuration config;
+    @Inject NotificationService notificationService;
+    @Inject CrowdNodeBlockchainApi crowdNodeBlockchainApi;
+    @Inject CrowdNodeConfig crowdNodeConfig;
+    @Inject BlockchainStateDao blockchainStateDao;
+    @Inject ExchangeRatesDao exchangeRatesDao;
+    @Inject TransactionMetadataProvider transactionMetadataProvider;
 
     private BlockStore blockStore;
+    private BlockStore headerStore;
     private File blockChainFile;
+    private File headerChainFile;
     private BlockChain blockChain;
-    private InputStream bootStrapStream;
+    private BlockChain headerChain;
+    private InputStream mnlistinfoBootStrapStream;
+    private InputStream qrinfoBootStrapStream;
     @Nullable
     private PeerGroup peerGroup;
 
     private final Handler handler = new Handler();
     private final Handler delayHandler = new Handler();
+    private final Handler metadataHandler = new Handler();
     private WakeLock wakeLock;
 
     private PeerConnectivityListener peerConnectivityListener;
@@ -172,8 +198,29 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
     private Executor executor = Executors.newSingleThreadExecutor();
     private int syncPercentage = 0; // 0 to 100%
 
+    // Risk Analyser for Transactions that is PeerGroup Aware
+    AllowLockTimeRiskAnalysis.Analyzer riskAnalyzer;
+    DefaultRiskAnalysis.Analyzer defaultRiskAnalyzer = DefaultRiskAnalysis.FACTORY;
+
+    private final List<TransactionFilter> crowdnodeFilters = Arrays.asList(
+            new NotFromAddressTxFilter(CrowdNodeConstants.INSTANCE.getCrowdNodeAddress(Constants.NETWORK_PARAMETERS)),
+            new CrowdNodeWithdrawalReceivedTx(Constants.NETWORK_PARAMETERS)
+    );
+
+    private final CrowdNodeDepositReceivedResponse depositReceivedResponse =
+            new CrowdNodeDepositReceivedResponse(Constants.NETWORK_PARAMETERS);
+
+    private CrowdNodeAPIConfirmationHandler apiConfirmationHandler;
+
+    void handleMetadata(Transaction tx) {
+        metadataHandler.post(() -> {
+            transactionMetadataProvider.syncTransactionBlocking(tx);
+        });
+    }
+
     private final ThrottlingWalletChangeListener walletEventListener = new ThrottlingWalletChangeListener(
             APPWIDGET_THROTTLE_MS) {
+
         @Override
         public void onThrottledWalletChanged() {
             updateAppWidget();
@@ -181,21 +228,27 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
 
         @Override
         public void onCoinsReceived(final Wallet wallet, final Transaction tx, final Coin prevBalance,
-                final Coin newBalance) {
+                                    final Coin newBalance) {
 
             final int bestChainHeight = blockChain.getBestChainHeight();
-            final boolean replaying = bestChainHeight < config.getBestChainHeightEver();
+            final boolean replaying = bestChainHeight < config.getBestChainHeightEver() || config.isRestoringBackup();
 
             long now = new Date().getTime();
             long blockChainHeadTime = blockChain.getChainHead().getHeader().getTime().getTime();
             boolean insideTxExchangeRateTimeThreshold = (now - blockChainHeadTime) < TX_EXCHANGE_RATE_TIME_THRESHOLD_MS;
 
-            if (tx.getExchangeRate() == null && ((!replaying || insideTxExchangeRateTimeThreshold) || tx.getConfidence().getConfidenceType() == ConfidenceType.PENDING)) {
+            // only set an exchange rate if the tx has no exchange rate and:
+            //   1. the blockchain is not being rescanned nor the wallet is being restored OR
+            //   2. the transaction is less than three hours old OR
+            //   3. the transaction is not yet mined
+            if (tx.getExchangeRate() == null && (!replaying
+                    || insideTxExchangeRateTimeThreshold
+                    || tx.getConfidence().getConfidenceType() == ConfidenceType.PENDING)) {
                 try {
-                    final de.schildbach.wallet.rates.ExchangeRate exchangeRate = AppDatabase.getAppDatabase()
-                            .exchangeRatesDao().getRateSync(config.getExchangeCurrencyCode());
+                    final org.dash.wallet.common.data.ExchangeRate exchangeRate =
+                            exchangeRatesDao.getRateSync(config.getExchangeCurrencyCode());
                     if (exchangeRate != null) {
-                        log.info("Setting exchange rate on received transaction.  Rate:  " + exchangeRate.toString() + " tx: " + tx.getHashAsString());
+                        log.info("Setting exchange rate on received transaction.  Rate:  " + exchangeRate + " tx: " + tx.getTxId().toString());
                         tx.setExchangeRate(new ExchangeRate(Coin.COIN, exchangeRate.getFiat()));
                         application.saveWallet();
                     }
@@ -207,31 +260,70 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
             transactionsReceived.incrementAndGet();
 
 
-            final Address address = WalletUtils.getWalletAddressOfReceived(tx, wallet);
+            final Address address = TransactionUtils.INSTANCE.getWalletAddressOfReceived(tx, wallet);
             final Coin amount = tx.getValue(wallet);
             final ConfidenceType confidenceType = tx.getConfidence().getConfidenceType();
             final boolean isRestoringBackup = application.getConfiguration().isRestoringBackup();
 
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    final boolean isReceived = amount.signum() > 0;
-                    final boolean isReplayedTx = confidenceType == ConfidenceType.BUILDING && (replaying || isRestoringBackup);
+            handler.post(() -> {
+                final boolean isReplayedTx = confidenceType == ConfidenceType.BUILDING && (replaying || isRestoringBackup);
 
-                    if (isReceived && !isReplayedTx)
+                if (!isReplayedTx) {
+                    if (depositReceivedResponse.matches(tx)) {
+                        notificationService.showNotification(
+                                "deposit_received",
+                                getString(R.string.crowdnode_deposit_received),
+                                false,
+                                new Intent(BlockchainServiceImpl.this, StakingActivity.class)
+                        );
+                    } else if (apiConfirmationHandler != null && apiConfirmationHandler.matches(tx)) {
+                        apiConfirmationHandler.handle(tx);
+                    } else if (passFilters(tx, wallet)) {
                         notifyCoinsReceived(address, amount, tx.getExchangeRate());
+                    }
                 }
             });
+
+            handleMetadata(tx);
             updateAppWidget();
         }
 
         @Override
         public void onCoinsSent(final Wallet wallet, final Transaction tx, final Coin prevBalance,
-                final Coin newBalance) {
+                                final Coin newBalance) {
             transactionsReceived.incrementAndGet();
+            handleMetadata(tx);
             updateAppWidget();
         }
+
+        private Boolean passFilters(final Transaction tx, final Wallet wallet) {
+            Coin amount = tx.getValue(wallet);
+            final boolean isReceived = amount.signum() > 0;
+
+            if (!isReceived) {
+                return false;
+            }
+
+            boolean passFilters = false;
+
+            for (TransactionFilter filter: crowdnodeFilters) {
+                if (filter.matches(tx)) {
+                    passFilters = true;
+                    break;
+                }
+            }
+
+            return passFilters;
+        }
     };
+
+    private final OnSharedPreferenceChangeListener sharedPrefsChangeListener = (sharedPreferences, key) -> {
+        if (key.equals(Configuration.PREFS_KEY_CROWDNODE_PRIMARY_ADDRESS)) {
+            registerCrowdNodeConfirmedAddressFilter();
+        }
+    };
+
+    private boolean resetMNListsOnPeerGroupStart = false;
 
     private void notifyCoinsReceived(@Nullable final Address address, final Coin amount,
                                      @Nullable ExchangeRate exchangeRate) {
@@ -272,16 +364,16 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
 
         final NotificationCompat.Builder notification = new NotificationCompat.Builder(this,
                 Constants.NOTIFICATION_CHANNEL_ID_TRANSACTIONS);
-        notification.setSmallIcon(R.drawable.ic_dash_d_white_bottom);
+        notification.setSmallIcon(R.drawable.ic_dash_d_white);
         notification.setTicker(tickerMsg);
         notification.setContentTitle(msg);
         if (text.length() > 0)
             notification.setContentText(text);
-        notification.setContentIntent(PendingIntent.getActivity(this, 0, OnboardingActivity.createIntent(this), 0));
+        notification.setContentIntent(PendingIntent.getActivity(this, 0, OnboardingActivity.createIntent(this), PendingIntent.FLAG_IMMUTABLE));
         notification.setNumber(notificationCount == 1 ? 0 : notificationCount);
         notification.setWhen(System.currentTimeMillis());
         notification.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.coins_received));
-        nm.notify(Constants.NOTIFICATION_ID_COINS_RECEIVED, notification.getNotification());
+        nm.notify(Constants.NOTIFICATION_ID_COINS_RECEIVED, notification.build());
     }
 
     private final class PeerConnectivityListener
@@ -323,54 +415,57 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
             if (stopped.get())
                 return;
 
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    final boolean connectivityNotificationEnabled = config.getConnectivityNotificationEnabled();
+            handler.post(() -> {
+                final boolean connectivityNotificationEnabled = config.getConnectivityNotificationEnabled();
 
-                    if (!connectivityNotificationEnabled || numPeers == 0) {
-                        nm.cancel(Constants.NOTIFICATION_ID_CONNECTED);
-                    } else {
-                        final Notification.Builder notification = new Notification.Builder(BlockchainServiceImpl.this);
-                        notification.setSmallIcon(R.drawable.stat_sys_peers, numPeers > 4 ? 4 : numPeers);
-                        notification.setContentTitle(getString(R.string.app_name));
-                        notification.setContentText(getString(R.string.notification_peers_connected_msg, numPeers));
-                        notification.setContentIntent(PendingIntent.getActivity(BlockchainServiceImpl.this, 0,
-                                OnboardingActivity.createIntent(BlockchainServiceImpl.this), 0));
-                        notification.setWhen(System.currentTimeMillis());
-                        notification.setOngoing(true);
-                        nm.notify(Constants.NOTIFICATION_ID_CONNECTED, notification.getNotification());
-                    }
-
-                    // send broadcast
-                    broadcastPeerState(numPeers);
+                if (!connectivityNotificationEnabled || numPeers == 0) {
+                    nm.cancel(Constants.NOTIFICATION_ID_CONNECTED);
+                } else {
+                    final Notification.Builder notification = new Notification.Builder(BlockchainServiceImpl.this);
+                    notification.setSmallIcon(R.drawable.stat_sys_peers, numPeers > 4 ? 4 : numPeers);
+                    notification.setContentTitle(getString(R.string.app_name));
+                    notification.setContentText(getString(R.string.notification_peers_connected_msg, numPeers));
+                    notification.setContentIntent(PendingIntent.getActivity(BlockchainServiceImpl.this, 0,
+                            OnboardingActivity.createIntent(BlockchainServiceImpl.this), PendingIntent.FLAG_IMMUTABLE));
+                    notification.setWhen(System.currentTimeMillis());
+                    notification.setOngoing(true);
+                    nm.notify(Constants.NOTIFICATION_ID_CONNECTED, notification.build());
                 }
+
+                // send broadcast
+                broadcastPeerState(numPeers);
             });
         }
     }
 
-    private final PeerDataEventListener blockchainDownloadListener = new DownloadProgressTracker() {
+    private abstract class MyDownloadProgressTracker extends DownloadProgressTracker implements OnPreBlockProgressListener { }
+
+    private final MyDownloadProgressTracker blockchainDownloadListener = new MyDownloadProgressTracker() {
         private final AtomicLong lastMessageTime = new AtomicLong(0);
+        private long throttleDelay = -1;
 
         @Override
         public void onBlocksDownloaded(final Peer peer, final Block block, final FilteredBlock filteredBlock,
-                final int blocksLeft) {
+                                       final int blocksLeft) {
             super.onBlocksDownloaded(peer, block, filteredBlock, blocksLeft);
-            delayHandler.removeCallbacksAndMessages(null);
+            postOrPostDelayed();
+        }
 
-            final long now = System.currentTimeMillis();
-            if (now - lastMessageTime.get() > BLOCKCHAIN_STATE_BROADCAST_THROTTLE_MS)
-                delayHandler.post(runnable);
-            else
-                delayHandler.postDelayed(runnable, BLOCKCHAIN_STATE_BROADCAST_THROTTLE_MS);
+        @Override
+        public void onHeadersDownloaded(final Peer peer, final Block block,
+                                        final int blocksLeft) {
+            super.onHeadersDownloaded(peer, block, blocksLeft);
+            postOrPostDelayed();
         }
 
         private final Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 lastMessageTime.set(System.currentTimeMillis());
+                log.debug("Runnable % = " + syncPercentage);
 
                 config.maybeIncrementBestChainHeightEver(blockChain.getChainHead().getHeight());
+                config.maybeIncrementBestHeaderHeightEver(headerChain.getChainHead().getHeight());
                 if(config.isRestoringBackup()) {
                     long timeAgo = System.currentTimeMillis() - blockChain.getChainHead().getHeader().getTimeSeconds() * 1000;
                     //if the app was restoring a backup from a file or seed and block chain is nearly synced
@@ -394,6 +489,9 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
         protected void progress(double pct, int blocksLeft, Date date) {
             super.progress(pct, blocksLeft, date);
             syncPercentage = pct > 0.0 ? (int)pct : 0;
+            if (syncPercentage > 100) {
+                syncPercentage = 100;
+            }
         }
 
         /*
@@ -403,7 +501,62 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
         @Override
         protected void doneDownload() {
             super.doneDownload();
+            updateBlockchainState();
             syncPercentage = 100;
+            setBlockchainDownloaded();
+        }
+
+        @Override
+        public void onMasterNodeListDiffDownloaded(Stage stage, @Nullable SimplifiedMasternodeListDiff mnlistdiff) {
+            log.info("masternodeListDiffDownloaded:" + stage);
+            if(peerGroup != null && peerGroup.getSyncStage() == PeerGroup.SyncStage.MNLIST) {
+                super.onMasterNodeListDiffDownloaded(stage, mnlistdiff);
+                startPreBlockPercent = syncPercentage;
+                postOrPostDelayed();
+            }
+        }
+
+        private void postOrPostDelayed() {
+            delayHandler.removeCallbacksAndMessages(null);
+            if (throttleDelay == -1) {
+                throttleDelay = application.isLowRamDevice() ? BLOCKCHAIN_STATE_BROADCAST_THROTTLE_MS : BLOCKCHAIN_STATE_BROADCAST_THROTTLE_MS / 4;
+            }
+            final long now = System.currentTimeMillis();
+            if (now - lastMessageTime.get() > throttleDelay) {
+                delayHandler.post(runnable);
+            } else {
+                delayHandler.postDelayed(runnable, throttleDelay);
+            }
+        }
+
+        int totalPreblockStages = PreBlockStage.UpdateTotal.getValue();
+        int startPreBlockPercent = 0;
+        PreBlockStage lastPreBlockStage = PreBlockStage.None;
+
+        @Override
+        public void onPreBlockProgressUpdated(PreBlockStage stage) {
+            if (stage == PreBlockStage.Starting && lastPreBlockStage == PreBlockStage.None) {
+                startPreBlockPercent = syncPercentage;
+            }
+            if (preBlocksWeight > 0.99) {
+                startPreBlockPercent = 0;
+            }
+            if (stage == PreBlockStage.StartRecovery && lastPreBlockStage == PreBlockStage.None) {
+                startPreBlockPercent = syncPercentage;
+                if (preBlocksWeight <= 0.10)
+                    setPreBlocksWeight(0.20);
+            }
+            double increment = preBlocksWeight * stage.getValue() * 100.0 / PreBlockStage.Complete.getValue();
+            if (increment > preBlocksWeight * 100)
+                increment = preBlocksWeight * 100;
+
+            log.debug("PreBlockDownload: " + increment + "%..." + preBlocksWeight + " " + stage.name() + " " + peerGroup.getSyncStage().name());
+            if (peerGroup != null && peerGroup.getSyncStage() == PeerGroup.SyncStage.PREBLOCKS) {
+                syncPercentage = (int)(startPreBlockPercent + increment);
+                log.info("PreBlockDownload: " + syncPercentage + "%..." + peerGroup.getSyncStage().name());
+                postOrPostDelayed();
+            }
+            lastPreBlockStage = stage;
         }
     };
 
@@ -473,8 +626,16 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
                     CrashReporter.saveBackgroundTrace(new RuntimeException(message), application.packageInfo());
                 }
 
+                wallet.getContext().initDashSync(getDir("masternode", MODE_PRIVATE).getAbsolutePath());
+
                 log.info("starting peergroup");
-                peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS, blockChain);
+                peerGroup = new PeerGroup(Constants.NETWORK_PARAMETERS, blockChain, headerChain);
+                if (resetMNListsOnPeerGroupStart) {
+                    resetMNListsOnPeerGroupStart = false;
+                    application.getWallet().getContext().masternodeListManager.setBootstrap(mnlistinfoBootStrapStream, qrinfoBootStrapStream, SimplifiedMasternodeListManager.QUORUM_ROTATION_FORMAT_VERSION);
+                    resetMNLists(true);
+                }
+
                 peerGroup.setDownloadTxDependencies(0); // recursive implementation causes StackOverflowError
                 peerGroup.addWallet(wallet);
                 peerGroup.setUserAgent(Constants.USER_AGENT, application.packageInfo().versionName);
@@ -500,7 +661,7 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
 
                     @Override
                     public InetSocketAddress[] getPeers(final long services, final long timeoutValue,
-                            final TimeUnit timeoutUnit) throws PeerDiscoveryException {
+                                                        final TimeUnit timeoutUnit) throws PeerDiscoveryException {
                         final List<InetSocketAddress> peers = new LinkedList<InetSocketAddress>();
 
                         boolean needsTrimPeersWorkaround = false;
@@ -528,9 +689,22 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
                                 log.info("DMN List peer discovery failed: "+ x.getMessage());
                             }
 
+                            // default masternode list
+                            if(peers.size() < MINIMUM_PEER_COUNT) {
+                                String [] defaultMNList = Constants.NETWORK_PARAMETERS.getDefaultMasternodeList();
+                                if (defaultMNList != null || defaultMNList.length != 0) {
+                                    log.info("DMN peer discovery returned less than 16 nodes.  Adding default DMN peers to the list to increase connections");
+                                    MasternodePeerDiscovery discovery = new MasternodePeerDiscovery(defaultMNList, Constants.NETWORK_PARAMETERS.getPort());
+                                    peers.addAll(Arrays.asList(discovery.getPeers(services, timeoutValue, timeoutUnit)));
+                                } else {
+                                    log.info("DNS peer discovery returned less than 16 nodes.  Unable to add seed peers (it is not specified for this network).");
+                                }
+                            }
+
+                            // seed nodes
                             if(peers.size() < MINIMUM_PEER_COUNT) {
                                 if (Constants.NETWORK_PARAMETERS.getAddrSeeds() != null) {
-                                    log.info("DNM peer discovery returned less than 16 nodes.  Adding seed peers to the list to increase connections");
+                                    log.info("Static DMN peer discovery returned less than 16 nodes.  Adding seed peers to the list to increase connections");
                                     peers.addAll(Arrays.asList(seedPeerDiscovery.getPeers(services, timeoutValue, timeoutUnit)));
                                 } else {
                                     log.info("DNS peer discovery returned less than 16 nodes.  Unable to add seed peers (it is not specified for this network).");
@@ -566,15 +740,23 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
                     }
                 });
 
+                // Use our custom risk analysis that allows v2 tx with absolute LockTime
+                riskAnalyzer = new AllowLockTimeRiskAnalysis.Analyzer(peerGroup);
+                wallet.setRiskAnalyzer(riskAnalyzer);
+
                 // start peergroup
                 peerGroup.startAsync();
                 peerGroup.startBlockChainDownload(blockchainDownloadListener);
             } else if (!impediments.isEmpty() && peerGroup != null) {
+                application.getWallet().getContext().close();
                 log.info("stopping peergroup");
                 peerGroup.removeDisconnectedEventListener(peerConnectivityListener);
                 peerGroup.removeConnectedEventListener(peerConnectivityListener);
                 peerGroup.removeWallet(wallet);
                 peerGroup.stopAsync();
+                // use the offline risk analyzer
+                wallet.setRiskAnalyzer(new AllowLockTimeRiskAnalysis.OfflineAnalyzer(config.getBestHeightEver(), System.currentTimeMillis()/1000));
+                riskAnalyzer.shutdown();
                 peerGroup = null;
 
                 log.debug("releasing wakelock");
@@ -684,8 +866,6 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
 
         super.onCreate();
 
-        application = (WalletApplication) getApplication();
-
         nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
@@ -698,7 +878,6 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
             startForeground();
         }
 
-        config = application.getConfiguration();
         final Wallet wallet = application.getWallet();
 
         peerConnectivityListener = new PeerConnectivityListener();
@@ -708,38 +887,37 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
         blockChainFile = new File(getDir("blockstore", Context.MODE_PRIVATE), Constants.Files.BLOCKCHAIN_FILENAME);
         final boolean blockChainFileExists = blockChainFile.exists();
 
-        try {
-            bootStrapStream = getAssets().open(Constants.Files.MNLIST_BOOTSTRAP_FILENAME);
-            SimplifiedMasternodeListManager.setBootStrapStream(bootStrapStream);
-        } catch (IOException x) {
-            log.info("cannot load the boot strap stream.  " + x.getMessage());
-        }
+        headerChainFile = new File(getDir("blockstore", Context.MODE_PRIVATE), Constants.Files.HEADERS_FILENAME);
+
+        mnlistinfoBootStrapStream = loadStream(Constants.Files.MNLIST_BOOTSTRAP_FILENAME);
+        qrinfoBootStrapStream = loadStream(Constants.Files.QRINFO_BOOTSTRAP_FILENAME);
 
         if (!blockChainFileExists) {
             log.info("blockchain does not exist, resetting wallet");
             wallet.reset();
-            try {
-                SimplifiedMasternodeListManager manager = wallet.getContext().masternodeListManager;
-                if (manager != null)
-                    manager.resetMNList(true, true);
-            } catch (RuntimeException x) {
-                // swallow this exception.  It is thrown when there is not a bootstrap mnlist file
-                // there is not a bootstrap mnlist file for testnet
-            }
+            resetMNLists(false);
+            resetMNListsOnPeerGroupStart = true;
         }
 
         try {
             blockStore = new SPVBlockStore(Constants.NETWORK_PARAMETERS, blockChainFile);
             blockStore.getChainHead(); // detect corruptions as early as possible
 
+            headerStore = new SPVBlockStore(Constants.NETWORK_PARAMETERS, headerChainFile);
+            headerStore.getChainHead(); // detect corruptions as early as possible
+
             final long earliestKeyCreationTime = wallet.getEarliestKeyCreationTime();
 
             if (!blockChainFileExists && earliestKeyCreationTime > 0) {
                 try {
                     final Stopwatch watch = Stopwatch.createStarted();
-                    final InputStream checkpointsInputStream = getAssets().open(Constants.Files.CHECKPOINTS_FILENAME);
+                    InputStream checkpointsInputStream = getAssets().open(Constants.Files.CHECKPOINTS_FILENAME);
                     CheckpointManager.checkpoint(Constants.NETWORK_PARAMETERS, checkpointsInputStream, blockStore,
                             earliestKeyCreationTime);
+                    //the headerStore should be set to the most recent checkpoint
+                    checkpointsInputStream = getAssets().open(Constants.Files.CHECKPOINTS_FILENAME);
+                    CheckpointManager.checkpoint(Constants.NETWORK_PARAMETERS, checkpointsInputStream, headerStore,
+                            System.currentTimeMillis() / 1000);
                     watch.stop();
                     log.info("checkpoints loaded from '{}', took {}", Constants.Files.CHECKPOINTS_FILENAME, watch);
                 } catch (final IOException x) {
@@ -748,10 +926,8 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
             }
         } catch (final BlockStoreException x) {
             blockChainFile.delete();
-            SimplifiedMasternodeListManager manager = application.getWallet().getContext().masternodeListManager;
-            if(manager != null) {
-                manager.resetMNList(true, true);
-            }
+            headerChainFile.delete();
+            resetMNLists(false);
 
             final String msg = "blockstore cannot be created";
             log.error(msg, x);
@@ -760,6 +936,7 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
 
         try {
             blockChain = new BlockChain(Constants.NETWORK_PARAMETERS, wallet, blockStore);
+            headerChain = new BlockChain(Constants.NETWORK_PARAMETERS, headerStore);
         } catch (final BlockStoreException x) {
             throw new Error("blockchain cannot be created", x);
         }
@@ -773,19 +950,26 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
         application.getWallet().addCoinsReceivedEventListener(Threading.SAME_THREAD, walletEventListener);
         application.getWallet().addCoinsSentEventListener(Threading.SAME_THREAD, walletEventListener);
         application.getWallet().addChangeEventListener(Threading.SAME_THREAD, walletEventListener);
+        config.registerOnSharedPreferenceChangeListener(sharedPrefsChangeListener);
 
         registerReceiver(tickReceiver, new IntentFilter(Intent.ACTION_TIME_TICK));
 
-        wallet.getContext().initDashSync(getDir("masternode", MODE_PRIVATE).getAbsolutePath());
-
         peerDiscoveryList.add(dnsDiscovery);
         updateAppWidget();
-        AppDatabase.getAppDatabase().blockchainStateDao().load().observe(this, new Observer<BlockchainState>() {
-            @Override
-            public void onChanged(BlockchainState blockchainState) {
-                handleBlockchainStateNotification(blockchainState);
-            }
-        });
+        blockchainStateDao.load().observe(this, this::handleBlockchainStateNotification);
+        registerCrowdNodeConfirmedAddressFilter();
+    }
+
+    private void resetMNLists(boolean requestFreshList) {
+        try {
+            SimplifiedMasternodeListManager manager = application.getWallet().getContext().masternodeListManager;
+            if (manager != null)
+                manager.resetMNList(true, requestFreshList);
+        } catch (RuntimeException x) {
+            // swallow this exception.  It is thrown when there is not a bootstrap file
+            // there is not a bootstrap mnlist file for testnet
+            log.info("error resetting masternode list with bootstrap files", x);
+        }
     }
 
     @Override
@@ -834,9 +1018,9 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
                     if(count > 0 && count <= 3)
                         minimum = count;
 
-                    peerGroup.broadcastTransaction(tx, minimum);
+                    peerGroup.broadcastTransaction(tx, minimum, true);
                 } else {
-                    log.info("peergroup not available, not broadcasting transaction " + tx.getHashAsString());
+                    log.info("peergroup not available, not broadcasting transaction {}", tx.getTxId());
                     tx.getConfidence().setPeerInfo(0, 1);
                 }
             }
@@ -865,14 +1049,18 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
         application.getWallet().removeChangeEventListener(walletEventListener);
         application.getWallet().removeCoinsSentEventListener(walletEventListener);
         application.getWallet().removeCoinsReceivedEventListener(walletEventListener);
+        config.unregisterOnSharedPreferenceChangeListener(sharedPrefsChangeListener);
 
         unregisterReceiver(connectivityReceiver);
 
         if (peerGroup != null) {
+            application.getWallet().getContext().close();
             peerGroup.removeDisconnectedEventListener(peerConnectivityListener);
             peerGroup.removeConnectedEventListener(peerConnectivityListener);
             peerGroup.removeWallet(application.getWallet());
             peerGroup.stop();
+            application.getWallet().setRiskAnalyzer(defaultRiskAnalyzer);
+            riskAnalyzer.shutdown();
 
             log.info("peergroup stopped");
         }
@@ -883,6 +1071,7 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
 
         try {
             blockStore.close();
+            headerStore.close();
         } catch (final BlockStoreException x) {
             throw new RuntimeException(x);
         }
@@ -890,13 +1079,6 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
         if (!deleteWalletFileOnShutdown) {
             application.saveWallet();
         }
-
-        //Dash Specific
-
-        //Constants.NETWORK_PARAMETERS.masternodeDB.write(Constants.NETWORK_PARAMETERS.masternodeManager);
-        //application.saveMasternodes();
-
-        //Dash Specific
 
         if (wakeLock.isHeld()) {
             log.debug("wakelock still held, releasing");
@@ -907,23 +1089,17 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
             log.info("removing blockchain");
             //noinspection ResultOfMethodCallIgnored
             blockChainFile.delete();
-            SimplifiedMasternodeListManager manager = application.getWallet().getContext().masternodeListManager;
-            if(manager != null) {
-                manager.resetMNList(true, false);
-            }
+            //noinspection ResultOfMethodCallIgnored
+            headerChainFile.delete();
+            resetMNLists(false);
             if (deleteWalletFileOnShutdown) {
                 log.info("removing wallet file and app data");
                 application.finalizeWipe();
             }
         }
 
-        if(bootStrapStream != null) {
-            try {
-                bootStrapStream.close();
-            } catch (IOException x) {
-                //do nothing
-            }
-        }
+        closeStream(mnlistinfoBootStrapStream);
+        closeStream(qrinfoBootStrapStream);
 
         super.onDestroy();
 
@@ -943,7 +1119,7 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
     private Notification createNetworkSyncNotification(BlockchainState blockchainState) {
         Intent notificationIntent = OnboardingActivity.createIntent(this);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
-                notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+                notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         final String message = (blockchainState != null)
                 ? BlockchainStateUtils.getSyncStateString(blockchainState, this)
@@ -951,50 +1127,52 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
 
         return new NotificationCompat.Builder(this,
                 Constants.NOTIFICATION_CHANNEL_ID_ONGOING)
-                .setSmallIcon(R.drawable.ic_dash_d_white_bottom)
+                .setSmallIcon(R.drawable.ic_dash_d_white)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText(message)
                 .setContentIntent(pendingIntent).build();
     }
 
     private void updateBlockchainStateImpediments() {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                BlockchainStateDao dao = AppDatabase.getAppDatabase().blockchainStateDao();
-                BlockchainState blockchainState = dao.loadSync();
-                if (blockchainState != null) {
-                    blockchainState.getImpediments().clear();
-                    blockchainState.getImpediments().addAll(impediments);
-                    dao.save(blockchainState);
-                }
+        executor.execute(() -> {
+            BlockchainState blockchainState = blockchainStateDao.loadSync();
+            if (blockchainState != null) {
+                blockchainState.getImpediments().clear();
+                blockchainState.getImpediments().addAll(impediments);
+                blockchainStateDao.save(blockchainState);
             }
         });
     }
 
     private void updateBlockchainState() {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                BlockchainStateDao blockchainStateDao = AppDatabase.getAppDatabase().blockchainStateDao();
-                BlockchainState blockchainState = blockchainStateDao.loadSync();
-                if (blockchainState == null) {
-                    blockchainState = new BlockchainState();
-                }
+        executor.execute(() -> {
+            BlockchainState blockchainState = blockchainStateDao.loadSync();
+            if (blockchainState == null) {
+                blockchainState = new BlockchainState();
+            }
 
-                StoredBlock chainHead = blockChain.getChainHead();
-                StoredBlock block = application.getWallet().getContext().chainLockHandler.getBestChainLockBlock();
-                int chainLockHeight = block != null ? block.getHeight() : 0;
-                int mnListHeight = (int) application.getWallet().getContext().masternodeListManager.getListAtChainTip().getHeight();
+            StoredBlock chainHead = blockChain.getChainHead();
+            StoredBlock block = application.getWallet().getContext().chainLockHandler.getBestChainLockBlock();
+            int chainLockHeight = block != null ? block.getHeight() : 0;
+            int mnListHeight = (int) application.getWallet().getContext().masternodeListManager.getListAtChainTip().getHeight();
 
-                blockchainState.setBestChainDate(chainHead.getHeader().getTime());
-                blockchainState.setBestChainHeight(chainHead.getHeight());
-                blockchainState.setImpediments(EnumSet.copyOf(impediments));
-                blockchainState.setChainlockHeight(chainLockHeight);
-                blockchainState.setMnlistHeight(mnListHeight);
-                blockchainState.setPercentageSync(percentageSync());
+            blockchainState.setBestChainDate(chainHead.getHeader().getTime());
+            blockchainState.setBestChainHeight(chainHead.getHeight());
+            blockchainState.setImpediments(EnumSet.copyOf(impediments));
+            blockchainState.setChainlockHeight(chainLockHeight);
+            blockchainState.setMnlistHeight(mnListHeight);
+            blockchainState.setPercentageSync(percentageSync());
 
-                AppDatabase.getAppDatabase().blockchainStateDao().save(blockchainState);
+            blockchainStateDao.save(blockchainState);
+        });
+    }
+
+    public void setBlockchainDownloaded() {
+        executor.execute(() -> {
+            BlockchainState blockchainState = blockchainStateDao.loadSync();
+            if (blockchainState != null && blockchainState.getPercentageSync() != 100) {
+                blockchainState.setPercentageSync(100);
+                blockchainStateDao.save(blockchainState);
             }
         });
     }
@@ -1073,6 +1251,49 @@ public class BlockchainServiceImpl extends LifecycleService implements Blockchai
             ContextCompat.startForegroundService(this, intent);
             // call startForeground just after startForegroundService.
             startForeground();
+        }
+    }
+
+    private void registerCrowdNodeConfirmedAddressFilter() {
+        String apiAddressStr = config.getCrowdNodeAccountAddress();
+        String primaryAddressStr = config.getCrowdNodePrimaryAddress();
+
+        if (!apiAddressStr.isEmpty() && !primaryAddressStr.isEmpty()) {
+            Address apiAddress = Address.fromBase58(Constants.NETWORK_PARAMETERS, apiAddressStr);
+            Address primaryAddress = Address.fromBase58(Constants.NETWORK_PARAMETERS, primaryAddressStr);
+
+            apiConfirmationHandler = new CrowdNodeAPIConfirmationHandler(
+                    apiAddress,
+                    primaryAddress,
+                    crowdNodeBlockchainApi,
+                    notificationService,
+                    crowdNodeConfig,
+                    getResources(),
+                    new Intent(this, StakingActivity.class)
+            );
+        } else {
+            apiConfirmationHandler = null;
+        }
+    }
+
+    InputStream loadStream(String filename) {
+        InputStream stream = null;
+        try {
+            stream = getAssets().open(filename);
+        } catch (IOException x) {
+            log.warn("cannot load the bootstrap stream: {}", x.getMessage());
+        }
+        return stream;
+    }
+
+
+    private void closeStream(InputStream mnlistinfoBootStrapStream) {
+        if (mnlistinfoBootStrapStream != null) {
+            try {
+                mnlistinfoBootStrapStream.close();
+            } catch (IOException x) {
+                //do nothing
+            }
         }
     }
 }
