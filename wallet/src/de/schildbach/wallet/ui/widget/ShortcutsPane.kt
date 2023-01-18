@@ -90,7 +90,6 @@ class ShortcutsPane(context: Context, attrs: AttributeSet) : LinearLayout(contex
         secureNowButton,
         scanToPayButton,
         payToAddressButton,
-        buySellButton,
         receiveButton,
         explore
     )
@@ -108,7 +107,7 @@ class ShortcutsPane(context: Context, attrs: AttributeSet) : LinearLayout(contex
     var userHasBalance: Boolean = true
         set(value) {
             scanToPayButton.shouldAppear = value
-            buySellButton.shouldAppear = !value
+            buySellButton.shouldAppear = false
             payToAddressButton.shouldAppear = value
 
             if (field != value) {
