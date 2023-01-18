@@ -30,7 +30,6 @@ import de.schildbach.wallet_test.R
 import kotlinx.android.synthetic.main.activity_advanced_security.*
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.services.analytics.AnalyticsService
-import org.dash.wallet.common.services.analytics.FirebaseAnalyticsServiceImpl
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 

@@ -19,16 +19,15 @@ package org.dash.wallet.features.exploredash.repository
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthException
-import com.google.firebase.auth.FirebaseUser
-import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import net.lingala.zip4j.ZipFile
 import org.dash.wallet.common.util.Constants
+import org.dash.wallet.features.exploredash.di.FireplaceAuth
+import org.dash.wallet.features.exploredash.di.FireplaceStorage
+import org.dash.wallet.features.exploredash.di.FireplaceUser
 import org.slf4j.LoggerFactory
 import java.io.*
 import java.lang.System.currentTimeMillis
@@ -58,8 +57,8 @@ interface ExploreRepository {
 class GCExploreDatabase @Inject constructor(
     @ApplicationContext private val context: Context,
     private val preferences: SharedPreferences,
-    private val auth: FirebaseAuth,
-    private val storage: FirebaseStorage
+    private val auth: FireplaceAuth,
+    private val storage: FireplaceStorage
 ) : ExploreRepository {
 
     companion object {
@@ -127,16 +126,17 @@ class GCExploreDatabase @Inject constructor(
         }
 
     override suspend fun getRemoteTimestamp(): Long {
-        val remoteDataInfo = try {
-            ensureAuthenticated()
-            remoteDataRef = storage.reference.child(Constants.EXPLORE_GC_FILE_PATH)
-            remoteDataRef!!.metadata.await()
-        } catch (ex: Exception) {
-            log.warn("error getting remote data timestamp", ex)
-            null
-        }
-        val dataTimestamp = remoteDataInfo?.getCustomMetadata("Data-Timestamp")?.toLong()
-        return dataTimestamp ?: -1L
+//        val remoteDataInfo = try {
+//            ensureAuthenticated()
+//            remoteDataRef = storage.reference.child(Constants.EXPLORE_GC_FILE_PATH)
+//            remoteDataRef!!.metadata.await()
+//        } catch (ex: Exception) {
+//            log.warn("error getting remote data timestamp", ex)
+//            null
+//        }
+//        val dataTimestamp = remoteDataInfo?.getCustomMetadata("Data-Timestamp")?.toLong()
+//        return dataTimestamp ?: -1L
+        return -1
     }
 
     override suspend fun download() {
@@ -162,29 +162,29 @@ class GCExploreDatabase @Inject constructor(
     }
 
     private suspend fun ensureAuthenticated() {
-        if (auth.currentUser == null) {
-            signingAnonymously()
-        }
+//        if (auth.currentUser == null) {
+//            signingAnonymously()
+//        }
     }
 
-    private suspend fun signingAnonymously(): FirebaseUser {
+    private suspend fun signingAnonymously(): FireplaceUser {
         return suspendCancellableCoroutine { coroutine ->
-            auth.signInAnonymously().addOnSuccessListener { result ->
-                if (coroutine.isActive) {
-                    val user = result.user
-                    if (user != null) {
-                        coroutine.resume(user)
-                    } else {
-                        coroutine.resumeWithException(
-                            FirebaseAuthException("-1", "User is null after anon sign in")
-                        )
-                    }
-                }
-            }.addOnFailureListener {
-                if (coroutine.isActive) {
-                    coroutine.resumeWithException(it)
-                }
-            }
+//            auth.signInAnonymously().addOnSuccessListener { result ->
+//                if (coroutine.isActive) {
+//                    val user = result.user
+//                    if (user != null) {
+//                        coroutine.resume(user)
+//                    } else {
+//                        coroutine.resumeWithException(
+//                            FirebaseAuthException("-1", "User is null after anon sign in")
+//                        )
+//                    }
+//                }
+//            }.addOnFailureListener {
+//                if (coroutine.isActive) {
+//                    coroutine.resumeWithException(it)
+//                }
+//            }
         }
     }
 

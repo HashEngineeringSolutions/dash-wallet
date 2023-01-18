@@ -19,9 +19,6 @@ package org.dash.wallet.common.services.analytics
 
 import android.os.Bundle
 import android.util.Log
-import com.google.firebase.analytics.ktx.analytics
-import com.google.firebase.crashlytics.ktx.crashlytics
-import com.google.firebase.ktx.Firebase
 import org.dash.wallet.common.BuildConfig
 import javax.inject.Inject
 
@@ -30,9 +27,37 @@ interface AnalyticsService {
     fun logError(error: Throwable, details: String? = null)
 }
 
-class FirebaseAnalyticsServiceImpl @Inject constructor() : AnalyticsService {
-    private val firebaseAnalytics = Firebase.analytics
-    private val crashlytics = Firebase.crashlytics
+class Analytics {
+    fun logEvent(event: String, params: Bundle) {
+
+    }
+    fun logError(throwable: Throwable) {
+
+    }
+}
+
+class CrashReporter {
+    fun setCrashlyticsCollectionEnabled(isDebug: Boolean) {
+
+    }
+
+    fun log(details: String) {
+
+    }
+
+    fun recordException(throwable: Throwable) {
+
+    }
+}
+
+object Fireplace {
+    val analytics = Analytics()
+    val crashlytics = CrashReporter()
+}
+
+class FireplaceAnalyticsServiceImpl @Inject constructor() : AnalyticsService {
+    private val fireplaceAnalytics = Fireplace.analytics
+    private val crashlytics = Fireplace.crashlytics
 
     init {
         crashlytics.setCrashlyticsCollectionEnabled(!BuildConfig.DEBUG)
@@ -40,17 +65,17 @@ class FirebaseAnalyticsServiceImpl @Inject constructor() : AnalyticsService {
 
     override fun logEvent(event: String, params: Bundle) {
         if (BuildConfig.DEBUG) {
-            Log.i("FIREBASE", "Skip event logging in debug mode: $event")
+            Log.i("FIREPLACE", "Skip event logging in debug mode: $event")
 
             if (!params.isEmpty) {
-                Log.i("FIREBASE", "Parameters: ${params.keySet().joinToString("; ") { "${it}: ${params[it]}" } }")
+                Log.i("FIREPLACE", "Parameters: ${params.keySet().joinToString("; ") { "${it}: ${params[it]}" } }")
             }
 
             return
         }
 
         try {
-            firebaseAnalytics.logEvent(event, params)
+            fireplaceAnalytics.logEvent(event, params)
         } catch (ex: Exception) {
             logError(ex)
         }
@@ -58,7 +83,7 @@ class FirebaseAnalyticsServiceImpl @Inject constructor() : AnalyticsService {
 
     override fun logError(error: Throwable, details: String?) {
         if (BuildConfig.DEBUG) {
-            Log.i("FIREBASE", "Skip error logging in debug mode: $error")
+            Log.i("FIREPLACE", "Skip error logging in debug mode: $error")
             details?.let { Log.i("FIREBASE", "Details: $details") }
             return
         }
@@ -68,12 +93,12 @@ class FirebaseAnalyticsServiceImpl @Inject constructor() : AnalyticsService {
     }
 
     companion object {
-        private var analyticsService: FirebaseAnalyticsServiceImpl? = null
+        private var analyticsService: FireplaceAnalyticsServiceImpl? = null
 
         @Deprecated("Inject AnalyticsService instead")
-        fun getInstance(): FirebaseAnalyticsServiceImpl {
+        fun getInstance(): FireplaceAnalyticsServiceImpl {
             if (analyticsService == null) {
-                analyticsService = FirebaseAnalyticsServiceImpl()
+                analyticsService = FireplaceAnalyticsServiceImpl()
             }
 
             return analyticsService!!

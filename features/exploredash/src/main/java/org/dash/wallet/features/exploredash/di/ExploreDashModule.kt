@@ -40,6 +40,15 @@ import org.dash.wallet.features.exploredash.repository.ExploreRepository
 import org.dash.wallet.features.exploredash.services.UserLocationState
 import org.dash.wallet.features.exploredash.services.UserLocationStateInt
 
+class FireplaceAuth {}
+class FireplaceStorage {}
+class FireplaceUser {}
+
+object Fireplace {
+    val auth = FireplaceAuth()
+    val storage = FireplaceStorage()
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class ExploreDashModule {
@@ -60,10 +69,10 @@ abstract class ExploreDashModule {
         }
 
         @Provides
-        fun provideFirebaseAuth() = Firebase.auth
+        fun provideFirebaseAuth() = Fireplace.auth
 
         @Provides
-        fun provideFirebaseStorage() = Firebase.storage
+        fun provideFirebaseStorage() = Fireplace.storage
     }
 
     @Binds

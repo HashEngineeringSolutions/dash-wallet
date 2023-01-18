@@ -38,7 +38,7 @@ import org.dash.wallet.common.services.NotificationService
 import org.dash.wallet.common.services.SendPaymentService
 import org.dash.wallet.common.services.LockScreenBroadcaster
 import org.dash.wallet.common.services.analytics.AnalyticsService
-import org.dash.wallet.common.services.analytics.FirebaseAnalyticsServiceImpl
+import org.dash.wallet.common.services.analytics.FireplaceAnalyticsServiceImpl
 import org.dash.wallet.integration.uphold.api.UpholdClient
 import javax.inject.Singleton
 
@@ -66,7 +66,7 @@ abstract class AppModule {
 
     @Binds
     abstract fun bindAnalyticsService(
-        analyticsService: FirebaseAnalyticsServiceImpl
+        analyticsService: FireplaceAnalyticsServiceImpl
     ): AnalyticsService
 
     @Binds
