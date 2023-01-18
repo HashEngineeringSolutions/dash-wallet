@@ -249,12 +249,6 @@ android {
         _testNet3 {
             res.srcDirs = ["testNet3/res"]
         }
-        beta {
-            res.srcDirs = ["beta/res"]
-        }
-        devNet {
-            res.srcDirs = ["devNet/res"]
-        }
         foss {
             fossBuild = true
         }
