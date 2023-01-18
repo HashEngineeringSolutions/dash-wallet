@@ -55,9 +55,9 @@ class MoreFragment : Fragment(R.layout.fragment_more) {
             findNavController().popBackStack()
         }
 
-        binding.buyAndSell.setOnClickListener {
-            startBuyAndSellActivity()
-        }
+//        binding.buyAndSell.setOnClickListener {
+//            startBuyAndSellActivity()
+//        }
         binding.explore.setOnClickListener {
             findNavController().navigate(
                 R.id.exploreFragment,

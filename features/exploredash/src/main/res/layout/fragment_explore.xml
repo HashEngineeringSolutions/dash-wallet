@@ -87,7 +87,7 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
-                <androidx.constraintlayout.widget.ConstraintLayout
+                <!--androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/merchants_btn"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -171,7 +171,7 @@
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toStartOf="@+id/atms_title"
                         app:layout_constraintTop_toBottomOf="@+id/atms_title" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
+                </androidx.constraintlayout.widget.ConstraintLayout-->
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/staking_btn"
