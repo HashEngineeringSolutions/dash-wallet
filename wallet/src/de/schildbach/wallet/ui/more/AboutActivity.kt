@@ -61,58 +61,7 @@ class AboutActivity : LockScreenActivity() {
             handleReportIssue()
         }
 
-        showExploreDashSyncStatus()
-        showFirebaseIds()
-
         setContentView(binding.root)
-    }
-
-    private fun showFirebaseIds() {
-        viewModel.firebaseInstallationId.observe(this) {
-            binding.firebaseInstallationId.text = it
-        }
-        binding.firebaseInstallationIdItem.setOnClickListener { viewModel.copyFirebaseInstallationId() }
-
-        viewModel.firebaseCloudMessagingToken.observe(this) {
-            binding.fcmToken.text = it
-        }
-        binding.fcmTokenItem.setOnClickListener { viewModel.copyFCMToken() }
-    }
-
-    private fun showExploreDashSyncStatus() {
-        val formatFlags = DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_ABBREV_MONTH or DateUtils.FORMAT_SHOW_TIME
-
-        viewModel.exploreRemoteTimestamp.observe(this) { timestamp ->
-            binding.lastExploreUpdateLoadingIndicator.isVisible = false
-            binding.exploreDashLastServerUpdate.isVisible = true
-
-            val formattedUpdateTime = if (timestamp <= 0L) {
-                getString(R.string.about_last_explore_dash_update_error)
-            } else {
-                DateUtils.formatDateTime(applicationContext, timestamp, formatFlags)
-            }
-
-            binding.exploreDashLastServerUpdate.text = formattedUpdateTime
-        }
-
-        viewModel.exploreIsSyncing.observe(this) { isSyncing ->
-            binding.exploreDashLastDeviceSync.text = if (isSyncing) {
-                "${getString(R.string.syncing)}…"
-            } else if (viewModel.exploreIsSyncFailed) {
-                getString(
-                    R.string.about_explore_failed_sync,
-                    DateUtils.formatDateTime(applicationContext, viewModel.exploreLastSyncAttempt, formatFlags)
-                )
-            } else if (viewModel.explorePreloadedTimestamp >= viewModel.exploreLastSyncAttempt) {
-                val prefix = if (viewModel.isTestNetPreloaded) "Testnet DB " else ""
-                prefix + getString(
-                    R.string.about_explore_preloaded_on,
-                    DateUtils.formatDateTime(applicationContext, viewModel.explorePreloadedTimestamp, formatFlags)
-                )
-            } else {
-                DateUtils.formatDateTime(applicationContext, viewModel.exploreLastSyncAttempt, formatFlags)
-            }
-        }
     }
 
     override fun finish() {

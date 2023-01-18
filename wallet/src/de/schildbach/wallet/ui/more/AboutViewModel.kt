@@ -76,8 +76,6 @@ class AboutViewModel @Inject constructor(
         get() = _firebaseCloudMessagingToken
 
     init {
-        loadFirebaseIds()
-
         viewModelScope.launch {
             _exploreRemoteTimestamp.value = exploreRepository.getRemoteTimestamp()
         }
@@ -89,16 +87,6 @@ class AboutViewModel @Inject constructor(
 
     fun logEvent(event: String) {
         analytics.logEvent(event, bundleOf())
-    }
-
-    private fun loadFirebaseIds() {
-        FirebaseInstallations.getInstance().id.addOnCompleteListener { task ->
-            _firebaseInstallationId.value = if (task.isSuccessful) task.result else ""
-        }
-
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            _firebaseCloudMessagingToken.value = if (task.isSuccessful) task.result else ""
-        }
     }
 
     fun copyFCMToken() {
