@@ -276,8 +276,8 @@ public class WalletApplication extends MultiDexApplication
     }
 
     private void syncExploreData() {
-        boolean isMainNet = Constants.NETWORK_PARAMETERS.getId().equals(NetworkParameters.ID_MAINNET);
-        ExploreSyncWorker.Companion.run(getApplicationContext(), isMainNet);
+        // boolean isMainNet = Constants.NETWORK_PARAMETERS.getId().equals(NetworkParameters.ID_MAINNET);
+        // ExploreSyncWorker.Companion.run(getApplicationContext(), isMainNet);
     }
 
     public void fullInitialization() {
