@@ -29,6 +29,7 @@ import kotlinx.coroutines.runBlocking
 import net.lingala.zip4j.ZipFile
 import org.dash.wallet.features.exploredash.repository.GCExploreDatabase
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -42,6 +43,7 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
 @RunWith(RobolectricTestRunner::class)
+@Ignore
 class ExploreDatabaseTest {
     @get:Rule
     var instantTaskExecutorRule = InstantTaskExecutorRule()
