@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Stopwatch;
-import com.squareup.okhttp.internal.http.HttpDate;
 
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
@@ -83,34 +82,6 @@ public class DynamicFeeLoader extends AsyncTaskLoader<Map<FeeCategory, Coin>> {
         try {
             final Map<FeeCategory, Coin> staticFees = parseFees(assets.open(Constants.Files.FEES_FILENAME));
             return staticFees;
-/*
-            final File dynamicFeesFile = new File(getContext().getFilesDir(), Constants.Files.FEES_FILENAME);
-            final File tempFile = new File(getContext().getCacheDir(), Constants.Files.FEES_FILENAME + ".temp");
-            fetchDynamicFees(dynamicFeesUrl, tempFile, dynamicFeesFile, userAgent);
-            if (!dynamicFeesFile.exists())
-                return staticFees;
-
-            // Check dynamic fees for sanity.
-            final Map<FeeCategory, Coin> dynamicFees = parseFees(new FileInputStream(dynamicFeesFile));
-            for (final FeeCategory category : FeeCategory.values()) {
-                final Coin staticFee = staticFees.get(category);
-                final Coin dynamicFee = dynamicFees.get(category);
-                final Coin upperBound = staticFee.shiftLeft(1);
-                if (dynamicFee.isGreaterThan(upperBound)) {
-                    dynamicFees.put(category, upperBound);
-                    log.warn("Down-adjusting dynamic fee: category {} from {}/kB to {}/kB", category,
-                            dynamicFee.toFriendlyString(), upperBound.toFriendlyString());
-                    continue;
-                }
-                final Coin lowerBound = staticFee.shiftRight(1);
-                if (dynamicFee.isLessThan(lowerBound)) {
-                    dynamicFees.put(category, lowerBound);
-                    log.warn("Up-adjusting dynamic fee: category {} from {}/kB to {}/kB", category,
-                            dynamicFee.toFriendlyString(), lowerBound.toFriendlyString());
-                }
-            }
-            return dynamicFees;
-            */
         } catch (final IOException x) {
             // Should not happen
             throw new RuntimeException(x);
@@ -148,47 +119,5 @@ public class DynamicFeeLoader extends AsyncTaskLoader<Map<FeeCategory, Coin>> {
             is.close();
         }
         return dynamicFees;
-    }
-
-    private static void fetchDynamicFees(final HttpUrl url, final File tempFile, final File targetFile,
-            final String userAgent) {
-        final Stopwatch watch = Stopwatch.createStarted();
-
-        final Request.Builder requestBuilder = new Request.Builder()
-                .url(url)
-                .header("User-Agent", userAgent);
-        if (targetFile.exists())
-            requestBuilder.header("If-Modified-Since", HttpDate.format(new Date(targetFile.lastModified())));
-
-        final OkHttpClient httpClient = Constants.HTTP_CLIENT.newBuilder()
-                .connectTimeout(5, TimeUnit.SECONDS)
-                .writeTimeout(5, TimeUnit.SECONDS)
-                .readTimeout(5, TimeUnit.SECONDS)
-                .build();
-        final Call call = httpClient.newCall(requestBuilder.build());
-        try {
-            final Response response = call.execute();
-            final int status = response.code();
-            if (status == HttpURLConnection.HTTP_NOT_MODIFIED) {
-                log.info("Dynamic fees not modified at {}, took {}", url, watch);
-            } else if (status == HttpURLConnection.HTTP_OK) {
-                final ResponseBody body = response.body();
-                final FileOutputStream os = new FileOutputStream(tempFile);
-                Io.copy(body.byteStream(), os);
-                os.close();
-                final Date lastModified = response.headers().getDate("Last-Modified");
-                if (lastModified != null)
-                    tempFile.setLastModified(lastModified.getTime());
-                body.close();
-                if (!tempFile.renameTo(targetFile))
-                    throw new IllegalStateException("Cannot rename " + tempFile + " to " + targetFile);
-                watch.stop();
-                log.info("Dynamic fees fetched from {}, took {}", url, watch);
-            } else {
-                log.warn("HTTP status {} when fetching dynamic fees from {}", response.code(), url);
-            }
-        } catch (final Exception x) {
-            log.warn("Problem when fetching dynamic fees rates from " + url, x);
-        }
     }
 }

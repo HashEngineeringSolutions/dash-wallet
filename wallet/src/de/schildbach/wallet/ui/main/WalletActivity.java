@@ -36,7 +36,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.common.collect.ImmutableList;
-import com.squareup.okhttp.HttpUrl;
 
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.wallet.Wallet;
@@ -264,13 +263,6 @@ public final class WalletActivity extends AbstractBindServiceActivity
     private void checkAlerts() {
 
         final PackageInfo packageInfo = getWalletApplication().packageInfo();
-        final int versionNameSplit = packageInfo.versionName.indexOf('-');
-        final HttpUrl.Builder url = HttpUrl
-                .parse(Constants.VERSION_URL
-                        + (versionNameSplit >= 0 ? packageInfo.versionName.substring(versionNameSplit) : ""))
-                .newBuilder();
-        url.addEncodedQueryParameter("package", packageInfo.packageName);
-        url.addQueryParameter("current", Integer.toString(packageInfo.versionCode));
 
         if (CrashReporter.hasSavedCrashTrace()) {
             final StringBuilder stackTrace = new StringBuilder();
