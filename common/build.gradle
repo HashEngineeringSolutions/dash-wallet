@@ -54,10 +54,6 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
 
-    // Firebase
-    implementation platform("com.google.firebase:firebase-bom:$firebaseVersion")
-    implementation 'com.google.firebase:firebase-analytics-ktx'
-    implementation 'com.google.firebase:firebase-crashlytics-ktx'
 
     // Retrofit + OkHttp
     api "com.squareup.okhttp3:okhttp:$ok_http_version"
