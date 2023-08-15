@@ -55,6 +55,8 @@ object Fireplace {
     val crashlytics = CrashReporter()
 }
 
+class FireplaceNetworkException(message: String) : Exception(message)
+
 class FireplaceAnalyticsServiceImpl @Inject constructor() : AnalyticsService {
     private val fireplaceAnalytics = Fireplace.analytics
     private val crashlytics = Fireplace.crashlytics

@@ -21,9 +21,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.ktx.storage
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -39,10 +36,20 @@ import org.dash.wallet.features.exploredash.repository.GCExploreDatabase
 import org.dash.wallet.features.exploredash.repository.ExploreRepository
 import org.dash.wallet.features.exploredash.services.UserLocationState
 import org.dash.wallet.features.exploredash.services.UserLocationStateInt
+import java.io.File
 
 class FireplaceAuth {}
 class FireplaceStorage {}
 class FireplaceUser {}
+
+class StorageResult {
+    val bytesTransferred = 0
+}
+class StorageReference {
+    fun getFile(tmpFile: File): StorageResult {
+        return StorageResult()
+    }
+}
 
 object Fireplace {
     val auth = FireplaceAuth()

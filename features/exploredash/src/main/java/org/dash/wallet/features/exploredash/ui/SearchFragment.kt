@@ -40,7 +40,6 @@ import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.firebase.FirebaseNetworkException
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -61,6 +60,7 @@ import org.dash.wallet.common.data.Resource
 import org.dash.wallet.common.data.Status
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.services.analytics.AnalyticsService
+import org.dash.wallet.common.services.analytics.FireplaceNetworkException
 import org.dash.wallet.features.exploredash.ui.adapters.MerchantLocationsHeaderAdapter
 import org.dash.wallet.features.exploredash.ui.adapters.MerchantsLocationsAdapter
 import javax.inject.Inject
@@ -244,7 +244,7 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             searchHeaderAdapter.allowSpaceForMessage = true
             recenterMapBtnSpacer.isVisible = true
             when (lastSyncProgress.exception) {
-                is FirebaseNetworkException -> {
+                is FireplaceNetworkException -> {
                     // if the network is unreachable, show the error for 15 seconds
                     syncMessage.text = getString(R.string.sync_in_progress_network_error)
                     Handler(Looper.getMainLooper()).postDelayed(

@@ -23,7 +23,6 @@ import androidx.core.os.bundleOf
 import androidx.lifecycle.*
 import androidx.paging.*
 import androidx.paging.PagingData
-import com.google.firebase.FirebaseNetworkException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
@@ -34,6 +33,7 @@ import org.dash.wallet.common.data.Status
 import org.dash.wallet.common.livedata.ConnectionLiveData
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.services.analytics.AnalyticsService
+import org.dash.wallet.common.services.analytics.FireplaceNetworkException
 import org.dash.wallet.features.exploredash.data.ExploreDataSource
 import org.dash.wallet.features.exploredash.data.model.*
 import org.dash.wallet.features.exploredash.data.model.GeoBounds
@@ -666,7 +666,7 @@ class ExploreViewModel @Inject constructor(
                 }
                 progress.status == Status.LOADING && !isOnline -> {
                     if(!observedLastError) {
-                        Resource.error(FirebaseNetworkException("network is offline"))
+                        Resource.error(FireplaceNetworkException("network is offline"))
                     } else {
                         Resource.success(100.0) // hide errors if already observed
                     }

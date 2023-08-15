@@ -20,7 +20,6 @@ package org.dash.wallet.features.exploredash
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
-import com.google.firebase.FirebaseNetworkException
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -28,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.dash.wallet.common.Configuration
 import org.dash.wallet.common.services.analytics.AnalyticsService
+import org.dash.wallet.common.services.analytics.FireplaceNetworkException
 import org.dash.wallet.features.exploredash.repository.ExploreDataSyncStatus
 import org.dash.wallet.features.exploredash.repository.ExploreRepository
 import org.slf4j.LoggerFactory
@@ -143,7 +143,7 @@ class ExploreSyncWorker @AssistedInject constructor(
 
             syncStatus.setSyncProgress(100.0)
 
-        } catch (ex: FirebaseNetworkException) {
+        } catch (ex: FireplaceNetworkException) {
             log.warn("sync explore no network", ex)
             syncStatus.setSyncError(ex)
             return@withContext Result.failure()

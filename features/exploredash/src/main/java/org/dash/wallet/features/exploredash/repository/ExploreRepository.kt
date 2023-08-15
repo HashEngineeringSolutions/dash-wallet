@@ -19,7 +19,6 @@ package org.dash.wallet.features.exploredash.repository
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.google.firebase.storage.StorageReference
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
@@ -28,6 +27,7 @@ import org.dash.wallet.common.util.Constants
 import org.dash.wallet.features.exploredash.di.FireplaceAuth
 import org.dash.wallet.features.exploredash.di.FireplaceStorage
 import org.dash.wallet.features.exploredash.di.FireplaceUser
+import org.dash.wallet.features.exploredash.di.StorageReference
 import org.slf4j.LoggerFactory
 import java.io.*
 import java.lang.System.currentTimeMillis
@@ -150,7 +150,7 @@ class GCExploreDatabase @Inject constructor(
 
         log.info("downloading explore db from server ($tmpFileDelete)")
         val startTime = currentTimeMillis()
-        val result = remoteDataRef!!.getFile(tmpFile).await()
+        val result = remoteDataRef!!.getFile(tmpFile)
         val totalTime = (currentTimeMillis() - startTime).toFloat() / 1000
         log.info("downloaded $remoteDataRef (${result.bytesTransferred} as $tmpFile [$totalTime s]")
 
