@@ -56,7 +56,6 @@ dependencies {
     // Core
     implementation "androidx.core:core-ktx:$jetpackVersion"
     implementation "androidx.appcompat:appcompat:$appCompatVersion"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:$coroutines_version"
     implementation "androidx.work:work-runtime-ktx:$workRuntimeVersion"
 
     // Architecture
@@ -80,12 +79,6 @@ dependencies {
     implementation "com.github.bumptech.glide:glide:$glideVersion"
     kapt "com.github.bumptech.glide:compiler:$glideVersion"
     api 'androidx.paging:paging-runtime-ktx:3.1.1'
-
-    // Maps & Location
-    implementation 'com.google.android.gms:play-services-location:18.0.0'
-    implementation 'com.google.android.gms:play-services-maps:18.0.0'
-    implementation 'com.google.maps.android:maps-ktx:3.2.0'
-    implementation 'com.google.maps.android:android-maps-utils:2.2.6'
 
     // Logs
     implementation "org.slf4j:slf4j-api:$slf4jVersion"

@@ -19,8 +19,6 @@ package org.dash.wallet.features.exploredash.di
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -54,6 +52,13 @@ class StorageReference {
 object Fireplace {
     val auth = FireplaceAuth()
     val storage = FireplaceStorage()
+}
+
+class FusedLocationProviderClient
+object LocationServices {
+    fun getFusedLocationProviderClient(context: Context): FusedLocationProviderClient {
+        return FusedLocationProviderClient()
+    }
 }
 
 @Module
