@@ -44,7 +44,6 @@ import com.google.common.base.Strings;
 import org.bitcoinj.crypto.KeyCrypterException;
 import org.bitcoinj.crypto.KeyCrypterScrypt;
 import org.bouncycastle.crypto.params.KeyParameter;
-import org.dash.wallet.common.Configuration;
 import org.dash.wallet.common.WalletDataProvider;
 import org.dash.wallet.common.ui.BaseAlertDialogBuilder;
 import org.slf4j.Logger;
@@ -58,7 +57,7 @@ import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.security.BiometricHelper;
 import de.schildbach.wallet.security.SecurityFunctions;
 import de.schildbach.wallet.service.RestartService;
-import de.schildbach.wallet.ui.preference.PinRetryController;
+import de.schildbach.wallet.security.PinRetryController;
 import de.schildbach.wallet_test.R;
 import kotlin.Unit;
 
@@ -384,16 +383,16 @@ public class EncryptKeysDialogFragment extends DialogFragment {
         passwordStrengthView.setVisibility(state == State.INPUT && passwordLength > 0 ? View.VISIBLE : View.INVISIBLE);
         if (passwordLength < 4) {
             passwordStrengthView.setText(R.string.encrypt_keys_dialog_password_strength_weak);
-            passwordStrengthView.setTextColor(getResources().getColor(R.color.fg_password_strength_weak));
+            passwordStrengthView.setTextColor(getResources().getColor(R.color.system_red));
         } else if (passwordLength < 6) {
             passwordStrengthView.setText(R.string.encrypt_keys_dialog_password_strength_fair);
-            passwordStrengthView.setTextColor(getResources().getColor(R.color.fg_password_strength_fair));
+            passwordStrengthView.setTextColor(getResources().getColor(R.color.orange));
         } else if (passwordLength < 8) {
             passwordStrengthView.setText(R.string.encrypt_keys_dialog_password_strength_good);
-            passwordStrengthView.setTextColor(getResources().getColor(R.color.fg_less_significant));
+            passwordStrengthView.setTextColor(getResources().getColor(R.color.content_tertiary));
         } else {
             passwordStrengthView.setText(R.string.encrypt_keys_dialog_password_strength_strong);
-            passwordStrengthView.setTextColor(getResources().getColor(R.color.fg_password_strength_strong));
+            passwordStrengthView.setTextColor(getResources().getColor(R.color.system_green));
         }
 
         showView.setEnabled(state == State.INPUT);

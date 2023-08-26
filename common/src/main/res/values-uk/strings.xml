@@ -16,7 +16,11 @@
     <string name="error">Помилка</string>
     <string name="select_a_coin">Виберіть монету</string>
     <string name="request_coins_share_dialog_title">Поділитись запитом Dash-монет…</string>
+    <string name="buy_with_fiat">Купити Dash за фіат</string>
+    <string name="buy_and_convert">Купуйте та конвертуйте Dash за допомогою іншої криптовалюти</string>
     <string name="transfer_dash">Переказати Dash</string>
+    <string name="login_error_title">Навдалося ввійти в ваш %s акаунт</string>
+    <string name="login_error_message">Сталася помилка під час входу до вашого %s акаунту.</string>
     <string name="balance">Баланс:</string>
 
     <!-- Local Currency List: GGP -->
@@ -51,6 +55,7 @@
     <string name="button_understand">Я розумію</string>
     <string name="button_okay">Згода</string>
     <string name="button_share">Поділитися</string>
+    <string name="share_address">Поділитися адресою</string>
     <string name="verify">Підтвердити</string>
     <string name="receive_enter_amount_button">Вкажіть суму</string>
 
@@ -70,8 +75,18 @@
     <string name="select_currency">Вибрати Валюту</string>
     <string name="send_coins_error_dusty_send">Сума надто мала для відправки</string>
     <string name="send_coins_error_insufficient_money">Недостатньо коштів</string>
+    <string name="no_connection">Немає підключення до Інтернету</string>
+    <string name="rate_not_available">Недоступний</string>
 
     <string name="empty_wallet_warning_title">Схоже ви спустошуєте свій гаманець</string>
     <string name="empty_wallet_crowdnode_warning">Пам\'ятайте, що ви не зможете вивести кошти з CrowdNode на цей гаманець, доки на балансі не буде хоча б 0.0003 Dash.</string>
     <string name="syncing">Синхронізація</string>
+
+    <!-- Integrations -->
+    <string name="buy_dash_subtitle">Отримуйте безпосередньо в Dash Wallet.</string>
+    <string name="convert_crypto">Конвертувати криптовалюту</string>
+    <string name="last_known_balance" >Останній відомий баланс</string>
+    <string name="disconnected">Disconnected</string>
+    <string name="enter_amount_available">доступно</string>
+    <string name="transaction_row_rate_not_available">Недоступний</string>
 </resources>

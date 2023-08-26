@@ -19,8 +19,10 @@ package org.dash.wallet.common.services.analytics
 
 // Event names should be <= 40 chars
 object AnalyticsConstants {
-    object Parameters {
-        const val VALUE = "value"
+    enum class Parameter(val paramName: String) {
+        // When adding a parameter, make sure to create a custom definition for it in Firebase Analytics.
+        // Better yet, use one of the parameters already added here.
+        VALUE("value")
     }
 
     object Uphold {
@@ -32,8 +34,18 @@ object AnalyticsConstants {
         const val BUY_DASH = "uphold_buy_dash"
     }
 
+    object Topper {
+        const val ENTER_BUY_SELL = "buy_sell_portal_topper"
+        const val ENTER_UPHOLD = "uphold_topper_buy_dash"
+    }
+
     object MoreMenu {
-        const val BUY_SELL_MORE = "more_buy_sell_dash"
+        const val BUY_SELL = "more_buy_sell_dash"
+        const val EXPLORE = "more_explore"
+        const val SECURITY = "more_security"
+        const val SETTINGS = "more_settings"
+        const val TOOLS = "more_tools"
+        const val CONTACT_SUPPORT = "more_contact_support"
     }
 
     object Security {
@@ -81,22 +93,31 @@ object AnalyticsConstants {
         const val ENTER_AMOUNT_HIDE_BALANCE = "enter_amount_hide_balance"
     }
 
+    object AddressInput {
+        const val SCAN_QR = "send_inner_scan_qr"
+        const val SHOW_CLIPBOARD = "send_show_content"
+        const val ADDRESS_TAP = "send_show_content_tap_address"
+        const val CONTINUE = "send_b_continue"
+    }
+
     object Home {
+        const val NAV_HOME = "bottom_nav_home"
+        const val NAV_MORE = "bottom_nav_more"
         const val SHORTCUT_SECURE_WALLET = "shortcut_secure_wallet"
         const val SHORTCUT_SCAN_TO_PAY = "shortcut_scan_to_pay"
         const val SHORTCUT_SEND_TO_ADDRESS = "shortcut_send_to_address"
         const val SHORTCUT_RECEIVE = "shortcut_receive"
         const val SHORTCUT_BUY_AND_SELL = "shortcut_buy_and_sell_dash"
+        const val SHORTCUT_EXPLORE = "shortcut_explore"
         const val HIDE_BALANCE = "home_hide_balance"
         const val SHOW_BALANCE = "home_show_balance"
         const val TRANSACTION_DETAILS = "home_transaction_details"
         const val TRANSACTION_FILTER = "home_transaction_filter"
-        const val SEND_RECEIVE_BUTTON = "home_send_receive_button"
+        const val SEND_RECEIVE_BUTTON = "bottom_nav_payments"
+        const val NO_ADDRESS_COPIED = "shortcut_send_no_address_copied"
     }
 
     object Explore {
-        const val WHERE_TO_SPEND = "explore__where_to_spend"
-        const val PORTAL_ATM = "explore__atms"
         const val LEARN_MORE = "explore_info_learn_more"
         const val CONTINUE = "explore_info_continue"
         const val ONLINE_MERCHANTS = "explore_online_merchants"
@@ -163,6 +184,20 @@ object AnalyticsConstants {
         const val MERCHANT_DETAILS_SCROLL_UP = "explore_merchant_details_scroll_up"
     }
 
+    object DashDirect {
+        const val CREATE_ACCOUNT = "dashdirect_btn_create"
+        const val LOGIN = "dashdirect_btn_login"
+        const val SUCCESSFUL_LOGIN = "dashdirect_success_login"
+        const val UNSUCCESSFUL_LOGIN = "dashdirect_not_success_login"
+        const val SUCCESSFUL_PURCHASE = "dashdirect_success_purchase"
+        const val PURCHASE_AMOUNT = "dashdirect_purchase_amount"
+        const val DISCOUNT_AMOUNT = "dashdirect_discount_amount"
+        const val MERCHANT_NAME = "dashdirect_merchant_name"
+        const val HOW_TO_USE = "dashdirect_btn_how_to_use"
+        const val FILTER_GIFT_CARD = "home_transaction_filter_gift_card"
+        const val DETAILS_GIFT_CARD = "home_transaction_details_gift_card"
+    }
+
     object CrowdNode {
         const val STAKING_ENTRY = "explore__staking"
 
@@ -210,7 +245,9 @@ object AnalyticsConstants {
         const val BUY_PAYMENT_METHOD = "coinbase_buy_p_method"
         const val BUY_ENTER_FIAT = "coinbase_buy_enter_amount_fiat"
         const val BUY_ENTER_DASH = "coinbase_buy_enter_amount_dash"
-        const val BUY_CHANGE_FIAT_CURRENCY = "coinbase_buy_b_change_fiat_currency" // Currency selector isn't shown in Coinbase.
+
+        // Currency selector isn't shown in Coinbase.
+        const val BUY_CHANGE_FIAT_CURRENCY = "coinbase_buy_b_change_fiat_currency"
         const val BUY_CONTINUE = "coinbase_buy_b_continue"
         const val BUY_AUTH_LIMIT = "coinbase_buy_b_auth_limit"
 
@@ -223,7 +260,7 @@ object AnalyticsConstants {
         const val BUY_QUOTE_RETRY = "coinbase_buy_quote_b_retry"
         const val BUY_QUOTE_FEE_INFO = "coinbase_buy_quote_b_fee_info"
 
-        const val BUY_SUCCESS_CLOSE = "coinbase_buy_success_b_close"
+        const val BUY_SUCCESS_CLOSE = "coinbase_buy_success"
         const val BUY_ERROR_RETRY = "coinbase_buy_error_b_retry"
         const val BUY_ERROR_CLOSE = "coinbase_buy_error_b_close"
 
@@ -266,7 +303,7 @@ object AnalyticsConstants {
         const val CONVERT_QUOTE_RETRY = "coinbase_convert_preview_b_retry"
         const val CONVERT_QUOTE_FEE_INFO = "coinbase_convert_preview_b_fee_info"
 
-        const val CONVERT_SUCCESS_CLOSE = "coinbase_convert_success_b_close"
+        const val CONVERT_SUCCESS_CLOSE = "coinbase_convert_success"
         const val CONVERT_ERROR_RETRY = "coinbase_convert_error_b_retry"
         const val CONVERT_ERROR_CLOSE = "coinbase_convert_error_b_close"
 

@@ -20,12 +20,9 @@ package de.schildbach.wallet.ui.transactions
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.graphics.drawable.Animatable
 import android.os.Bundle
-import android.view.View
 import androidx.activity.viewModels
-import androidx.core.content.ContextCompat
-import de.schildbach.wallet.WalletApplication
+import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet.ui.LockScreenActivity
 import de.schildbach.wallet.ui.ReportIssueDialogBuilder
 import de.schildbach.wallet.ui.TransactionResultViewModel
@@ -33,15 +30,18 @@ import de.schildbach.wallet.ui.main.WalletActivity
 import de.schildbach.wallet.ui.send.SendCoinsActivity
 import de.schildbach.wallet.util.WalletUtils
 import de.schildbach.wallet_test.R
-import kotlinx.android.synthetic.main.activity_successful_transaction.*
-import kotlinx.android.synthetic.main.transaction_result_content.*
+import de.schildbach.wallet_test.databinding.ActivitySuccessfulTransactionBinding
+import de.schildbach.wallet_test.databinding.TransactionResultContentBinding
 import org.bitcoinj.core.Sha256Hash
 import org.bitcoinj.core.Transaction
+import org.dash.wallet.common.services.analytics.AnalyticsConstants
+import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
 import org.slf4j.LoggerFactory
 
 /**
  * @author Samuel Barbosa
  */
+@AndroidEntryPoint
 class TransactionResultActivity : LockScreenActivity() {
 
     private val log = LoggerFactory.getLogger(javaClass.simpleName)
@@ -53,18 +53,34 @@ class TransactionResultActivity : LockScreenActivity() {
         private const val EXTRA_PAYEE_VERIFIED_BY = "payee_verified_by"
 
         @JvmStatic
-        fun createIntent(context: Context, action: String? = null, transaction: Transaction, userAuthorized: Boolean): Intent {
+        fun createIntent(
+            context: Context,
+            action: String? = null,
+            transaction: Transaction,
+            userAuthorized: Boolean
+        ): Intent {
             return createIntent(context, action, transaction, userAuthorized, null, null)
         }
 
         @JvmStatic
-        fun createIntent(context: Context, transaction: Transaction, userAuthorized: Boolean, payeeName: String? = null,
-                         payeeVerifiedBy: String? = null): Intent {
+        fun createIntent(
+            context: Context,
+            transaction: Transaction,
+            userAuthorized: Boolean,
+            payeeName: String? = null,
+            payeeVerifiedBy: String? = null
+        ): Intent {
             return createIntent(context, null, transaction, userAuthorized, payeeName, payeeVerifiedBy)
         }
 
-        fun createIntent(context: Context, action: String?, transaction: Transaction, userAuthorized: Boolean,
-                         paymentMemo: String? = null, payeeVerifiedBy: String? = null): Intent {
+        fun createIntent(
+            context: Context,
+            action: String?,
+            transaction: Transaction,
+            userAuthorized: Boolean,
+            paymentMemo: String? = null,
+            payeeVerifiedBy: String? = null
+        ): Intent {
             return Intent(context, TransactionResultActivity::class.java).apply {
                 setAction(action)
                 putExtra(EXTRA_TX_ID, transaction.txId)
@@ -76,21 +92,25 @@ class TransactionResultActivity : LockScreenActivity() {
     }
 
     private val viewModel: TransactionResultViewModel by viewModels()
+    private lateinit var binding: ActivitySuccessfulTransactionBinding
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val txId = intent.getSerializableExtra(EXTRA_TX_ID) as Sha256Hash
-        if (intent.extras?.getBoolean(EXTRA_USER_AUTHORIZED_RESULT_EXTRA, false)!!)
+        if (intent.extras?.getBoolean(EXTRA_USER_AUTHORIZED_RESULT_EXTRA, false)!!) {
             intent.putExtra(INTENT_EXTRA_KEEP_UNLOCKED, true)
+        }
 
-        setContentView(R.layout.activity_successful_transaction)
+        binding = ActivitySuccessfulTransactionBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
+        val contentBinding = TransactionResultContentBinding.bind(binding.container)
         val transactionResultViewBinder = TransactionResultViewBinder(
             walletData.wallet!!,
             configuration.format.noCode(),
-            container
+            contentBinding
         )
 
         viewModel.init(txId)
@@ -100,32 +120,25 @@ class TransactionResultActivity : LockScreenActivity() {
             val payeeName = intent.getStringExtra(EXTRA_PAYMENT_MEMO)
             val payeeVerifiedBy = intent.getStringExtra(EXTRA_PAYEE_VERIFIED_BY)
             transactionResultViewBinder.bind(tx, payeeName, payeeVerifiedBy)
-            open_explorer_card.setOnClickListener { viewOnExplorer(tx) }
-            tax_category_layout.setOnClickListener { viewOnTaxCategory()}
-            transaction_close_btn.setOnClickListener {
+            transactionResultViewBinder.setTransactionIcon(R.drawable.check_animated)
+            contentBinding.openExplorerCard.setOnClickListener { viewOnExplorer(tx) }
+            contentBinding.taxCategoryLayout.setOnClickListener { viewOnTaxCategory() }
+            binding.transactionCloseBtn.setOnClickListener {
                 onTransactionDetailsDismiss()
             }
-            report_issue_card.setOnClickListener {
+            contentBinding.reportIssueCard.setOnClickListener {
                 showReportIssue()
             }
 
             viewModel.transactionMetadata.observe(this) {
-                if(it != null) {
-                    transactionResultViewBinder.setTransactionMetadata(it)
-                }
+                transactionResultViewBinder.setTransactionMetadata(it)
             }
+            transactionResultViewBinder.setOnRescanTriggered { rescanBlockchain() }
         } else {
-            log.error("Transaction not found. TxId:", txId)
+            log.error("Transaction not found. TxId: {}", txId)
             finish()
             return
         }
-
-        check_icon.setImageDrawable(ContextCompat.getDrawable(this,
-                R.drawable.check_animated))
-        check_icon.postDelayed({
-            check_icon.visibility = View.VISIBLE
-            (check_icon.drawable as Animatable).start()
-        }, 400)
     }
 
     private fun viewOnExplorer(tx: Transaction) {
@@ -138,14 +151,17 @@ class TransactionResultActivity : LockScreenActivity() {
     }
 
     private fun showReportIssue() {
-        ReportIssueDialogBuilder.createReportIssueDialog(this, WalletApplication.getInstance())
-            .buildAlertDialog().show()
+        ReportIssueDialogBuilder.createReportIssueDialog(
+            this,
+            packageInfoProvider,
+            configuration,
+            viewModel.walletData.wallet
+        ).buildAlertDialog().show()
     }
 
-    private fun onTransactionDetailsDismiss(){
+    private fun onTransactionDetailsDismiss() {
         when {
-            intent.action == Intent.ACTION_VIEW ||
-                    intent.action == SendCoinsActivity.ACTION_SEND_FROM_WALLET_URI -> {
+            intent.action == Intent.ACTION_VIEW || intent.action == SendCoinsActivity.ACTION_SEND_FROM_WALLET_URI -> {
                 finish()
             }
             intent.getBooleanExtra(EXTRA_USER_AUTHORIZED_RESULT_EXTRA, false) -> {
@@ -153,6 +169,24 @@ class TransactionResultActivity : LockScreenActivity() {
             }
             else -> {
                 startActivity(WalletActivity.createIntent(this))
+            }
+        }
+    }
+
+    private fun rescanBlockchain() {
+        AdaptiveDialog.create(
+            null,
+            getString(R.string.preferences_initiate_reset_title),
+            getString(R.string.preferences_initiate_reset_dialog_message),
+            getString(R.string.button_cancel),
+            getString(R.string.preferences_initiate_reset_dialog_positive)
+        ).show(this) {
+            if (it == true) {
+                log.info("manually initiated blockchain reset")
+                viewModel.rescanBlockchain()
+                finish()
+            } else {
+                viewModel.logEvent(AnalyticsConstants.Settings.RESCAN_BLOCKCHAIN_DISMISS)
             }
         }
     }

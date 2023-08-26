@@ -1,4 +1,52 @@
 Dash Wallet
+v9.0.5
+* Update to dashj 19.0.5
+* Update translations for the new Send flow
+* Fix stuck currency code on the Receive screen
+* Fix overflowing labels on the Home and Advanced Security screens
+* Fix leaking balance info on the Quick Receive screen
+* Update transaction error handling based on removal of BIP61 in Dash Core 19
+* Fix explore DB file name for prod flavor (was same as testnet for 9.0.4)
+
+v9.0.4
+* Update to dashj 19.0.4
+* Fix fiat amount not matching DASH amount in the system notification
+* Masternode keys fixes
+* Redesign Send flow
+* Redesign some Home screen elements
+* Add ability to open links from system notifications
+
+v9.0.3
+* Update to dashj 19.0.3 (supports Dash Core 19.2)
+* Coinbase: properly handle expired sessions
+* Uphold: update logo
+* Uphold: fix incorrect balance when there are multiple Dash cards
+* Don't make sounds when Do Not Disturb mode is ON
+* Delete old explore databases to reduce storage requirements
+* Fix crash with icons with gradients on Android 6
+* Fix crash when sending Dash
+* Fix crash from Importing Private Key funding by a tx without confirmations
+
+v9.0.2
+* update to dashj 19.0.2
+* Coinbase: hide Transfer Dash when network offline
+
+v9.0.1
+* update to dashj 19.0.1 (sync fixes and crash fixes)
+
+v9.0.0
+* Supports Dash Core 19
+* Added Masternode Keys feature
+* Request PIN code for balance (quick send)
+* Improve Transaction Error UI
+* Allow sending when exchange rate is missing
+* Redesign balance header on Home Screen
+* Redesign wallet backup
+* Update Shortcut buttons on Home Screen
+* Fixes for Crowdnode related to Android 12 and account linking
+* Improve initial sync speed when app starts
+* update to dashj 19.0
+
 v8.1.3
 * Fix Uphold Transfer Crash
 * Add Sync Explore DB button on About Screen (Testnet only)

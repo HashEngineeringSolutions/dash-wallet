@@ -29,7 +29,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import org.bitcoinj.core.Coin
 import org.bitcoinj.utils.MonetaryFormat
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
@@ -39,13 +39,13 @@ import org.dash.wallet.common.ui.enter_amount.EnterAmountViewModel
 import org.dash.wallet.common.ui.viewBinding
 import org.dash.wallet.common.util.GenericUtils
 import org.dash.wallet.common.util.safeNavigate
+import org.dash.wallet.common.util.toFormattedString
 import org.dash.wallet.integration.coinbase_integration.R
 import org.dash.wallet.integration.coinbase_integration.databinding.FragmentCoinbaseBuyDashBinding
 import org.dash.wallet.integration.coinbase_integration.databinding.KeyboardHeaderViewBinding
 import org.dash.wallet.integration.coinbase_integration.viewmodels.CoinbaseBuyDashViewModel
 
 @AndroidEntryPoint
-@ExperimentalCoroutinesApi
 class CoinbaseBuyDashFragment : Fragment(R.layout.fragment_coinbase_buy_dash) {
     private val binding by viewBinding(FragmentCoinbaseBuyDashBinding::bind)
     private val viewModel by viewModels<CoinbaseBuyDashViewModel>()
@@ -85,30 +85,29 @@ class CoinbaseBuyDashFragment : Fragment(R.layout.fragment_coinbase_buy_dash) {
                 binding.toolbarSubtitle.text = getString(
                     R.string.exchange_rate_template,
                     Coin.COIN.toPlainString(),
-                    GenericUtils.fiatToString(rate.fiat)
+                    rate.fiat.toFormattedString()
                 )
             }
         }
 
         amountViewModel.onContinueEvent.observe(viewLifecycleOwner) { pair ->
-            binding.authLimitBanner.root.isVisible = viewModel.isInputGreaterThanLimit(pair.first)
-            if (!binding.authLimitBanner.root.isVisible) {
-                val dashToFiat = amountViewModel.dashToFiatDirection.value ?: true
+            lifecycleScope.launch {
+                binding.authLimitBanner.root.isVisible = viewModel.isInputGreaterThanLimit(pair.first)
+                if (!binding.authLimitBanner.root.isVisible) {
+                    val dashToFiat = amountViewModel.dashToFiatDirection.value ?: true
 
-                val dashAmount = MonetaryFormat().withLocale(GenericUtils.getDeviceLocale())
-                    .noCode().minDecimals(6).optionalDecimals().format( pair.first)
+                    val dashAmount = MonetaryFormat().withLocale(GenericUtils.getDeviceLocale())
+                        .noCode().minDecimals(6).optionalDecimals().format( pair.first)
 
-                viewModel.onContinueClicked(dashToFiat, pair.second, dashAmount, binding.paymentMethodPicker.selectedMethodIndex)
+                    viewModel.onContinueClicked(dashToFiat, dashAmount, binding.paymentMethodPicker.selectedMethodIndex)
+                }
             }
         }
 
-        viewModel.placeBuyOrder.observe(viewLifecycleOwner) { placeBuyOrderEvent ->
-            placeBuyOrderEvent.getContentIfNotHandled()?.let {
-                safeNavigate(CoinbaseBuyDashFragmentDirections.buyDashToOrderReview(
-                    binding.paymentMethodPicker.paymentMethods[binding.paymentMethodPicker.selectedMethodIndex], it))
-            }
+        viewModel.placeBuyOrder.observe(viewLifecycleOwner) {
+            safeNavigate(CoinbaseBuyDashFragmentDirections.buyDashToOrderReview(
+                binding.paymentMethodPicker.paymentMethods[binding.paymentMethodPicker.selectedMethodIndex], it))
         }
-
 
         viewModel.showLoading.observe(viewLifecycleOwner){
             if (it) {
@@ -119,7 +118,7 @@ class CoinbaseBuyDashFragment : Fragment(R.layout.fragment_coinbase_buy_dash) {
 
         viewModel.placeBuyOrderFailedCallback.observe(viewLifecycleOwner) {
             AdaptiveDialog.create(
-                R.drawable.ic_info_red,
+                R.drawable.ic_error,
                 getString(R.string.error),
                 it,
                 getString(R.string.close)
@@ -132,17 +131,9 @@ class CoinbaseBuyDashFragment : Fragment(R.layout.fragment_coinbase_buy_dash) {
 
         binding.authLimitBanner.root.setOnClickListener {
             viewModel.logEvent(AnalyticsConstants.Coinbase.BUY_AUTH_LIMIT)
-            AdaptiveDialog.custom(
-                R.layout.dialog_withdrawal_limit_info,
-                null,
-                getString(R.string.set_auth_limit),
-                getString(R.string.change_withdrawal_limit),
-                "",
-                getString(R.string.got_it)
-            ).show(requireActivity())
+            AdaptiveDialog.custom(R.layout.dialog_withdrawal_limit_info).show(requireActivity())
         }
 
-        monitorNetworkChanges()
         viewModel.isDeviceConnectedToInternet.observe(viewLifecycleOwner) { hasInternet ->
             fragment.handleNetworkState(hasInternet)
         }
@@ -168,12 +159,6 @@ class CoinbaseBuyDashFragment : Fragment(R.layout.fragment_coinbase_buy_dash) {
     private fun dismissProgress() {
         if (loadingDialog != null && loadingDialog?.isAdded == true) {
             loadingDialog?.dismissAllowingStateLoss()
-        }
-    }
-
-    private fun monitorNetworkChanges(){
-        lifecycleScope.launchWhenResumed {
-            viewModel.monitorNetworkStateChange()
         }
     }
 }

@@ -71,11 +71,12 @@ dependencies {
     // UI
     implementation "com.google.android.material:material:$materialVersion"
     implementation "androidx.constraintlayout:constraintlayout:$constrainLayoutVersion"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:$swipeRefreshLayoutVersion"
 
     // Tests
     testImplementation "junit:junit:$junitVersion"
     testImplementation "org.mockito.kotlin:mockito-kotlin:$mockitoVersion"
-    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion"
     testImplementation "androidx.arch.core:core-testing:$coreTestingVersion"
     testImplementation 'com.google.guava:guava:28.2-android'
     androidTestImplementation "androidx.test.ext:junit:$junitExtVersion"

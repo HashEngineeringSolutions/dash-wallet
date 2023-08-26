@@ -34,8 +34,6 @@ import com.google.common.base.Strings;
 
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.utils.MonetaryFormat;
-import org.dash.wallet.common.data.CurrencyInfo;
-import org.dash.wallet.common.util.GenericUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,18 +48,12 @@ public class Configuration {
     private final SharedPreferences prefs;
     private final Resources res;
 
-    public static final String PREFS_KEY_HIDE_BALANCE = "hide_balance";
-    public static final String PREFS_KEY_SEND_COINS_AUTOCLOSE = "send_coins_autoclose";
     public static final String PREFS_KEY_CONNECTIVITY_NOTIFICATION = "connectivity_notification";
-    public static final String PREFS_KEY_EXCHANGE_CURRENCY = "exchange_currency";
-    public static final String PREFS_KEY_EXCHANGE_CURRENCY_DETECTED = "exchange_currency_detected";
     public static final String PREFS_KEY_TRUSTED_PEER = "trusted_peer";
     public static final String PREFS_KEY_TRUSTED_PEER_ONLY = "trusted_peer_only";
     public static final String PREFS_KEY_BLOCK_EXPLORER = "block_explorer";
     public static final String PREFS_KEY_REMIND_BALANCE = "remind_balance";
     public static final String PREFS_KEY_REMIND_BALANCE_TIME = "remind_balance_time";
-    public static final String PREFS_KEY_DISCLAIMER = "disclaimer";
-    private static final String PREFS_KEY_LABS_QR_PAYMENT_REQUEST = "labs_qr_payment_request";
     private static final String PREFS_KEY_PREVIOUS_VERSION = "previous_version";
     public static final String PREFS_KEY_AUTO_LOGOUT_ENABLED = "auto_logout_enabled";
     public static final String PREFS_KEY_AUTO_LOGOUT_MINUTES = "auto_logout_minutes";
@@ -88,28 +80,12 @@ public class Configuration {
 
     public static final String PREFS_KEY_LAST_UPHOLD_BALANCE = "last_uphold_balance";
 
-    // Coinbase
-
-    public static final String PREFS_KEY_LAST_COINBASE_ACCESS_TOKEN = "last_coinbase_access_token";
-    public static final String PREFS_KEY_LAST_COINBASE_REFRESH_TOKEN = "last_coinbase_refresh_token";
-    public static final String PREFS_KEY_COINBASE_USER_ACCOUNT_ID = "coinbase_account_id";
-    public static final String PREFS_KEY_COINBASE_AUTH_INFO_SHOWN = "coinbase_auth_info_shown";
-    public static final String PREFS_KEY_COINBASE_USER_WITHDRAWAL_LIMIT = "withdrawal_limit";
-    public static final String PREFS_KEY_COINBASE_SEND_LIMIT_CURRENCY = "send_limit_currency";
-
-
-
     private static final int PREFS_DEFAULT_BTC_SHIFT = 0;
     public static final int PREFS_DEFAULT_BTC_PRECISION = 8;
     public static final String PREFS_KEY_IS_DASH_TO_FIAT_DIRECTION = "is_dash_to_fiat_direction";
     public static final String PREFS_KEY_SHOW_NOTIFICATIONS_EXPLAINER = "show_notifications_explainer";
     public static final String PREFS_KEY_SHOW_TAX_CATEGORY_EXPLAINER = "show_tax_catagory_explainer";
     public static final String PREFS_KEY_SHOW_TAX_CATEGORY_INSTALLTIME = "show_tax_catagory_install_time";
-
-    // Explore Dash
-    public static final String PREFS_KEY_HAS_INFO_SCREEN_BEEN_SHOWN_ALREADY = "has_info_screen_been_shown";
-    public static final String PREFS_KEY_HAS_LOCATION_DIALOG_BEEN_SHOWN = "has_location_dialog_been_shown";
-    public static final String PREFS_KEY_EXPLORE_DATABASE_NAME = "explore_database_name";
 
     // CrowdNode
     public static final String PREFS_KEY_CROWDNODE_ACCOUNT_ADDRESS = "crowdnode_account_address";
@@ -158,28 +134,6 @@ public class Configuration {
         final int decimalRepetitions = (PREFS_DEFAULT_BTC_PRECISION - minPrecision) / numberToRepeat;
         return new MonetaryFormat().shift(PREFS_DEFAULT_BTC_SHIFT).minDecimals(minPrecision).repeatOptionalDecimals(numberToRepeat,
                 decimalRepetitions);
-    }
-
-    public MonetaryFormat getMaxPrecisionFormat() {
-        final int shift = getBtcShift();
-        if (shift == 0)
-            return new MonetaryFormat().shift(0).minDecimals(2).optionalDecimals(2, 2, 2);
-        else if (shift == 3)
-            return new MonetaryFormat().shift(3).minDecimals(2).optionalDecimals(2, 1);
-        else
-            return new MonetaryFormat().shift(6).minDecimals(0).optionalDecimals(2);
-    }
-
-    public boolean getHideBalance() {
-        return prefs.getBoolean(PREFS_KEY_HIDE_BALANCE, false);
-    }
-
-    public void setHideBalance(final boolean hideBalance) {
-        prefs.edit().putBoolean(PREFS_KEY_HIDE_BALANCE, hideBalance).apply();
-    }
-
-    public boolean getSendCoinsAutoclose() {
-        return prefs.getBoolean(PREFS_KEY_SEND_COINS_AUTOCLOSE, true);
     }
 
     public boolean getConnectivityNotificationEnabled() {
@@ -272,10 +226,6 @@ public class Configuration {
         return prefs.getLong(PREFS_KEY_LAST_RESTORE, 0);
     }
 
-    public void updateLastRestoreTime() {
-        prefs.edit().putLong(PREFS_KEY_LAST_RESTORE, System.currentTimeMillis()).apply();
-    }
-
     public boolean lastBackupSeedReminderMoreThan24hAgo() {
         long lastReminder = prefs.getLong(PREFS_KEY_LAST_BACKUP_SEED_TIME, 0);
         if (lastReminder > 0) {
@@ -299,44 +249,12 @@ public class Configuration {
         prefs.edit().putLong(PREFS_KEY_LAST_BACKUP_SEED_TIME, -1).apply();
     }
 
-    public boolean getDisclaimerEnabled() {
-        return prefs.getBoolean(PREFS_KEY_DISCLAIMER, true);
-    }
-
-    public void setDisclaimerEnabled(boolean enabled) {
-        prefs.edit().putBoolean(PREFS_KEY_DISCLAIMER, enabled).apply();
-    }
-
-    @Nullable
-    public String getExchangeCurrencyCode() {
-        String currencyCode = prefs.getString(PREFS_KEY_EXCHANGE_CURRENCY, null);
-        // previous versions of the app (prior to 7.3.3) may have stored an obsolete
-        // currency code in the preferences.  Let's change to the most up to date.
-        return CurrencyInfo.getOtherName(currencyCode);
-    }
-
-    public void setExchangeCurrencyCode(final String exchangeCurrencyCode) {
-        prefs.edit().putString(PREFS_KEY_EXCHANGE_CURRENCY, exchangeCurrencyCode).apply();
-    }
-
-    public boolean getExchangeCurrencyCodeDetected() {
-        return prefs.getBoolean(PREFS_KEY_EXCHANGE_CURRENCY_DETECTED, false);
-    }
-
-    public void setExchangeCurrencyCodeDetected(boolean detected) {
-        prefs.edit().putBoolean(PREFS_KEY_EXCHANGE_CURRENCY_DETECTED, detected).apply();
-    }
-
     /**
      * @return whether the app was ever upgraded of if it's running on the first version in which
      * it was installed
      */
     public boolean wasUpgraded() {
         return prefs.getInt(PREFS_KEY_PREVIOUS_VERSION, 0) != 0;
-    }
-
-    public boolean getQrPaymentRequestEnabled() {
-        return prefs.getBoolean(PREFS_KEY_LABS_QR_PAYMENT_REQUEST, false);
     }
 
     public boolean versionCodeCrossed(final int currentVersionCode, final int triggeringVersionCode) {
@@ -357,10 +275,6 @@ public class Configuration {
             log.info("detected app upgrade: " + lastVersionCode + " -> " + currentVersionCode);
         else if (currentVersionCode < lastVersionCode)
             log.warn("detected app downgrade: " + lastVersionCode + " -> " + currentVersionCode);
-    }
-
-    public boolean hasBeenUsed() {
-        return prefs.contains(PREFS_KEY_LAST_USED);
     }
 
     public long getLastUsedAgo() {
@@ -521,87 +435,6 @@ public class Configuration {
 
     public void setTaxCategoryInstallTime(long time) {
         prefs.edit().putLong(PREFS_KEY_SHOW_TAX_CATEGORY_INSTALLTIME, time).apply();
-    }
-
-    // Explore Dash
-
-    public boolean hasExploreDashInfoScreenBeenShown() {
-        return prefs.getBoolean(PREFS_KEY_HAS_INFO_SCREEN_BEEN_SHOWN_ALREADY, false);
-    }
-
-    public void setHasExploreDashInfoScreenBeenShown(boolean isShown){
-        prefs.edit().putBoolean(PREFS_KEY_HAS_INFO_SCREEN_BEEN_SHOWN_ALREADY, isShown).apply();
-    }
-
-    public boolean hasExploreDashLocationDialogBeenShown() {
-        return prefs.getBoolean(PREFS_KEY_HAS_LOCATION_DIALOG_BEEN_SHOWN, false);
-    }
-
-    public void setHasExploreDashLocationDialogBeenShown(boolean isShown) {
-        prefs.edit().putBoolean(PREFS_KEY_HAS_LOCATION_DIALOG_BEEN_SHOWN, isShown).apply();
-    }
-
-    public String setExploreDatabaseName(Long timestamp) {
-        String dbName = "explore-database-" + timestamp;
-        prefs.edit().putString(PREFS_KEY_EXPLORE_DATABASE_NAME, dbName).apply();
-        return dbName;
-    }
-
-    @NonNull
-    public String getExploreDatabaseName() {
-        return prefs.getString(PREFS_KEY_EXPLORE_DATABASE_NAME, "explore-database");
-    }
-
-    // Coinbase
-    // TODO: put new preferences in the CoinbaseConfig and migrate these.
-
-    public void setLastCoinBaseAccessToken(String token) {
-        prefs.edit().putString(PREFS_KEY_LAST_COINBASE_ACCESS_TOKEN, token).apply();
-    }
-
-    @NonNull
-    public String getLastCoinbaseAccessToken() {
-        return prefs.getString(PREFS_KEY_LAST_COINBASE_ACCESS_TOKEN, "");
-    }
-
-    public void setLastCoinBaseRefreshToken(String token) {
-        prefs.edit().putString(PREFS_KEY_LAST_COINBASE_REFRESH_TOKEN, token).apply();
-    }
-
-    public String getLastCoinbaseRefreshToken() {
-        return prefs.getString(PREFS_KEY_LAST_COINBASE_REFRESH_TOKEN, null);
-    }
-
-    public Boolean getHasCoinbaseAuthInfoBeenShown() {
-        return prefs.getBoolean(PREFS_KEY_COINBASE_AUTH_INFO_SHOWN, false);
-    }
-
-    public void setHasCoinbaseAuthInfoBeenShown(boolean isShown) {
-        prefs.edit().putBoolean(PREFS_KEY_COINBASE_AUTH_INFO_SHOWN, isShown).apply();
-    }
-
-    public void setCoinBaseUserAccountId(String accountId) {
-        prefs.edit().putString(PREFS_KEY_COINBASE_USER_ACCOUNT_ID, accountId).apply();
-    }
-
-    public String getCoinbaseUserAccountId(){
-        return prefs.getString(PREFS_KEY_COINBASE_USER_ACCOUNT_ID, null);
-    }
-
-    public void setCoinbaseUserWithdrawalLimitAmount(String amount){
-        prefs.edit().putString(PREFS_KEY_COINBASE_USER_WITHDRAWAL_LIMIT, amount).apply();
-    }
-
-    public String getCoinbaseUserWithdrawalLimitAmount() {
-        return prefs.getString(PREFS_KEY_COINBASE_USER_WITHDRAWAL_LIMIT, null);
-    }
-
-    public void setCoinbaseSendLimitCurrency(String currency){
-        prefs.edit().putString(PREFS_KEY_COINBASE_SEND_LIMIT_CURRENCY, currency).apply();
-    }
-
-    public String getCoinbaseSendLimitCurrency() {
-        return prefs.getString(PREFS_KEY_COINBASE_SEND_LIMIT_CURRENCY, GenericUtils.getLocaleCurrencyCode());
     }
 
     // CrowdNode

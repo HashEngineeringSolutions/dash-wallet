@@ -20,9 +20,9 @@ package org.dash.wallet.integrations.crowdnode.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
-import androidx.core.os.bundleOf
 import androidx.lifecycle.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.bitcoinj.core.Address
@@ -32,14 +32,16 @@ import org.bitcoinj.uri.BitcoinURI
 import org.bitcoinj.utils.MonetaryFormat
 import org.dash.wallet.common.Configuration
 import org.dash.wallet.common.WalletDataProvider
-import org.dash.wallet.common.data.ExchangeRate
 import org.dash.wallet.common.data.SingleLiveEvent
 import org.dash.wallet.common.data.Status
+import org.dash.wallet.common.data.WalletUIConfig
+import org.dash.wallet.common.data.entity.ExchangeRate
 import org.dash.wallet.common.services.BlockchainStateProvider
 import org.dash.wallet.common.services.ExchangeRatesProvider
 import org.dash.wallet.common.services.SystemActionsService
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.services.analytics.AnalyticsService
+import org.dash.wallet.common.ui.BalanceUIState
 import org.dash.wallet.integrations.crowdnode.api.CrowdNodeApi
 import org.dash.wallet.integrations.crowdnode.model.MessageStatusException
 import org.dash.wallet.integrations.crowdnode.model.OnlineAccountStatus
@@ -54,6 +56,7 @@ enum class NavigationRequest {
     BackupPassphrase, RestoreWallet, BuyDash, SendReport
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class CrowdNodeViewModel @Inject constructor(
     private val globalConfig: Configuration,
@@ -64,7 +67,8 @@ class CrowdNodeViewModel @Inject constructor(
     exchangeRatesProvider: ExchangeRatesProvider,
     val analytics: AnalyticsService,
     private val blockchainStateProvider: BlockchainStateProvider,
-    private val systemActions: SystemActionsService
+    private val systemActions: SystemActionsService,
+    walletUIConfig: WalletUIConfig
 ) : ViewModel() {
     companion object {
         const val URL_ARG = "url"
@@ -110,13 +114,9 @@ class CrowdNodeViewModel @Inject constructor(
     val exchangeRate: LiveData<ExchangeRate>
         get() = _exchangeRate
 
-    private val _crowdNodeBalance: MutableLiveData<Coin> = MutableLiveData()
-    val crowdNodeBalance: LiveData<Coin>
+    private val _crowdNodeBalance: MutableLiveData<BalanceUIState> = MutableLiveData(BalanceUIState())
+    val crowdNodeBalance: LiveData<BalanceUIState>
         get() = _crowdNodeBalance
-
-    private val _isBalanceLoading: MutableLiveData<Boolean> = MutableLiveData()
-    val isBalanceLoading: LiveData<Boolean>
-        get() = _isBalanceLoading
 
     val dashFormat: MonetaryFormat
         get() = globalConfig.format.noCode()
@@ -126,7 +126,7 @@ class CrowdNodeViewModel @Inject constructor(
 
     val shouldShowFirstDepositBanner: Boolean
         get() = !crowdNodeApi.hasAnyDeposits() &&
-                (crowdNodeBalance.value?.isLessThan(CrowdNodeConstants.MINIMUM_DASH_DEPOSIT) ?: true)
+            (crowdNodeBalance.value?.balance?.isLessThan(CrowdNodeConstants.MINIMUM_DASH_DEPOSIT) ?: true)
 
     init {
         walletDataProvider.observeBalance()
@@ -137,8 +137,9 @@ class CrowdNodeViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
 
-        exchangeRatesProvider
-            .observeExchangeRate(globalConfig.exchangeCurrencyCode!!)
+        walletUIConfig.observe(WalletUIConfig.SELECTED_CURRENCY)
+            .filterNotNull()
+            .flatMapLatest(exchangeRatesProvider::observeExchangeRate)
             .onEach(_exchangeRate::postValue)
             .launchIn(viewModelScope)
 
@@ -146,23 +147,25 @@ class CrowdNodeViewModel @Inject constructor(
             .onEach {
                 when (it.status) {
                     Status.LOADING -> {
-                        _isBalanceLoading.postValue(true)
-                        _crowdNodeBalance.postValue(it.data ?: Coin.ZERO)
+                        _crowdNodeBalance.postValue(
+                            _crowdNodeBalance.value?.copy(balance = it.data ?: Coin.ZERO, isUpdating = true)
+                        )
                     }
                     Status.SUCCESS -> {
-                        _isBalanceLoading.postValue(false)
-                        _crowdNodeBalance.postValue(it.data ?: Coin.ZERO)
+                        _crowdNodeBalance.postValue(
+                            _crowdNodeBalance.value?.copy(balance = it.data ?: Coin.ZERO, isUpdating = false)
+                        )
                     }
                     Status.ERROR -> {
-                        _isBalanceLoading.postValue(false)
+                        _crowdNodeBalance.postValue(_crowdNodeBalance.value?.copy(isUpdating = false))
                         networkError.call()
                     }
-                    else -> _isBalanceLoading.postValue(false)
+                    else -> _crowdNodeBalance.postValue(_crowdNodeBalance.value?.copy(isUpdating = false))
                 }
             }
             .launchIn(viewModelScope)
     }
-    
+
     fun backupPassphrase() {
         navigationCallback.postValue(NavigationRequest.BackupPassphrase)
     }
@@ -185,6 +188,10 @@ class CrowdNodeViewModel @Inject constructor(
         crowdNodeApi.refreshBalance()
     }
 
+    fun refreshBalance() {
+        crowdNodeApi.refreshBalance()
+    }
+
     fun signUp() {
         crowdNodeApi.persistentSignUp(_accountAddress.value!!)
     }
@@ -193,9 +200,11 @@ class CrowdNodeViewModel @Inject constructor(
         val address = _accountAddress.value!!
         val apiLinkUrl = CrowdNodeConstants.getApiLinkUrl(address)
         crowdNodeApi.trackLinkingAccount(address)
-        onlineAccountRequest.postValue(mapOf(
-            URL_ARG to apiLinkUrl
-        ))
+        onlineAccountRequest.postValue(
+            mapOf(
+                URL_ARG to apiLinkUrl
+            )
+        )
     }
 
     fun cancelLinkingOnlineAccount() {
@@ -211,7 +220,7 @@ class CrowdNodeViewModel @Inject constructor(
     fun clearError() {
         if (crowdNodeApi.apiError.value is MessageStatusException) {
             viewModelScope.launch {
-                config.setPreference(CrowdNodeConfig.SIGNED_EMAIL_MESSAGE_ID, -1)
+                config.set(CrowdNodeConfig.SIGNED_EMAIL_MESSAGE_ID, -1)
             }
         }
 
@@ -240,34 +249,34 @@ class CrowdNodeViewModel @Inject constructor(
     }
 
     suspend fun getIsInfoShown(): Boolean {
-        return config.getPreference(CrowdNodeConfig.INFO_SHOWN) ?: false
+        return config.get(CrowdNodeConfig.INFO_SHOWN) ?: false
     }
 
     fun setInfoShown(isShown: Boolean) {
         viewModelScope.launch {
-            config.setPreference(CrowdNodeConfig.INFO_SHOWN, isShown)
+            config.set(CrowdNodeConfig.INFO_SHOWN, isShown)
         }
     }
 
     suspend fun getShouldShowConfirmationDialog(): Boolean {
         return crowdNodeApi.onlineAccountStatus.value == OnlineAccountStatus.Confirming &&
-               !(config.getPreference(CrowdNodeConfig.CONFIRMATION_DIALOG_SHOWN) ?: false)
+            !(config.get(CrowdNodeConfig.CONFIRMATION_DIALOG_SHOWN) ?: false)
     }
 
     fun setConfirmationDialogShown(isShown: Boolean) {
         viewModelScope.launch {
-            config.setPreference(CrowdNodeConfig.CONFIRMATION_DIALOG_SHOWN, isShown)
+            config.set(CrowdNodeConfig.CONFIRMATION_DIALOG_SHOWN, isShown)
         }
     }
 
     suspend fun getShouldShowOnlineInfo(): Boolean {
         return signUpStatus != SignUpStatus.LinkedOnline &&
-                !(config.getPreference(CrowdNodeConfig.ONLINE_INFO_SHOWN) ?: false)
+            !(config.get(CrowdNodeConfig.ONLINE_INFO_SHOWN) ?: false)
     }
 
     fun setOnlineInfoShown(isShown: Boolean) {
         viewModelScope.launch {
-            config.setPreference(CrowdNodeConfig.ONLINE_INFO_SHOWN, isShown)
+            config.set(CrowdNodeConfig.ONLINE_INFO_SHOWN, isShown)
         }
     }
 
@@ -324,18 +333,22 @@ class CrowdNodeViewModel @Inject constructor(
 
     fun initiateOnlineSignUp() {
         val signupUrl = CrowdNodeConstants.getProfileUrl(networkParameters)
-        onlineAccountRequest.postValue(mapOf(
-            URL_ARG to signupUrl,
-            EMAIL_ARG to emailForAccount
-        ))
+        onlineAccountRequest.postValue(
+            mapOf(
+                URL_ARG to signupUrl,
+                EMAIL_ARG to emailForAccount
+            )
+        )
     }
 
     fun getAccountUrl(): String {
-        return CrowdNodeConstants.getFundsOpenUrl(if (signUpStatus == SignUpStatus.LinkedOnline) {
-            primaryDashAddress!!
-        } else {
-            _accountAddress.value!!
-        })
+        return CrowdNodeConstants.getFundsOpenUrl(
+            if (signUpStatus == SignUpStatus.LinkedOnline) {
+                primaryDashAddress!!
+            } else {
+                _accountAddress.value!!
+            }
+        )
     }
 
     fun finishSignUpToOnlineAccount() {
@@ -343,13 +356,13 @@ class CrowdNodeViewModel @Inject constructor(
     }
 
     suspend fun shouldShowWithdrawalLimitsInfo(): Boolean {
-        val isShown = config.getPreference(CrowdNodeConfig.WITHDRAWAL_LIMITS_SHOWN) ?: false
+        val isShown = config.get(CrowdNodeConfig.WITHDRAWAL_LIMITS_SHOWN) ?: false
         return !crowdNodeApi.hasAnyDeposits() && !isShown
     }
 
     fun triggerWithdrawalLimitsShown() {
         viewModelScope.launch {
-            config.setPreference(CrowdNodeConfig.WITHDRAWAL_LIMITS_SHOWN, true)
+            config.set(CrowdNodeConfig.WITHDRAWAL_LIMITS_SHOWN, true)
         }
     }
 
@@ -365,13 +378,13 @@ class CrowdNodeViewModel @Inject constructor(
         val accountAddress = accountAddress.value ?: return
         val amount = CrowdNodeConstants.API_CONFIRMATION_DASH_AMOUNT
 
-        analytics.logEvent(AnalyticsConstants.CrowdNode.LINK_EXISTING_SHARE_BUTTON, bundleOf())
+        analytics.logEvent(AnalyticsConstants.CrowdNode.LINK_EXISTING_SHARE_BUTTON, mapOf())
         val paymentRequestUri = BitcoinURI.convertToBitcoinURI(accountAddress, amount, "", "")
         systemActions.shareText(paymentRequestUri)
     }
 
     fun logEvent(eventName: String) {
-        analytics.logEvent(eventName, bundleOf())
+        analytics.logEvent(eventName, mapOf())
     }
 
     private fun getOrCreateAccountAddress(): Address {

@@ -18,22 +18,21 @@
 package org.dash.wallet.features.exploredash.di
 
 import android.content.Context
-import android.content.SharedPreferences
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.dash.wallet.features.exploredash.data.ExploreDataSource
-import org.dash.wallet.features.exploredash.data.MerchantAtmDataSource
-import org.dash.wallet.features.exploredash.repository.DataSyncStatusService
-import org.dash.wallet.features.exploredash.repository.ExploreDataSyncStatus
-import org.dash.wallet.features.exploredash.repository.GCExploreDatabase
-import org.dash.wallet.features.exploredash.repository.ExploreRepository
+import org.dash.wallet.features.exploredash.data.explore.ExploreDataSource
+import org.dash.wallet.features.exploredash.data.explore.MerchantAtmDataSource
+import org.dash.wallet.features.exploredash.network.RemoteDataSource
+import org.dash.wallet.features.exploredash.network.service.DashDirectAuthApi
+import org.dash.wallet.features.exploredash.network.service.DashDirectServicesApi
+import org.dash.wallet.features.exploredash.repository.*
 import org.dash.wallet.features.exploredash.services.UserLocationState
 import org.dash.wallet.features.exploredash.services.UserLocationStateInt
+import org.dash.wallet.features.exploredash.utils.DashDirectConfig
 import java.io.File
 
 class FireplaceAuth {}
@@ -66,11 +65,6 @@ object LocationServices {
 abstract class ExploreDashModule {
     companion object {
         @Provides
-        fun provideSharedPrefs(@ApplicationContext context: Context): SharedPreferences {
-            return context.getSharedPreferences("explore", Context.MODE_PRIVATE)
-        }
-
-        @Provides
         fun provideContext(@ApplicationContext context: Context): Context {
             return context
         }
@@ -80,31 +74,36 @@ abstract class ExploreDashModule {
             return LocationServices.getFusedLocationProviderClient(context)
         }
 
-        @Provides
-        fun provideFirebaseAuth() = Fireplace.auth
+        @Provides fun provideFirebaseAuth() = Fireplace.auth
+
+        @Provides fun provideFirebaseStorage() = Fireplace.storage
+
+        fun provideRemoteDataSource(config: DashDirectConfig): RemoteDataSource {
+            return RemoteDataSource(config)
+        }
+
+        fun provideAuthApi(remoteDataSource: RemoteDataSource): DashDirectAuthApi {
+            return remoteDataSource.buildApi(DashDirectAuthApi::class.java)
+        }
 
         @Provides
-        fun provideFirebaseStorage() = Fireplace.storage
+        fun provideDashDirectApi(remoteDataSource: RemoteDataSource): DashDirectServicesApi {
+            return remoteDataSource.buildApi(DashDirectServicesApi::class.java)
+        }
     }
 
     @Binds
-    abstract fun bindExploreRepository(
-        exploreRepository: GCExploreDatabase
-    ): ExploreRepository
-
-    @ExperimentalCoroutinesApi
-    @Binds
-    abstract fun bindUserLocationState(
-        userLocationState: UserLocationState
-    ): UserLocationStateInt
+    abstract fun bindExploreRepository(exploreRepository: GCExploreDatabase): ExploreRepository
 
     @Binds
-    abstract fun bindExploreDataSource(
-        exploreDatabase: MerchantAtmDataSource
-    ): ExploreDataSource
+    abstract fun bindUserLocationState(userLocationState: UserLocationState): UserLocationStateInt
 
     @Binds
-    abstract fun bindDataSyncService(
-        exploreDatabase: ExploreDataSyncStatus
-    ): DataSyncStatusService
+    abstract fun bindExploreDataSource(exploreDatabase: MerchantAtmDataSource): ExploreDataSource
+
+    @Binds
+    abstract fun bindDataSyncService(exploreDatabase: ExploreDataSyncStatus): DataSyncStatusService
+
+    @Binds
+    abstract fun provideDashDirectRepository(dashDirectRepository: DashDirectRepository): DashDirectRepositoryInt
 }

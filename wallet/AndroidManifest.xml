@@ -85,12 +85,7 @@
         </activity>
 
         <activity
-            android:name="de.schildbach.wallet.ui.VerifySeedActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.ViewSeedActivity"
+            android:name="de.schildbach.wallet.ui.verify.VerifySeedActivity"
             android:screenOrientation="portrait"
             android:theme="@style/My.Theme.ChildActivity" />
 
@@ -101,7 +96,8 @@
             android:label="@string/app_name_short"
             android:screenOrientation="portrait"
             android:theme="@style/LockScreenActivity.Child.Theme"
-            android:windowSoftInputMode="stateAlwaysHidden" />
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTop" />
 
         <activity-alias
             android:name="de.schildbach.wallet.WalletActivity"
@@ -157,20 +153,11 @@
             android:configChanges="keyboard|keyboardHidden"
             android:label="@string/address_book_activity_title"
             android:theme="@style/LockScreenActivity.Child.Theme" />
-        <activity
-            android:name="de.schildbach.wallet.ui.rates.ExchangeRatesActivity"
-            android:configChanges="keyboard|keyboardHidden"
-            android:label="@string/exchange_rates_activity_title"
-            android:theme="@style/LockScreenActivity.Child.Theme" />
+
         <activity
             android:name="de.schildbach.wallet.ui.NetworkMonitorActivity"
             android:configChanges="keyboard|keyboardHidden"
             android:label="@string/network_monitor_activity_title"
-            android:theme="@style/LockScreenActivity.Child.Theme" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.preference.PreferenceActivity"
-            android:label="@string/preferences_activity_title"
             android:theme="@style/LockScreenActivity.Child.Theme" />
 
         <activity
@@ -222,12 +209,6 @@
             </intent-filter>
         </activity>
 
-        <activity android:name="org.dash.wallet.integration.uphold.ui.UpholdSplashActivity"
-            android:theme="@style/LockScreenActivity.Child.Theme" />
-
-        <activity android:name="org.dash.wallet.integration.uphold.ui.UpholdAccountActivity"
-            android:theme="@style/LockScreenActivity.Child.Theme" />
-
         <activity
             android:name="de.schildbach.wallet.ui.LockScreenActivity"
             android:screenOrientation="portrait"
@@ -237,11 +218,6 @@
             android:name="de.schildbach.wallet.ui.SetPinActivity"
             android:screenOrientation="portrait"
             android:theme="@style/My.Theme.ChildActivity" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.more.SecurityActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/LockScreenActivity.Child.Theme" />
 
         <activity
             android:name="de.schildbach.wallet.ui.RestoreWalletFromSeedActivity"
@@ -272,11 +248,6 @@
             android:theme="@style/LockScreenActivity.Child.Theme" />
 
         <activity
-            android:name="de.schildbach.wallet.ui.ToolsActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/LockScreenActivity.Child.Theme" />
-
-        <activity
             android:name="de.schildbach.wallet.ui.payments.QuickReceiveActivity"
             android:screenOrientation="portrait"
             android:theme="@style/LockScreenActivity.Child.Theme" />
@@ -297,7 +268,7 @@
             android:theme="@style/LockScreenActivity.Theme" />
 
         <activity
-            android:name="de.schildbach.wallet.ui.send.UpholdTransferActivity"
+            android:name="org.dash.wallet.integration.uphold.ui.UpholdTransferActivity"
             android:screenOrientation="portrait"
             android:theme="@style/My.Theme.ChildActivity" />
 
@@ -369,8 +340,8 @@
 
         <activity
             android:name="de.schildbach.wallet.ui.coinbase.CoinbaseActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/LockScreenActivity.Theme" />
+            android:theme="@style/LockScreenActivity.Child.Theme"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name="de.schildbach.wallet.ui.coinbase.CoinBaseWebClientActivity"

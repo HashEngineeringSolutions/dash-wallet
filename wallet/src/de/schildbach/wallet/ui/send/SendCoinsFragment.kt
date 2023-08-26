@@ -28,8 +28,8 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.navArgs
 import dagger.hilt.android.AndroidEntryPoint
-import de.schildbach.wallet.Constants
 import de.schildbach.wallet.integration.android.BitcoinIntegration
+import de.schildbach.wallet.ui.LockScreenActivity
 import de.schildbach.wallet.ui.transactions.TransactionResultActivity
 import de.schildbach.wallet_test.R
 import de.schildbach.wallet_test.databinding.SendCoinsFragmentBinding
@@ -49,7 +49,7 @@ import org.dash.wallet.common.ui.dialogs.MinimumBalanceDialog
 import org.dash.wallet.common.ui.enter_amount.EnterAmountFragment
 import org.dash.wallet.common.ui.enter_amount.EnterAmountViewModel
 import org.dash.wallet.common.ui.viewBinding
-import org.dash.wallet.common.util.GenericUtils
+import org.dash.wallet.common.util.toFormattedString
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
 
@@ -66,9 +66,17 @@ class SendCoinsFragment: Fragment(R.layout.send_coins_fragment) {
     private val args by navArgs<SendCoinsFragmentArgs>()
 
     @Inject lateinit var authManager: AuthenticationManager
-    private var userAuthorizedDuring = false
     private var enterAmountFragment: EnterAmountFragment? = null
-    private var revealBalance = false
+    private var userAuthorizedDuring: Boolean = false
+        get() = field || enterAmountFragment?.didAuthorize == true
+        set(value) {
+            field = value
+            enterAmountFragment?.didAuthorize = value
+        }
+
+    private val requirePinForBalance by lazy {
+        (requireActivity() as LockScreenActivity).keepUnlocked
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -77,9 +85,9 @@ class SendCoinsFragment: Fragment(R.layout.send_coins_fragment) {
             requireActivity().finish()
         }
 
-        if (savedInstanceState == null) {
-            viewModel.initPaymentIntent(args.paymentIntent)
+        viewModel.initPaymentIntent(args.paymentIntent)
 
+        if (savedInstanceState == null) {
             val intentAmount = args.paymentIntent.amount
             var dashToFiat = viewModel.isDashToFiatPreferred
             // If an amount is specified (in Dash), then set the active currency to Dash
@@ -90,25 +98,24 @@ class SendCoinsFragment: Fragment(R.layout.send_coins_fragment) {
 
             val fragment = EnterAmountFragment.newInstance(
                 initialAmount = args.paymentIntent.amount,
-                dashToFiat = dashToFiat
+                dashToFiat = dashToFiat,
+                requirePinForMaxButton = requirePinForBalance
             )
             childFragmentManager.beginTransaction()
                 .setReorderingAllowed(true)
                 .add(R.id.enter_amount_fragment_placeholder, fragment)
                 .commitNow()
             enterAmountFragment = fragment
+        } else {
+            enterAmountFragment = childFragmentManager.findFragmentById(
+                R.id.enter_amount_fragment_placeholder
+            ) as EnterAmountFragment
         }
 
-        binding.hideButton.setOnClickListener {
-            revealBalance = !revealBalance
-            viewModel.logEvent(if (revealBalance) {
-                AnalyticsConstants.SendReceive.ENTER_AMOUNT_SHOW_BALANCE
-            } else {
-                AnalyticsConstants.SendReceive.ENTER_AMOUNT_HIDE_BALANCE
-            })
-            viewModel.maxOutputAmount.value?.let { balance ->
-                updateBalanceLabel(balance, enterAmountViewModel.selectedExchangeRate.value)
-            }
+        binding.paymentHeader.setTitle(getString(R.string.send_coins_fragment_button_send))
+        binding.paymentHeader.setProposition(getString(R.string.to))
+        binding.paymentHeader.setOnShowHideBalanceClicked {
+            lifecycleScope.launch { revealOrHideBalance(requirePinForBalance) }
         }
 
         viewModel.isBlockchainReplaying.observe(viewLifecycleOwner) { updateView() }
@@ -121,14 +128,14 @@ class SendCoinsFragment: Fragment(R.layout.send_coins_fragment) {
             }
         }
         viewModel.state.observe(viewLifecycleOwner) { updateView() }
-        viewModel.address.observe(viewLifecycleOwner) { binding.address.text = it }
+        viewModel.address.observe(viewLifecycleOwner) { binding.paymentHeader.setSubtitle(it) }
         viewModel.maxOutputAmount.observe(viewLifecycleOwner) { balance ->
             enterAmountViewModel.setMaxAmount(balance)
             updateBalanceLabel(balance, enterAmountViewModel.selectedExchangeRate.value)
         }
 
         enterAmountViewModel.amount.observe(viewLifecycleOwner) { viewModel.currentAmount = it }
-        enterAmountViewModel.dashToFiatDirection.observe(viewLifecycleOwner) { viewModel.isDashToFiatPreferred = it}
+        enterAmountViewModel.dashToFiatDirection.observe(viewLifecycleOwner) { viewModel.isDashToFiatPreferred = it }
         enterAmountViewModel.onContinueEvent.observe(viewLifecycleOwner) {
             lifecycleScope.launch { authenticateOrConfirm() }
         }
@@ -145,7 +152,11 @@ class SendCoinsFragment: Fragment(R.layout.send_coins_fragment) {
         } else if (dryRunException != null) {
             errorMessage = when (dryRunException) {
                 is Wallet.DustySendRequested -> getString(R.string.send_coins_error_dusty_send)
-                is InsufficientMoneyException -> getString(R.string.send_coins_error_insufficient_money)
+                is InsufficientMoneyException -> if (!requirePinForBalance || userAuthorizedDuring) {
+                    getString(R.string.send_coins_error_insufficient_money)
+                } else {
+                    ""
+                }
                 is Wallet.CouldNotAdjustDownwards -> getString(R.string.send_coins_error_dusty_send)
                 else -> dryRunException.toString()
             }
@@ -153,15 +164,19 @@ class SendCoinsFragment: Fragment(R.layout.send_coins_fragment) {
 
         enterAmountFragment?.setError(errorMessage)
         enterAmountViewModel.blockContinue = errorMessage.isNotEmpty() ||
-                !viewModel.everythingPlausible() ||
-                viewModel.isBlockchainReplaying.value ?: false
+            !viewModel.everythingPlausible() ||
+            viewModel.isBlockchainReplaying.value ?: false
 
-        enterAmountFragment?.setViewDetails(getString(when (state) {
-            SendCoinsViewModel.State.INPUT -> R.string.send_coins_fragment_button_send
-            SendCoinsViewModel.State.SENDING -> R.string.send_coins_sending_msg
-            SendCoinsViewModel.State.SENT -> R.string.send_coins_sent_msg
-            SendCoinsViewModel.State.FAILED -> R.string.send_coins_failed_msg
-        }))
+        enterAmountFragment?.setViewDetails(
+            getString(
+                when (state) {
+                    SendCoinsViewModel.State.INPUT -> R.string.send_coins_fragment_button_send
+                    SendCoinsViewModel.State.SENDING -> R.string.send_coins_sending_msg
+                    SendCoinsViewModel.State.SENT -> R.string.send_coins_sent_msg
+                    SendCoinsViewModel.State.FAILED -> R.string.send_coins_failed_msg
+                }
+            )
+        )
     }
 
     private suspend fun authenticateOrConfirm() {
@@ -191,8 +206,8 @@ class SendCoinsFragment: Fragment(R.layout.send_coins_fragment) {
         val editedAmount = enterAmountViewModel.amount.value
         val rate = enterAmountViewModel.selectedExchangeRate.value
 
-        if (rate != null && editedAmount != null) {
-            val exchangeRate = ExchangeRate(Coin.COIN, rate.fiat)
+        if (editedAmount != null) {
+            val exchangeRate = rate?.fiat?.let { ExchangeRate(Coin.COIN, it) }
 
             try {
                 viewModel.logEvent(AnalyticsConstants.SendReceive.ENTER_AMOUNT_SEND)
@@ -240,24 +255,17 @@ class SendCoinsFragment: Fragment(R.layout.send_coins_fragment) {
         }
 
         val rate = enterAmountViewModel.selectedExchangeRate.value
-
-        // prevent crash if the exchange rate is null
-        val exchangeRate = if (rate != null) ExchangeRate(Coin.COIN, rate.fiat) else null
-        val fiatAmount = exchangeRate?.coinToFiat(amount)
+        val exchangeRate = rate?.let { ExchangeRate(Coin.COIN, rate.fiat) }
         val amountStr = MonetaryFormat.BTC.noCode().format(amount).toString()
-
-        // if the exchange rate is not available, then show "Not Available"
-        val amountFiat = if (fiatAmount != null) {
-            Constants.LOCAL_FORMAT.format(fiatAmount).toString()
-        } else {
-            getString(R.string.transaction_row_rate_not_available)
-        }
-        val fiatSymbol = if (fiatAmount != null) GenericUtils.currencySymbol(fiatAmount.currencyCode) else ""
         val fee = txFee?.toPlainString() ?: ""
 
         val confirmed = ConfirmTransactionDialog.showDialogAsync(
-            requireActivity(), address, amountStr, amountFiat,
-            fiatSymbol, fee, total ?: ""
+            requireActivity(),
+            address,
+            amountStr,
+            exchangeRate,
+            fee,
+            total ?: ""
         )
 
         if (confirmed) {
@@ -291,12 +299,18 @@ class SendCoinsFragment: Fragment(R.layout.send_coins_fragment) {
 
         val transactionResultIntent = TransactionResultActivity.createIntent(
             requireActivity(),
-            requireActivity().intent.action, transaction, false
+            requireActivity().intent.action,
+            transaction,
+            false
         )
         startActivity(transactionResultIntent)
     }
 
     private fun playSentSound() {
+        if (!viewModel.shouldPlaySounds) {
+            return
+        }
+
         // play sound effect
         val soundResId = resources.getIdentifier(
             SEND_COINS_SOUND,
@@ -307,21 +321,17 @@ class SendCoinsFragment: Fragment(R.layout.send_coins_fragment) {
         if (soundResId > 0) {
             RingtoneManager.getRingtone(
                 requireActivity(),
-                Uri.parse("android.resource://" + requireActivity().packageName + "/" + soundResId))
+                Uri.parse("android.resource://" + requireActivity().packageName + "/" + soundResId)
+            )
                 .play()
         }
     }
 
-    private fun updateBalanceLabel(balance: Coin, rate: org.dash.wallet.common.data.ExchangeRate?) {
+    private fun updateBalanceLabel(balance: Coin, rate: org.dash.wallet.common.data.entity.ExchangeRate?) {
         val exchangeRate = rate?.let { ExchangeRate(Coin.COIN, it.fiat) }
-
-        if (revealBalance) {
-            var balanceText = viewModel.dashFormat.format(balance).toString()
-            exchangeRate?.let { balanceText += " ~ ${GenericUtils.fiatToString(exchangeRate.coinToFiat(balance))}" }
-            binding.balanceLabel.text = balanceText
-        } else {
-            binding.balanceLabel.text = "**********"
-        }
+        var balanceText = viewModel.dashFormat.format(balance).toString()
+        exchangeRate?.let { balanceText += " ~ ${exchangeRate.coinToFiat(balance).toFormattedString()}" }
+        binding.paymentHeader.setBalanceValue(balanceText)
     }
 
     private suspend fun showInsufficientMoneyDialog(missing: Coin) {
@@ -387,5 +397,26 @@ class SendCoinsFragment: Fragment(R.layout.send_coins_fragment) {
             getString(R.string.button_dismiss),
             null
         ).showAsync(requireActivity())
+    }
+
+    private suspend fun revealOrHideBalance(requirePin: Boolean) {
+        val isRevealing = !binding.paymentHeader.revealBalance
+
+        if (isRevealing && requirePin && !userAuthorizedDuring) {
+            authManager.authenticate(requireActivity(), false) ?: return
+            userAuthorizedDuring = true
+        }
+
+        binding.paymentHeader.triggerRevealBalance()
+        viewModel.logEvent(
+            if (binding.paymentHeader.revealBalance) {
+                AnalyticsConstants.SendReceive.ENTER_AMOUNT_SHOW_BALANCE
+            } else {
+                AnalyticsConstants.SendReceive.ENTER_AMOUNT_HIDE_BALANCE
+            }
+        )
+        viewModel.maxOutputAmount.value?.let { balance ->
+            updateBalanceLabel(balance, enterAmountViewModel.selectedExchangeRate.value)
+        }
     }
 }

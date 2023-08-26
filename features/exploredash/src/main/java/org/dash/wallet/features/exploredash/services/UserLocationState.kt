@@ -26,17 +26,13 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import org.dash.wallet.common.util.GenericUtils
-import org.dash.wallet.features.exploredash.data.model.GeoBounds
-import org.dash.wallet.features.exploredash.di.FusedLocationProviderClient
+import org.dash.wallet.features.exploredash.data.explore.model.GeoBounds
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.math.*
 
-
-data class UserLocation(var latitude: Double,
-                        var longitude: Double,
-                        var accuracy: Double)
+data class UserLocation(var latitude: Double, var longitude: Double, var accuracy: Double)
 
 interface UserLocationStateInt {
     fun observeUpdates(): Flow<UserLocation>
@@ -47,8 +43,9 @@ interface UserLocationStateInt {
     fun getRadiusBounds(centerLat: Double, centerLng: Double, radius: Double): GeoBounds
 }
 
-@ExperimentalCoroutinesApi
-class UserLocationState @Inject constructor(private val context: Context, private val client: FusedLocationProviderClient): UserLocationStateInt  {
+class UserLocationState
+@Inject
+constructor(private val context: Context, private val client: FusedLocationProviderClient) : UserLocationStateInt {
     companion object {
         private const val UPDATE_INTERVAL_SECS = 10L
         private const val FASTEST_UPDATE_INTERVAL_SECS = 2L
@@ -61,7 +58,7 @@ class UserLocationState @Inject constructor(private val context: Context, privat
 
     }
 
-   override fun getCurrentLocationAddress(lat: Double, lng: Double): Address? {
+    override fun getCurrentLocationAddress(lat: Double, lng: Double): Address? {
         return try {
             val geocoder = Geocoder(context, GenericUtils.getDeviceLocale())
             val addresses = geocoder.getFromLocation(lat, lng, 1)
@@ -94,8 +91,7 @@ class UserLocationState @Inject constructor(private val context: Context, privat
         val sindLat = sin(dLat / 2)
         val sindLng = sin(dLng / 2)
 
-        val a = sindLat.pow(2.0) +
-                (sindLng.pow(2.0) * cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)))
+        val a = sindLat.pow(2.0) + (sindLng.pow(2.0) * cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)))
 
         val c = 2 * atan2(sqrt(a), sqrt(1 - a))
 

@@ -20,8 +20,9 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 import org.bitcoinj.core.Coin
 import org.bitcoinj.utils.Fiat
-import org.dash.wallet.common.data.ExchangeRate
+import org.dash.wallet.common.data.entity.ExchangeRate
 import org.dash.wallet.common.util.GenericUtils
+import org.dash.wallet.common.util.toFormattedString
 import java.math.RoundingMode
 
 @Parcelize
@@ -102,8 +103,8 @@ data class CoinBaseUserAccountDataUIModel(
     val currencyToCryptoCurrencyExchangeRate: String,
     override val currencyToDashExchangeRate: String,
     val cryptoCurrencyToDashExchangeRate: String,
-    override val currencyToUSDExchangeRate: String,
-) : CoinbaseToDashExchangeRateUIModel(coinBaseUserAccountData, currencyToDashExchangeRate,currencyToUSDExchangeRate), Parcelable
+    override val currencyToUSDExchangeRate: String
+) : CoinbaseToDashExchangeRateUIModel(coinBaseUserAccountData, currencyToDashExchangeRate, currencyToUSDExchangeRate), Parcelable
 
 fun CoinBaseUserAccountDataUIModel.getCoinBaseExchangeRateConversion(
     currentExchangeRate: ExchangeRate
@@ -117,16 +118,16 @@ fun CoinBaseUserAccountDataUIModel.getCoinBaseExchangeRateConversion(
     val fiatAmount = Fiat.parseFiat(currencyRate.fiat.currencyCode, bd.toString())
     val dashAmount = currencyRate.fiatToCoin(fiatAmount)
 
-    return Pair(GenericUtils.fiatToString(fiatAmount), dashAmount)
+    return Pair(fiatAmount.toFormattedString(), dashAmount)
 }
 
 @Parcelize
-open class CoinbaseToDashExchangeRateUIModel (
+open class CoinbaseToDashExchangeRateUIModel(
     open val coinBaseUserAccountData: CoinBaseUserAccountData,
     open val currencyToDashExchangeRate: String,
-    open val currencyToUSDExchangeRate: String,
+    open val currencyToUSDExchangeRate: String
 ): Parcelable {
     companion object {
-        val EMPTY = CoinbaseToDashExchangeRateUIModel(CoinBaseUserAccountData.EMPTY, "","")
+        val EMPTY = CoinbaseToDashExchangeRateUIModel(CoinBaseUserAccountData.EMPTY, "", "")
     }
 }

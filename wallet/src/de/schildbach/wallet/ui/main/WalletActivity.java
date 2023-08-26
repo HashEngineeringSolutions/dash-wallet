@@ -17,13 +17,9 @@
 
 package de.schildbach.wallet.ui.main;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.nfc.NdefMessage;
 import android.nfc.NfcAdapter;
 import android.os.Build;
@@ -39,7 +35,6 @@ import com.google.common.collect.ImmutableList;
 
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.wallet.Wallet;
-import org.dash.wallet.common.Configuration;
 import org.dash.wallet.common.data.CurrencyInfo;
 import org.dash.wallet.common.ui.BaseAlertDialogBuilder;
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog;
@@ -52,18 +47,14 @@ import java.util.Locale;
 
 import dagger.hilt.android.AndroidEntryPoint;
 import de.schildbach.wallet.Constants;
-import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.WalletBalanceWidgetProvider;
 import de.schildbach.wallet.data.PaymentIntent;
 import de.schildbach.wallet.ui.AbstractBindServiceActivity;
 import de.schildbach.wallet.ui.EncryptKeysDialogFragment;
 import de.schildbach.wallet.ui.EncryptNewKeyChainDialogFragment;
-import de.schildbach.wallet.ui.util.InputParser.BinaryInputParser;
 import de.schildbach.wallet.ui.ReportIssueDialogBuilder;
 import de.schildbach.wallet.ui.RestoreWalletFromSeedDialogFragment;
-import de.schildbach.wallet.ui.SetPinActivity;
-import de.schildbach.wallet.ui.backup.BackupWalletDialogFragment;
-import de.schildbach.wallet.ui.backup.RestoreFromFileHelper;
+import de.schildbach.wallet.ui.util.InputParser.BinaryInputParser;
 import de.schildbach.wallet.ui.widget.UpgradeWalletDisclaimerDialog;
 import de.schildbach.wallet.util.CrashReporter;
 import de.schildbach.wallet.util.Nfc;
@@ -80,36 +71,23 @@ public final class WalletActivity extends AbstractBindServiceActivity
         UpgradeWalletDisclaimerDialog.OnUpgradeConfirmedListener,
         EncryptNewKeyChainDialogFragment.OnNewKeyChainEncryptedListener {
 
-    private static final int DIALOG_BACKUP_WALLET_PERMISSION = 0;
-    private static final int DIALOG_RESTORE_WALLET_PERMISSION = 1;
-    private static final int DIALOG_TIMESKEW_ALERT = 3;
-    private static final int DIALOG_VERSION_ALERT = 4;
-    private static final int DIALOG_LOW_STORAGE_ALERT = 5;
-
     private static final Logger log = LoggerFactory.getLogger(WalletActivity.class);
 
     public static Intent createIntent(Context context) {
         return new Intent(context, WalletActivity.class);
     }
 
-    private WalletApplication application;
-    private Configuration config;
-    private Wallet wallet;
-
     private final Handler handler = new Handler();
     private boolean isRestoringBackup;
-    private boolean showBackupWalletDialog = false;
 
     private BaseAlertDialogBuilder baseAlertDialogBuilder;
     private MainViewModel viewModel;
+
 
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        application = getWalletApplication();
-        config = application.getConfiguration();
-        wallet = application.getWallet();
         baseAlertDialogBuilder = new BaseAlertDialogBuilder(this);
         viewModel = new ViewModelProvider(this).get(MainViewModel.class);
 
@@ -120,7 +98,7 @@ public final class WalletActivity extends AbstractBindServiceActivity
             checkAlerts();
         }
 
-        config.touchLastUsed();
+        configuration.touchLastUsed();
 
         handleIntent(getIntent());
 
@@ -129,14 +107,23 @@ public final class WalletActivity extends AbstractBindServiceActivity
             //Add BIP44 support and PIN if missing
             upgradeWalletKeyChains(Constants.BIP44_PATH, false);
         }
+
+        viewModel.getCurrencyChangeDetected().observe(this, currencies ->
+            WalletActivityExt.INSTANCE.showFiatCurrencyChangeDetectedDialog(
+            this,
+                viewModel,
+                currencies.component1(),
+                currencies.component2()
+            )
+        );
     }
 
     @Override
     public void onStart() {
         super.onStart();
 
-        if (!getLockScreenDisplayed() && config.getShowNotificationsExplainer()) {
-            // explainPushNotifications();
+        if (!getLockScreenDisplayed() && configuration.getShowNotificationsExplainer()) {
+            explainPushNotifications();
         }
     }
 
@@ -144,17 +131,11 @@ public final class WalletActivity extends AbstractBindServiceActivity
     protected void onResume() {
         super.onResume();
 
-        checkLowStorageAlert();
+        turnOnAutoLogout();
+        WalletActivityExt.INSTANCE.checkTimeSkew(this, viewModel);
+        WalletActivityExt.INSTANCE.checkLowStorageAlert(this);
         checkWalletEncryptionDialog();
-        detectUserCountry();
-        showBackupWalletDialogIfNeeded();
-    }
-
-    private void showBackupWalletDialogIfNeeded() {
-        if (showBackupWalletDialog) {
-            BackupWalletDialogFragment.show(getSupportFragmentManager());
-            showBackupWalletDialog = false;
-        }
+        viewModel.detectUserCountry();
     }
 
     @Override
@@ -171,6 +152,7 @@ public final class WalletActivity extends AbstractBindServiceActivity
 
     private void handleIntent(final Intent intent) {
         final String action = intent.getAction();
+        final Bundle extras = intent.getExtras();
 
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
             final String inputType = intent.getType();
@@ -192,6 +174,8 @@ public final class WalletActivity extends AbstractBindServiceActivity
                     alertDialog.show();
                 }
             }.parse();
+        } else if (extras != null && extras.containsKey(WalletActivityExt.NOTIFICATION_ACTION_KEY)) {
+            WalletActivityExt.INSTANCE.handleFirebaseAction(this, extras);
         }
     }
 
@@ -199,70 +183,16 @@ public final class WalletActivity extends AbstractBindServiceActivity
         showRestoreWalletFromSeedDialog();
     }
 
-    public void handleEncryptKeys() {
-        startActivity(SetPinActivity.createIntent(this, R.string.wallet_options_encrypt_keys_change, true));
-    }
-
     public void handleEncryptKeysRestoredWallet() {
         EncryptKeysDialogFragment.show(false, getSupportFragmentManager(), dialog -> resetBlockchain());
-    }
-
-    @Override
-    protected Dialog onCreateDialog(final int id, final Bundle args) {
-        if (id == DIALOG_BACKUP_WALLET_PERMISSION)
-            return createBackupWalletPermissionDialog();
-        else if (id == DIALOG_RESTORE_WALLET_PERMISSION)
-            return createRestoreWalletPermissionDialog();
-        else if (id == DIALOG_TIMESKEW_ALERT)
-            return createTimeskewAlertDialog(args.getLong("diff_minutes"));
-        else if (id == DIALOG_VERSION_ALERT)
-            return createVersionAlertDialog();
-        else if (id == DIALOG_LOW_STORAGE_ALERT)
-            return createLowStorageAlertDialog();
-        else
-            throw new IllegalArgumentException();
-    }
-
-    private Dialog createBackupWalletPermissionDialog() {
-        baseAlertDialogBuilder.setTitle(getString(R.string.backup_wallet_permission_dialog_title));
-        baseAlertDialogBuilder.setMessage(getString(R.string.backup_wallet_permission_dialog_message));
-        baseAlertDialogBuilder.setNeutralText(getString(R.string.button_dismiss));
-        return baseAlertDialogBuilder.buildAlertDialog();
-    }
-
-    private Dialog createRestoreWalletPermissionDialog() {
-        return RestoreFromFileHelper.createRestoreWalletPermissionDialog(this, this, this);
     }
 
     private void showRestoreWalletFromSeedDialog() {
         RestoreWalletFromSeedDialogFragment.show(getSupportFragmentManager());
     }
 
-    private void checkLowStorageAlert() {
-        final Intent stickyIntent = registerReceiver(null, new IntentFilter(Intent.ACTION_DEVICE_STORAGE_LOW));
-        if (stickyIntent != null)
-            showDialog(DIALOG_LOW_STORAGE_ALERT);
-    }
-
-    private Dialog createLowStorageAlertDialog() {
-        baseAlertDialogBuilder.setTitle(getString(R.string.wallet_low_storage_dialog_title));
-        baseAlertDialogBuilder.setMessage(getString(R.string.wallet_low_storage_dialog_msg));
-        baseAlertDialogBuilder.setPositiveText(getString(R.string.wallet_low_storage_dialog_button_apps));
-        baseAlertDialogBuilder.setPositiveAction(
-                () -> {
-                    startActivity(new Intent(android.provider.Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS));
-                    finish();
-                    return Unit.INSTANCE;
-                }
-        );
-        baseAlertDialogBuilder.setNegativeText(getString(R.string.button_dismiss));
-        baseAlertDialogBuilder.setShowIcon(true);
-        return baseAlertDialogBuilder.buildAlertDialog();
-    }
-
     private void checkAlerts() {
-
-        final PackageInfo packageInfo = getWalletApplication().packageInfo();
+        final PackageInfo packageInfo = packageInfoProvider.getPackageInfo();
 
         if (CrashReporter.hasSavedCrashTrace()) {
             final StringBuilder stackTrace = new StringBuilder();
@@ -283,7 +213,12 @@ public final class WalletActivity extends AbstractBindServiceActivity
                 @Override
                 protected CharSequence collectApplicationInfo() throws IOException {
                     final StringBuilder applicationInfo = new StringBuilder();
-                    CrashReporter.appendApplicationInfo(applicationInfo, application);
+                    CrashReporter.appendApplicationInfo(
+                            applicationInfo,
+                            packageInfoProvider,
+                            configuration,
+                            walletData.getWallet()
+                    );
                     return applicationInfo;
                 }
 
@@ -304,79 +239,20 @@ public final class WalletActivity extends AbstractBindServiceActivity
 
                 @Override
                 protected CharSequence collectWalletDump() {
-                    return wallet.toString(false, true, true, null);
+                    return walletData.getWallet().toString(false, true, true, null);
                 }
             };
-
 
             alertDialog = dialog.buildAlertDialog();
             alertDialog.show();
         }
     }
 
-    private Dialog createTimeskewAlertDialog(final long diffMinutes) {
-        final PackageManager pm = getPackageManager();
-        final Intent settingsIntent = new Intent(android.provider.Settings.ACTION_DATE_SETTINGS);
-
-        baseAlertDialogBuilder.setTitle(getString(R.string.wallet_timeskew_dialog_title));
-        baseAlertDialogBuilder.setMessage(getString(R.string.wallet_timeskew_dialog_msg, diffMinutes));
-        if (pm.resolveActivity(settingsIntent, 0) != null){
-            baseAlertDialogBuilder.setPositiveText(getString(R.string.button_settings));
-            baseAlertDialogBuilder.setPositiveAction(
-                    () -> {
-                        startActivity(settingsIntent);
-                        finish();
-                        return Unit.INSTANCE;
-                    }
-            );
-        }
-        baseAlertDialogBuilder.setNegativeText(getString(R.string.button_dismiss));
-        baseAlertDialogBuilder.setShowIcon(true);
-        return baseAlertDialogBuilder.buildAlertDialog();
-    }
-
-    private Dialog createVersionAlertDialog() {
-        final PackageManager pm = getPackageManager();
-        final Intent marketIntent = new Intent(Intent.ACTION_VIEW,
-                Uri.parse(String.format(Constants.MARKET_APP_URL, getPackageName())));
-        final Intent binaryIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(Constants.BINARY_URL));
-        final StringBuilder message = new StringBuilder(getString(R.string.wallet_version_dialog_msg));
-        if (Build.VERSION.SDK_INT < Constants.SDK_DEPRECATED_BELOW)
-            message.append("\n\n").append(getString(R.string.wallet_version_dialog_msg_deprecated));
-
-        baseAlertDialogBuilder.setTitle(getString(R.string.wallet_version_dialog_title));
-        baseAlertDialogBuilder.setMessage(message);
-        if (pm.resolveActivity(marketIntent, 0) != null){
-            baseAlertDialogBuilder.setPositiveText(getString(R.string.wallet_version_dialog_button_market));
-            baseAlertDialogBuilder.setPositiveAction(
-                    () -> {
-                        startActivity(marketIntent);
-                        finish();
-                        return Unit.INSTANCE;
-                    }
-            );
-        }
-        if (pm.resolveActivity(binaryIntent, 0) != null){
-            baseAlertDialogBuilder.setNeutralText(getString(R.string.wallet_version_dialog_button_binary));
-            baseAlertDialogBuilder.setNeutralAction(
-                    () -> {
-                        startActivity(binaryIntent);
-                        finish();
-                        return Unit.INSTANCE;
-                    }
-            );
-        }
-        baseAlertDialogBuilder.setNegativeText(getString(R.string.button_dismiss));
-        baseAlertDialogBuilder.setShowIcon(true);
-        return baseAlertDialogBuilder.buildAlertDialog();
-    }
-
     public void restoreWallet(final Wallet wallet) {
-        application.replaceWallet(wallet);
+        walletApplication.replaceWallet(wallet);
         getSharedPreferences(Constants.WALLET_LOCK_PREFS_NAME, Context.MODE_PRIVATE).edit().clear().apply();
 
-        config.disarmBackupReminder();
-        this.wallet = application.getWallet();
+        configuration.disarmBackupReminder();
         upgradeWalletKeyChains(Constants.BIP44_PATH, true);
     }
 
@@ -396,11 +272,11 @@ public final class WalletActivity extends AbstractBindServiceActivity
     // not encrypt the wallet.
 
     private void checkWalletEncryptionDialog() {
-        if (!wallet.isEncrypted()) {
+        if (!walletData.getWallet().isEncrypted()) {
             log.info("the wallet is not encrypted");
             viewModel.logError(new Exception("the wallet is not encrypted / OnboardingActivity"),
                     "no other details are available without the user submitting a report");
-            AdaptiveDialog dialog = AdaptiveDialog.custom(R.layout.dialog_adaptive,
+            AdaptiveDialog dialog = AdaptiveDialog.create(
                     R.drawable.ic_error,
                     getString(R.string.wallet_encryption_error_title),
                     getString(R.string.wallet_not_encrypted_error_message),
@@ -411,8 +287,12 @@ public final class WalletActivity extends AbstractBindServiceActivity
             dialog.show(this, reportIssue -> {
                 if (reportIssue != null) {
                     if (reportIssue) {
-                        alertDialog = ReportIssueDialogBuilder.createReportIssueDialog(WalletActivity.this,
-                                WalletApplication.getInstance()).buildAlertDialog();
+                        alertDialog = ReportIssueDialogBuilder.createReportIssueDialog(
+                            WalletActivity.this,
+                            packageInfoProvider,
+                            configuration,
+                            walletData.getWallet()
+                        ).buildAlertDialog();
                         alertDialog.show();
                     } else {
                         // is there way to try to fix it?
@@ -427,7 +307,7 @@ public final class WalletActivity extends AbstractBindServiceActivity
     }
 
     private void checkRestoredWalletEncryptionDialog() {
-        if (!wallet.isEncrypted()) {
+        if (!walletData.getWallet().isEncrypted()) {
             handleEncryptKeysRestoredWallet();
         } else {
             resetBlockchain();
@@ -437,15 +317,15 @@ public final class WalletActivity extends AbstractBindServiceActivity
     public void upgradeWalletKeyChains(final ImmutableList<ChildNumber> path, final boolean restoreBackup) {
 
         isRestoringBackup = restoreBackup;
-        if (!wallet.hasKeyChain(path)) {
-            if (wallet.isEncrypted()) {
+        if (!walletData.getWallet().hasKeyChain(path)) {
+            if (walletData.getWallet().isEncrypted()) {
                 EncryptNewKeyChainDialogFragment.show(getSupportFragmentManager(), path);
             } else {
                 //
                 // Upgrade the wallet now
                 //
-                wallet.addKeyChain(path);
-                application.saveWallet();
+                walletData.getWallet().addKeyChain(path);
+                walletApplication.saveWallet();
                 //
                 // Tell the user that the wallet is being upgraded (BIP44)
                 // and they will have to enter a PIN.
@@ -475,159 +355,6 @@ public final class WalletActivity extends AbstractBindServiceActivity
 
     }
 
-    /**
-     * Get ISO 3166-1 alpha-2 country code for this device (or null if not available)
-     * If available, call {@link #showFiatCurrencyChangeDetectedDialog(String, String)}
-     * passing the country code.
-     */
-    private void detectUserCountry() {
-        if (config.getExchangeCurrencyCodeDetected()) {
-            return;
-        }
-        try {
-            final TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-            final String simCountry = tm.getSimCountryIso();
-
-            log.info("Detecting currency based on device, mobile network or locale:");
-            if (simCountry != null && simCountry.length() == 2) { // SIM country code is available
-                log.info("Device Sim Country: " + simCountry);
-                updateCurrencyExchange(simCountry.toUpperCase());
-            } else if (tm.getPhoneType() != TelephonyManager.PHONE_TYPE_CDMA) { // device is not 3G (would be unreliable)
-                String networkCountry = tm.getNetworkCountryIso();
-                log.info("Network Country: " + simCountry);
-                if (networkCountry != null && networkCountry.length() == 2) { // network country code is available
-                    updateCurrencyExchange(networkCountry.toUpperCase());
-                } else {
-                    //Couldn't obtain country code - Use Default
-                    if (config.getExchangeCurrencyCode() == null)
-                        setDefaultCurrency();
-                }
-            } else {
-                //No cellular network - Wifi Only
-                if (config.getExchangeCurrencyCode() == null)
-                    setDefaultCurrency();
-            }
-        } catch (Exception e) {
-            //fail safe
-            log.info("NMA-243:  Exception thrown obtaining Locale information: ", e);
-            if (config.getExchangeCurrencyCode() == null)
-                setDefaultCurrency();
-        }
-    }
-
-    private void setDefaultCurrency() {
-        String countryCode = getCurrentCountry();
-        log.info("Setting default currency:");
-
-        try {
-            log.info("Local Country: " + countryCode);
-            Locale l = new Locale("", countryCode);
-            Currency currency = Currency.getInstance(l);
-            String newCurrencyCode = currency.getCurrencyCode();
-            if (CurrencyInfo.hasObsoleteCurrency(newCurrencyCode)) {
-                log.info("found obsolete currency: " + newCurrencyCode);
-                newCurrencyCode = CurrencyInfo.getUpdatedCurrency(newCurrencyCode);
-            }
-
-            // check to see if we use a different currency code for exchange rates
-            newCurrencyCode = CurrencyInfo.getOtherName(newCurrencyCode);
-
-            log.info("Setting Local Currency: " + newCurrencyCode);
-            config.setExchangeCurrencyCode(newCurrencyCode);
-
-            //Fallback to default
-            if (config.getExchangeCurrencyCode() == null) {
-                setDefaultExchangeCurrencyCode();
-            }
-        } catch (IllegalArgumentException x) {
-            log.info("Cannot obtain currency for " + countryCode + ": ", x);
-            setDefaultExchangeCurrencyCode();
-        }
-    }
-
-    private void setDefaultExchangeCurrencyCode() {
-        log.info("Using default Country: US");
-        log.info("Using default currency: " + Constants.DEFAULT_EXCHANGE_CURRENCY);
-        config.setExchangeCurrencyCode(Constants.DEFAULT_EXCHANGE_CURRENCY);
-    }
-
-    private String getCurrentCountry() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            return LocaleList.getDefault().get(0).getCountry();
-        } else {
-            return Locale.getDefault().getCountry();
-        }
-    }
-
-    /**
-     * Check whether app was ever updated or if it is an installation that was never updated.
-     * Show dialog to update if it's being updated or change it automatically.
-     *
-     * @param countryCode countryCode ISO 3166-1 alpha-2 country code.
-     */
-    private void updateCurrencyExchange(String countryCode) {
-        log.info("Updating currency exchange rate based on country: " + countryCode);
-        Locale l = new Locale("", countryCode);
-        Currency currency = Currency.getInstance(l);
-        String newCurrencyCode = currency.getCurrencyCode();
-        String currentCurrencyCode = config.getExchangeCurrencyCode();
-        if (currentCurrencyCode == null) {
-            currentCurrencyCode = Constants.DEFAULT_EXCHANGE_CURRENCY;
-        }
-
-        if (!currentCurrencyCode.equalsIgnoreCase(newCurrencyCode)) {
-            if (config.wasUpgraded()) {
-                showFiatCurrencyChangeDetectedDialog(currentCurrencyCode, newCurrencyCode);
-            } else {
-                if (CurrencyInfo.hasObsoleteCurrency(newCurrencyCode)) {
-                    log.info("found obsolete currency: " + newCurrencyCode);
-                    newCurrencyCode = CurrencyInfo.getUpdatedCurrency(newCurrencyCode);
-                }
-                // check to see if we use a different currency code for exchange rates
-                newCurrencyCode = CurrencyInfo.getOtherName(newCurrencyCode);
-
-                log.info("Setting Local Currency: " + newCurrencyCode);
-                config.setExchangeCurrencyCodeDetected(true);
-                config.setExchangeCurrencyCode(newCurrencyCode);
-            }
-        }
-
-        //Fallback to default
-        if (config.getExchangeCurrencyCode() == null) {
-            setDefaultExchangeCurrencyCode();
-        }
-    }
-
-    /**
-     * Show a Dialog and if user confirms it, set the default fiat currency exchange rate using
-     * the country code to generate a Locale and get the currency code from it.
-     *
-     * @param newCurrencyCode currency code.
-     */
-    private void showFiatCurrencyChangeDetectedDialog(final String currentCurrencyCode,
-                                                      final String newCurrencyCode) {
-        baseAlertDialogBuilder.setMessage(getString(R.string.change_exchange_currency_code_message,
-                newCurrencyCode, currentCurrencyCode));
-        baseAlertDialogBuilder.setPositiveText(getString(R.string.change_to, newCurrencyCode));
-        baseAlertDialogBuilder.setPositiveAction(
-                () -> {
-                    config.setExchangeCurrencyCodeDetected(true);
-                    config.setExchangeCurrencyCode(newCurrencyCode);
-                    WalletBalanceWidgetProvider.updateWidgets(WalletActivity.this, wallet);
-                    return Unit.INSTANCE;
-                }
-        );
-        baseAlertDialogBuilder.setNegativeText(getString(R.string.leave_as, currentCurrencyCode));
-        baseAlertDialogBuilder.setNegativeAction(
-                () -> {
-                    config.setExchangeCurrencyCodeDetected(true);
-                    return Unit.INSTANCE;
-                }
-        );
-        alertDialog = baseAlertDialogBuilder.buildAlertDialog();
-        alertDialog.show();
-    }
-
     private final Function0<Unit> neutralActionListener = () -> {
         getWalletApplication().resetBlockchain();
         finish();
@@ -636,21 +363,21 @@ public final class WalletActivity extends AbstractBindServiceActivity
 
     @Override
     public void onLockScreenDeactivated() {
-//        if (config.getShowNotificationsExplainer()) {
-//            explainPushNotifications();
-//        }
+        if (configuration.getShowNotificationsExplainer()) {
+            explainPushNotifications();
+        }
     }
 
     private void explainPushNotifications() {
-        AdaptiveDialog dialog = AdaptiveDialog.create(
-                R.drawable.ic_info_blue,
-                getString(R.string.notification_explainer_title),
-                getString(R.string.notification_explainer_message),
-                "",
-                getString(R.string.button_okay)
-        );
-
-        dialog.show(this, result -> Unit.INSTANCE);
-        config.setShowNotificationsExplainer(false);
+//        AdaptiveDialog dialog = AdaptiveDialog.create(
+//                R.drawable.ic_info_blue,
+//                getString(R.string.notification_explainer_title),
+//                getString(R.string.notification_explainer_message),
+//                "",
+//                getString(R.string.button_okay)
+//        );
+//
+//        dialog.show(this, result -> Unit.INSTANCE);
+//        configuration.setShowNotificationsExplainer(false);
     }
 }

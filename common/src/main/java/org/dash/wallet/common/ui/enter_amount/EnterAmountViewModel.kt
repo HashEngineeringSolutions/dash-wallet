@@ -21,23 +21,25 @@ import androidx.lifecycle.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import org.bitcoinj.core.Coin
 import org.bitcoinj.utils.Fiat
-import org.dash.wallet.common.Configuration
-import org.dash.wallet.common.data.ExchangeRate
 import org.dash.wallet.common.data.SingleLiveEvent
+import org.dash.wallet.common.data.WalletUIConfig
+import org.dash.wallet.common.data.entity.ExchangeRate
 import org.dash.wallet.common.services.ExchangeRatesProvider
+import org.dash.wallet.common.util.Constants
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class EnterAmountViewModel @Inject constructor(
-    var exchangeRates: ExchangeRatesProvider,
-    var configuration: Configuration
+    val exchangeRates: ExchangeRatesProvider,
+    private val walletUIConfig: WalletUIConfig
 ) : ViewModel() {
-    private val _selectedCurrencyCode = MutableStateFlow(configuration.exchangeCurrencyCode)
+    private val _selectedCurrencyCode = MutableStateFlow(Constants.DEFAULT_EXCHANGE_CURRENCY)
     var selectedCurrencyCode: String
-        get() = _selectedCurrencyCode.value!!
+        get() = _selectedCurrencyCode.value
         set(value) {
             _selectedCurrencyCode.value = value
         }
@@ -69,14 +71,21 @@ class EnterAmountViewModel @Inject constructor(
         get() = _callerBlocksContinue.value ?: false
         set(value) { _callerBlocksContinue.value = value }
 
+    private var _minIsIncluded = false
+
     val canContinue: LiveData<Boolean>
         get() = MediatorLiveData<Boolean>().apply {
             fun canContinue(): Boolean {
                 val amount = _amount.value ?: Coin.ZERO
                 val minAmount = _minAmount.value ?: Coin.ZERO
                 val maxAmount = _maxAmount.value ?: Coin.ZERO
+                val minCheck = if (_minIsIncluded) {
+                    amount >= minAmount
+                } else {
+                    amount > minAmount
+                }
 
-                return !blockContinue && amount > minAmount && (maxAmount == Coin.ZERO || amount <= maxAmount)
+                return !blockContinue && minCheck && (maxAmount == Coin.ZERO || amount <= maxAmount)
             }
 
             addSource(_callerBlocksContinue) { value = canContinue() }
@@ -87,12 +96,17 @@ class EnterAmountViewModel @Inject constructor(
         }
 
     init {
+        // User picked a currency on the Enter Amount screen
         _selectedCurrencyCode
             .filterNotNull()
-            .flatMapLatest { code ->
-                exchangeRates.observeExchangeRate(code)
-            }
+            .flatMapLatest(exchangeRates::observeExchangeRate)
             .onEach(_selectedExchangeRate::postValue)
+            .launchIn(viewModelScope)
+
+        // User changed the currency in Settings
+        walletUIConfig.observe(WalletUIConfig.SELECTED_CURRENCY)
+            .filterNotNull()
+            .onEach { _selectedCurrencyCode.value = it }
             .launchIn(viewModelScope)
     }
 
@@ -100,7 +114,18 @@ class EnterAmountViewModel @Inject constructor(
         _maxAmount.value = coin
     }
 
-    fun setMinAmount(coin: Coin) {
+    fun setMinAmount(coin: Coin, isIncludedMin: Boolean = false) {
         _minAmount.value = coin
+        _minIsIncluded = isIncludedMin
+    }
+
+    suspend fun getSelectedCurrencyCode(): String {
+        return walletUIConfig.getExchangeCurrencyCode()
+    }
+
+    fun resetCurrency() {
+        viewModelScope.launch {
+            _selectedCurrencyCode.value = walletUIConfig.getExchangeCurrencyCode()
+        }
     }
 }

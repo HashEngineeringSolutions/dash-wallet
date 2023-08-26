@@ -30,7 +30,7 @@ import androidx.fragment.app.FragmentManager
 import dagger.hilt.android.internal.managers.ViewComponentManager
 import org.dash.wallet.common.R
 import org.dash.wallet.common.databinding.ViewPaymentMethodBinding
-import org.dash.wallet.common.ui.getRoundedRippleBackground
+import org.dash.wallet.common.ui.setRoundedRippleBackground
 import org.dash.wallet.common.ui.radio_group.IconSelectMode
 import org.dash.wallet.common.ui.radio_group.IconifiedViewItem
 import org.dash.wallet.common.ui.radio_group.OptionPickerDialog
@@ -57,7 +57,7 @@ class PaymentMethodPicker(context: Context, attrs: AttributeSet): ConstraintLayo
         }
 
     init {
-        background = resources.getRoundedRippleBackground(R.style.ListViewButtonBackground)
+        setRoundedRippleBackground(R.style.ListViewButtonBackground)
         val paddingStart = resources.getDimensionPixelOffset(R.dimen.default_horizontal_padding)
         val paddingEnd = resources.getDimensionPixelOffset(R.dimen.payment_method_padding_end)
         updatePadding(left=paddingStart, right=paddingEnd)
@@ -82,6 +82,7 @@ class PaymentMethodPicker(context: Context, attrs: AttributeSet): ConstraintLayo
                     name,
                     listOf(method.account, method.accountType).filterNot { it.isNullOrEmpty() }.joinToString(" • "),
                     paymentMethodIcon,
+                    null,
                     if (paymentMethodIcon != null) IconSelectMode.Encircle else IconSelectMode.Tint,
                     null,
                     cardIcon
@@ -129,11 +130,12 @@ class PaymentMethodPicker(context: Context, attrs: AttributeSet): ConstraintLayo
 
     @DrawableRes
     private fun getPaymentMethodIcon(paymentMethodType: PaymentMethodType): Int? {
-        return when(paymentMethodType) {
+        return when (paymentMethodType) {
             PaymentMethodType.Card -> R.drawable.ic_card
             PaymentMethodType.BankAccount -> R.drawable.ic_bank
             PaymentMethodType.PayPal -> R.drawable.ic_paypal
             PaymentMethodType.Fiat -> R.drawable.ic_cash_account
+            PaymentMethodType.ApplePay -> R.drawable.ic_apple_pay
             else -> null
         }
     }

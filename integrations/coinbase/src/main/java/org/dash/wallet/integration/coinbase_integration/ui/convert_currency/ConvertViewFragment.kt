@@ -36,6 +36,7 @@ import org.dash.wallet.common.util.Constants
 import org.dash.wallet.common.ui.enter_amount.NumericKeyboardView
 import org.dash.wallet.common.ui.viewBinding
 import org.dash.wallet.common.util.GenericUtils
+import org.dash.wallet.common.util.isCurrencyFirst
 import org.dash.wallet.integration.coinbase_integration.CoinbaseConstants
 import org.dash.wallet.integration.coinbase_integration.R
 import org.dash.wallet.integration.coinbase_integration.databinding.FragmentConvertCurrencyBinding
@@ -65,7 +66,6 @@ class ConvertViewFragment : Fragment(R.layout.fragment_convert_currency) {
     private val decimalSeparator =
         DecimalFormatSymbols.getInstance(GenericUtils.getDeviceLocale()).decimalSeparator
     private var maxAmountSelected: Boolean = false
-    var selectedCurrencyCodeExchangeRate: ExchangeRate? = null
     var currencyConversionOptionList: List<String> = emptyList()
     private var hasInternet: Boolean = true
     
@@ -76,10 +76,6 @@ class ConvertViewFragment : Fragment(R.layout.fragment_convert_currency) {
         binding.continueBtn.isEnabled = false
         binding.continueBtn.setOnClickListener {
             viewModel.continueSwap(binding.currencyOptions.pickedOption)
-        }
-
-        viewModel.selectedLocalExchangeRate.observe(viewLifecycleOwner) {
-            selectedCurrencyCodeExchangeRate = ExchangeRate(Coin.COIN, it.fiat)
         }
 
         viewModel.selectedCryptoCurrencyAccount.observe(viewLifecycleOwner) {
@@ -359,20 +355,19 @@ class ConvertViewFragment : Fragment(R.layout.fragment_convert_currency) {
             } else {
                 balance
             }
-            val text = if (GenericUtils.isCurrencyFirst(fiatAmount)) {
+            val text = if (fiatAmount.isCurrencyFirst()) {
                 "$localCurrencySymbol $faitBalance"
             } else {
                 "$faitBalance $localCurrencySymbol"
             }
             SpannableString(text).apply {
-                if (GenericUtils.isCurrencyFirst(fiatAmount) && text.length - faitBalance.length > 0) {
+                if (fiatAmount.isCurrencyFirst() && text.length - faitBalance.length > 0) {
                     setAmountFormat(this, 0, text.length - faitBalance.length)
                 } else {
                     setAmountFormat(this, balance.length, text.length)
                 }
             }
         } else {
-
             val formattedValue = if (balance.contains("E")) {
                 DecimalFormat("########.########").format(balance.toDouble())
             } else {
@@ -394,10 +389,10 @@ class ConvertViewFragment : Fragment(R.layout.fragment_convert_currency) {
 
 
         if (hasBalance) {
-
             viewModel.selectedCryptoCurrencyAccount.value?.let {
-                selectedCurrencyCodeExchangeRate?.let { rate ->
-
+                viewModel.selectedLocalExchangeRate.value?.let {
+                    ExchangeRate(Coin.COIN, it.fiat)
+                }?.let { rate ->
                     val dashAmount = when {
                         (it.coinBaseUserAccountData.balance?.currency == currencyCode && it.coinBaseUserAccountData.balance.currency != Constants.DASH_CURRENCY) -> {
                             val bd =

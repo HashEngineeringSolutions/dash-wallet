@@ -16,14 +16,13 @@
  */
 package de.schildbach.wallet.ui.send
 
-import androidx.core.os.bundleOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.schildbach.wallet.WalletApplication
-import de.schildbach.wallet.data.BlockchainStateDao
 import de.schildbach.wallet.data.PaymentIntent
+import de.schildbach.wallet.database.dao.BlockchainStateDao
 import de.schildbach.wallet.payments.MaxOutputAmountCoinSelector
 import de.schildbach.wallet.payments.SendCoinsTaskRunner
 import de.schildbach.wallet.security.BiometricHelper
@@ -39,6 +38,7 @@ import org.bitcoinj.wallet.SendRequest
 import org.bitcoinj.wallet.Wallet
 import org.dash.wallet.common.Configuration
 import org.dash.wallet.common.WalletDataProvider
+import org.dash.wallet.common.services.NotificationService
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.services.analytics.AnalyticsService
 import org.slf4j.LoggerFactory
@@ -52,14 +52,15 @@ class SendCoinsViewModel @Inject constructor(
     val biometricHelper: BiometricHelper,
     private val analytics: AnalyticsService,
     private val configuration: Configuration,
-    private val sendCoinsTaskRunner: SendCoinsTaskRunner
+    private val sendCoinsTaskRunner: SendCoinsTaskRunner,
+    private val notificationService: NotificationService
 ) : SendCoinsBaseViewModel(walletDataProvider, configuration) {
     companion object {
         private val log = LoggerFactory.getLogger(SendCoinsViewModel::class.java)
     }
 
     enum class State {
-        INPUT,  // asks for confirmation
+        INPUT, // asks for confirmation
         SENDING, SENT, FAILED // sending states
     }
 
@@ -97,6 +98,9 @@ class SendCoinsViewModel @Inject constructor(
         get() = configuration.isDashToFiatDirection
         set(value) { configuration.isDashToFiatDirection = value }
 
+    val shouldPlaySounds: Boolean
+        get() = !notificationService.isDoNotDisturb
+
     init {
         blockchainStateDao.observeState()
             .filterNotNull()
@@ -117,8 +121,10 @@ class SendCoinsViewModel @Inject constructor(
         super.initPaymentIntent(paymentIntent)
 
         if (paymentIntent.hasPaymentRequestUrl()) {
-            throw IllegalArgumentException(PaymentProtocolFragment::class.java.simpleName
-                    + "class should be used to handle Payment requests (BIP70 and BIP270)")
+            throw IllegalArgumentException(
+                PaymentProtocolFragment::class.java.simpleName +
+                    "class should be used to handle Payment requests (BIP70 and BIP270)"
+            )
         }
 
         log.info("got {}", paymentIntent)
@@ -139,7 +145,7 @@ class SendCoinsViewModel @Inject constructor(
         val finalPaymentIntent = basePaymentIntent.mergeWithEditedValues(editedAmount, null)
 
         val transaction = try {
-            val finalSendRequest = createSendRequest(
+            val finalSendRequest = sendCoinsTaskRunner.createSendRequest(
                 basePaymentIntent.mayEditAmount(),
                 finalPaymentIntent,
                 true,
@@ -172,7 +178,7 @@ class SendCoinsViewModel @Inject constructor(
 
     fun shouldAdjustAmount(): Boolean {
         return dryRunException is InsufficientMoneyException &&
-                currentAmount.isLessThan(maxOutputAmount.value ?: Coin.ZERO)
+            currentAmount.isLessThan(maxOutputAmount.value ?: Coin.ZERO)
     }
 
     fun getAdjustedAmount(): Coin {
@@ -186,14 +192,14 @@ class SendCoinsViewModel @Inject constructor(
 
     fun logSentEvent(dashToFiat: Boolean) {
         if (dashToFiat) {
-            analytics.logEvent(AnalyticsConstants.SendReceive.ENTER_AMOUNT_DASH, bundleOf())
+            analytics.logEvent(AnalyticsConstants.SendReceive.ENTER_AMOUNT_DASH, mapOf())
         } else {
-            analytics.logEvent(AnalyticsConstants.SendReceive.ENTER_AMOUNT_FIAT, bundleOf())
+            analytics.logEvent(AnalyticsConstants.SendReceive.ENTER_AMOUNT_FIAT, mapOf())
         }
     }
 
     fun logEvent(eventName: String) {
-        analytics.logEvent(eventName, bundleOf())
+        analytics.logEvent(eventName, mapOf())
     }
 
     private fun isPayeePlausible(): Boolean {
@@ -214,7 +220,7 @@ class SendCoinsViewModel @Inject constructor(
 
         try {
             // check regular payment
-            var sendRequest = createSendRequest(
+            var sendRequest = sendCoinsTaskRunner.createSendRequest(
                 basePaymentIntent.mayEditAmount(),
                 finalPaymentIntent,
                 signInputs = false,
@@ -223,7 +229,7 @@ class SendCoinsViewModel @Inject constructor(
             wallet.completeTx(sendRequest)
 
             if (checkDust(sendRequest)) {
-                sendRequest = createSendRequest(
+                sendRequest = sendCoinsTaskRunner.createSendRequest(
                     basePaymentIntent.mayEditAmount(),
                     finalPaymentIntent,
                     signInputs = false,

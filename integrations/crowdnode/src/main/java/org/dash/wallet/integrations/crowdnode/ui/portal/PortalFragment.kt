@@ -32,12 +32,14 @@ import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import org.bitcoinj.core.Coin
-import org.dash.wallet.common.data.ExchangeRate
+import org.dash.wallet.common.data.entity.ExchangeRate
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
+import org.dash.wallet.common.ui.blinkAnimator
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
 import org.dash.wallet.common.ui.viewBinding
 import org.dash.wallet.common.util.GenericUtils
 import org.dash.wallet.common.util.safeNavigate
+import org.dash.wallet.common.util.toFormattedString
 import org.dash.wallet.integrations.crowdnode.R
 import org.dash.wallet.integrations.crowdnode.databinding.FragmentPortalBinding
 import org.dash.wallet.integrations.crowdnode.model.CrowdNodeException
@@ -97,7 +99,7 @@ class PortalFragment : Fragment(R.layout.fragment_portal) {
             setOnlineAccountStatus(status)
 
             if (viewModel.signUpStatus == SignUpStatus.LinkedOnline) {
-                val crowdNodeBalance = viewModel.crowdNodeBalance.value ?: Coin.ZERO
+                val crowdNodeBalance = viewModel.crowdNodeBalance.value?.balance ?: Coin.ZERO
                 val walletBalance = viewModel.dashBalance.value ?: Coin.ZERO
 
                 setWithdrawalEnabled(crowdNodeBalance)
@@ -169,34 +171,28 @@ class PortalFragment : Fragment(R.layout.fragment_portal) {
         if (balance != null && fiatRate != null) {
             val rate = org.bitcoinj.utils.ExchangeRate(Coin.COIN, fiatRate)
             val fiatValue = rate.coinToFiat(balance)
-            binding.walletBalanceLocal.text = GenericUtils.fiatToString(fiatValue)
+            binding.walletBalanceLocal.text = fiatValue.toFormattedString()
         }
     }
 
     private fun handleBalance(binding: FragmentPortalBinding) {
-        this.balanceAnimator = ObjectAnimator.ofFloat(
-            binding.balanceLabel,
-            View.ALPHA.name,
-            0f, 1f
-        ).apply {
-            duration = 500
-            repeatCount = ObjectAnimator.INFINITE
-            repeatMode = ObjectAnimator.REVERSE
+        this.balanceAnimator = binding.balanceLabel.blinkAnimator
+        binding.root.setOnRefreshListener {
+            viewModel.refreshBalance()
         }
 
-        viewModel.isBalanceLoading.observe(viewLifecycleOwner) { isLoading ->
-            if (isLoading) {
+        viewModel.crowdNodeBalance.observe(viewLifecycleOwner) { state ->
+            if (state.isUpdating) {
                 this.balanceAnimator?.start()
             } else {
+                binding.root.isRefreshing = false
                 this.balanceAnimator?.end()
             }
-        }
 
-        viewModel.crowdNodeBalance.observe(viewLifecycleOwner) { balance ->
-            binding.walletBalanceDash.setAmount(balance)
-            updateFiatAmount(balance, viewModel.exchangeRate.value)
-            setWithdrawalEnabled(balance)
-            setMinimumEarningDepositReminder(balance, isConfirmed)
+            binding.walletBalanceDash.setAmount(state.balance)
+            updateFiatAmount(state.balance, viewModel.exchangeRate.value)
+            setWithdrawalEnabled(state.balance)
+            setMinimumEarningDepositReminder(state.balance, isConfirmed)
         }
 
         viewModel.dashBalance.observe(viewLifecycleOwner) { balance ->
@@ -204,7 +200,7 @@ class PortalFragment : Fragment(R.layout.fragment_portal) {
         }
 
         viewModel.exchangeRate.observe(viewLifecycleOwner) { rate ->
-            updateFiatAmount(viewModel.crowdNodeBalance.value ?: Coin.ZERO, rate)
+            updateFiatAmount(viewModel.crowdNodeBalance.value?.balance ?: Coin.ZERO, rate)
         }
     }
 

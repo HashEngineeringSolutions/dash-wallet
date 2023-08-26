@@ -34,11 +34,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.dash.wallet.common.util.Constants
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
-import org.dash.wallet.common.ui.getRoundedBackground
+import org.dash.wallet.common.ui.setRoundedBackground
 import org.dash.wallet.common.ui.viewBinding
 import org.dash.wallet.common.util.GenericUtils
 import org.dash.wallet.common.util.safeNavigate
-import org.dash.wallet.integration.coinbase_integration.CoinbaseConstants
 import org.dash.wallet.integration.coinbase_integration.R
 import org.dash.wallet.integration.coinbase_integration.databinding.FragmentCoinbaseConversionPreviewBinding
 import org.dash.wallet.integration.coinbase_integration.model.*
@@ -166,7 +165,7 @@ class CoinbaseConversionPreviewFragment : Fragment(R.layout.fragment_coinbase_co
 
         viewModel.getUserAccountAddressFailedCallback.observe(viewLifecycleOwner) {
             AdaptiveDialog.create(
-                R.drawable.ic_info_red,
+                R.drawable.ic_error,
                 getString(R.string.error),
                 getString(R.string.error),
                 getString(R.string.close)
@@ -175,7 +174,7 @@ class CoinbaseConversionPreviewFragment : Fragment(R.layout.fragment_coinbase_co
 
         viewModel.onInsufficientMoneyCallback.observe(viewLifecycleOwner) {
             AdaptiveDialog.create(
-                R.drawable.ic_info_red,
+                R.drawable.ic_error,
                 getString(R.string.insufficient_money_title),
                 getString(R.string.insufficient_money_msg),
                 getString(R.string.close)
@@ -184,7 +183,7 @@ class CoinbaseConversionPreviewFragment : Fragment(R.layout.fragment_coinbase_co
 
         viewModel.onFailure.observe(viewLifecycleOwner) {
             AdaptiveDialog.create(
-                R.drawable.ic_info_red,
+                R.drawable.ic_error,
                 getString(R.string.send_coins_error_msg),
                 getString(R.string.insufficient_money_msg),
                 getString(R.string.close)
@@ -325,7 +324,6 @@ class CoinbaseConversionPreviewFragment : Fragment(R.layout.fragment_coinbase_co
         } else {
             setRetryStatus()
         }
-        viewModel.monitorNetworkStateChange()
     }
 
     override fun onPause() {
@@ -350,11 +348,11 @@ class CoinbaseConversionPreviewFragment : Fragment(R.layout.fragment_coinbase_co
         binding.confirmBtn.text = getString(R.string.retry)
         binding.retryIcon.visibility = View.VISIBLE
         isRetrying = true
-        setConfirmBtnStyle(R.style.PrimaryButtonTheme_Large_TransparentBlue, R.color.dash_blue)
+        setConfirmBtnStyle(R.style.PrimaryButtonTheme_Large_LightBlue, R.color.dash_blue)
     }
 
     private fun setConfirmBtnStyle(@StyleRes buttonStyle: Int, @ColorRes colorRes: Int) {
-        binding.confirmBtnContainer.background = resources.getRoundedBackground(buttonStyle)
+        binding.confirmBtnContainer.setRoundedBackground(buttonStyle)
         binding.confirmBtn.setTextColor(resources.getColor(colorRes))
     }
 

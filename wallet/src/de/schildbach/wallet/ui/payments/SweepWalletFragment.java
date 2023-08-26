@@ -45,6 +45,7 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PrefixedChecksummedBytes;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.TransactionConfidence;
 import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutPoint;
@@ -59,7 +60,7 @@ import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.Wallet.BalanceType;
 import org.bitcoinj.wallet.WalletTransaction;
 import org.dash.wallet.common.Configuration;
-import org.dash.wallet.common.data.ExchangeRate;
+import org.dash.wallet.common.services.ExchangeRatesProvider;
 import org.dash.wallet.common.services.LeftoverBalanceException;
 import org.dash.wallet.common.ui.CurrencyTextView;
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog;
@@ -73,10 +74,12 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 
+import dagger.hilt.android.AndroidEntryPoint;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
-import de.schildbach.wallet.data.DynamicFeeLoader;
+import de.schildbach.wallet.data.StaticFeeLoader;
 import de.schildbach.wallet.data.PaymentIntent;
 
 import de.schildbach.wallet.payments.DecodePrivateKeyTask;
@@ -85,7 +88,6 @@ import de.schildbach.wallet.payments.RequestWalletBalanceTask;
 import de.schildbach.wallet.payments.SendCoinsOfflineTask;
 import de.schildbach.wallet.ui.util.InputParser.StringInputParser;
 import de.schildbach.wallet.ui.transactions.TransactionResultActivity;
-import de.schildbach.wallet.ui.rates.ExchangeRatesViewModel;
 import de.schildbach.wallet.ui.scan.ScanActivity;
 import de.schildbach.wallet.util.WalletUtils;
 import de.schildbach.wallet_test.R;
@@ -96,6 +98,7 @@ import static com.google.common.base.Preconditions.checkState;
 /**
  * @author Andreas Schildbach
  */
+@AndroidEntryPoint
 public class SweepWalletFragment extends Fragment {
     private SweepWalletActivity activity;
     private WalletApplication application;
@@ -118,7 +121,6 @@ public class SweepWalletFragment extends Fragment {
     private CurrencyTextView balanceView;
     private DialogFragment decryptDialog;
     private Button viewGo;
-    private ExchangeRate currentExchangeRate;
 
     private String password = "";
 
@@ -127,6 +129,8 @@ public class SweepWalletFragment extends Fragment {
     private static final int REQUEST_CODE_SCAN = 0;
 
     private DialogFragment loadingDialog;
+
+    private SweepWalletViewModel viewModel;
 
     private enum State {
         INTRO,
@@ -141,7 +145,7 @@ public class SweepWalletFragment extends Fragment {
         @NonNull
         @Override
         public Loader<Map<FeeCategory, Coin>> onCreateLoader(final int id, final Bundle args) {
-            return new DynamicFeeLoader(activity);
+            return new StaticFeeLoader(activity);
         }
 
         @Override
@@ -221,14 +225,7 @@ public class SweepWalletFragment extends Fragment {
             }
         });
 
-        ExchangeRatesViewModel exchangeRatesViewModel = new ViewModelProvider(this)
-                .get(ExchangeRatesViewModel.class);
-        String code = config.getExchangeCurrencyCode();
-        exchangeRatesViewModel.getRate(code).observe(getViewLifecycleOwner(), exchangeRate -> {
-            if (exchangeRate != null) {
-                currentExchangeRate = exchangeRate;
-            }
-        });
+        viewModel = new ViewModelProvider(this).get(SweepWalletViewModel.class);
 
         return view;
     }
@@ -422,7 +419,12 @@ public class SweepWalletFragment extends Fragment {
                     Transaction fakeTx = fakeTxns.get(utxo.getHash());
                     if (fakeTx == null) {
                         fakeTx = new FakeTransaction(Constants.NETWORK_PARAMETERS, utxo.getHash());
-                        fakeTx.getConfidence().setConfidenceType(ConfidenceType.BUILDING);
+                        // if this "fake" transaction is not ours then set the confidence type to BUILDING
+                        // otherwise use our transaction confidence.  This will prevent a wallet corruption
+                        // where an unconfirmed transaction will get assigned a BUILDING confidence type
+                        // before the transaction is received via the blockchain.
+                        if (fakeTx.getConfidence().getSource() != TransactionConfidence.Source.SELF)
+                            fakeTx.getConfidence().setConfidenceType(ConfidenceType.BUILDING);
                         fakeTxns.put(fakeTx.getTxId(), fakeTx);
                     }
                     final TransactionOutput fakeOutput = new TransactionOutput(Constants.NETWORK_PARAMETERS, fakeTx,
@@ -570,9 +572,9 @@ public class SweepWalletFragment extends Fragment {
 
         sendRequest.feePerKb = fees.get(FeeCategory.ECONOMIC);
 
-        if (currentExchangeRate != null) {
+        if (viewModel.getCurrentExchangeRate() != null) {
             sendRequest.exchangeRate = new org.bitcoinj.utils.ExchangeRate(
-                    Coin.COIN, currentExchangeRate.getFiat());
+                    Coin.COIN, viewModel.getCurrentExchangeRate().getFiat());
             log.info("Using exchange rate: " + sendRequest.exchangeRate.coinToFiat(Coin.COIN).toFriendlyString());
         }
 

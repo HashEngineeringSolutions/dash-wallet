@@ -38,13 +38,13 @@ import org.bitcoinj.core.Coin
 import org.bitcoinj.utils.ExchangeRate
 import org.bitcoinj.utils.Fiat
 import org.bitcoinj.utils.MonetaryFormat
-import org.dash.wallet.common.livedata.EventObserver
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
 import org.dash.wallet.common.ui.dialogs.MinimumBalanceDialog
 import org.dash.wallet.common.ui.viewBinding
 import org.dash.wallet.common.util.GenericUtils
 import org.dash.wallet.common.util.safeNavigate
+import org.dash.wallet.common.util.toFormattedString
 import org.dash.wallet.integration.coinbase_integration.R
 import org.dash.wallet.integration.coinbase_integration.databinding.FragmentCoinbaseConvertCryptoBinding
 import org.dash.wallet.integration.coinbase_integration.model.CoinBaseUserAccountDataUIModel
@@ -105,11 +105,13 @@ class CoinbaseConvertCryptoFragment : Fragment(R.layout.fragment_coinbase_conver
         }
 
         convertViewModel.selectedLocalExchangeRate.observe(viewLifecycleOwner) { rate ->
-            binding.toolbarSubtitle.text = getString(
-                R.string.exchange_rate_template,
-                Coin.COIN.toPlainString(),
-                GenericUtils.fiatToString(rate.fiat)
-            )
+            rate?.let {
+                binding.toolbarSubtitle.text = getString(
+                    R.string.exchange_rate_template,
+                    Coin.COIN.toPlainString(),
+                    rate.fiat.toFormattedString()
+                )
+            }
         }
 
         convertViewModel.dashToCrypto.value?.let {
@@ -129,25 +131,15 @@ class CoinbaseConvertCryptoFragment : Fragment(R.layout.fragment_coinbase_conver
         }
 
         binding.authLimitBanner.warningLimitInfo.setOnClickListener {
-            AdaptiveDialog.custom(
-                R.layout.dialog_withdrawal_limit_info,
-                null,
-                getString(R.string.set_auth_limit),
-                getString(R.string.change_withdrawal_limit),
-                "",
-                getString(R.string.got_it)
-            ).show(requireActivity()) { }
+            AdaptiveDialog.custom(R.layout.dialog_withdrawal_limit_info).show(requireActivity())
         }
 
-        viewModel.swapTradeOrder.observe(
-            viewLifecycleOwner,
-            EventObserver {
-                safeNavigate(
-                    CoinbaseConvertCryptoFragmentDirections
-                        .coinbaseConvertCryptoFragmentTocoinbaseConversionPreviewFragment(it)
-                )
-            }
-        )
+        viewModel.swapTradeOrder.observe(viewLifecycleOwner) {
+            safeNavigate(
+                CoinbaseConvertCryptoFragmentDirections
+                    .coinbaseConvertCryptoFragmentTocoinbaseConversionPreviewFragment(it)
+            )
+        }
 
 
         viewModel.swapTradeFailedCallback.observe(viewLifecycleOwner) {
@@ -158,7 +150,7 @@ class CoinbaseConvertCryptoFragment : Fragment(R.layout.fragment_coinbase_conver
             }
 
             AdaptiveDialog.create(
-                R.drawable.ic_info_red,
+                R.drawable.ic_error,
                 getString(R.string.error),
                 message,
                 getString(R.string.close)
@@ -167,7 +159,7 @@ class CoinbaseConvertCryptoFragment : Fragment(R.layout.fragment_coinbase_conver
 
         convertViewModel.userDashAccountEmptyError.observe(viewLifecycleOwner) {
             AdaptiveDialog.create(
-                R.drawable.ic_info_red,
+                R.drawable.ic_error,
                 getString(R.string.dont_have_any_dash),
                 "",
                 getString(R.string.close)
@@ -209,7 +201,7 @@ class CoinbaseConvertCryptoFragment : Fragment(R.layout.fragment_coinbase_conver
         }
 
         convertViewModel.selectedLocalExchangeRate.observe(viewLifecycleOwner) {
-            binding.convertView.exchangeRate = ExchangeRate(Coin.COIN, it.fiat)
+            binding.convertView.exchangeRate = it?.let { ExchangeRate(Coin.COIN, it.fiat) }
             setConvertViewInput()
         }
 
@@ -251,8 +243,6 @@ class CoinbaseConvertCryptoFragment : Fragment(R.layout.fragment_coinbase_conver
             setGuidelinePercent(true)
         }
 
-        monitorNetworkChanges()
-
         sharedViewModel.baseIdForFaitModelCoinBase.observe(viewLifecycleOwner) { uiState ->
             // New value received
             when (uiState) {
@@ -280,27 +270,33 @@ class CoinbaseConvertCryptoFragment : Fragment(R.layout.fragment_coinbase_conver
     }
 
     private fun proceedWithSwap(request: SwapRequest, checkSendingConditions: Boolean = true) {
+        if (request.fiatAmount == null && request.amount != null) {
+            showSwapValueErrorView(SwapValueErrorType.ExchangeRateMissing)
+            return
+        }
+
         val swapValueErrorType = convertViewModel.checkEnteredAmountValue(checkSendingConditions)
-        if (swapValueErrorType == SwapValueErrorType.NOError) {
-            if (!request.dashToCrypto && convertViewModel.dashToCrypto.value == true) {
-                lifecycleScope.launch {
+
+        lifecycleScope.launch {
+            if (swapValueErrorType == SwapValueErrorType.NOError) {
+                if (!request.dashToCrypto && convertViewModel.dashToCrypto.value == true) {
                     if (viewModel.getLastBalance() < (request.amount ?: Coin.ZERO)) {
                         showNoAssetsError()
                     }
-                }
-            } else {
-                if (request.amount != null && viewModel.isInputGreaterThanLimit(request.amount)) {
-                    showSwapValueErrorView(SwapValueErrorType.UnAuthorizedValue)
                 } else {
-                    selectedCoinBaseAccount?.let {
-                        request.fiatAmount?.let { fait ->
-                            viewModel.swapTrade(fait, it, request.dashToCrypto)
+                    if (request.amount != null && viewModel.isInputGreaterThanLimit(request.amount)) {
+                        showSwapValueErrorView(SwapValueErrorType.UnAuthorizedValue)
+                    } else {
+                        selectedCoinBaseAccount?.let {
+                            request.fiatAmount?.let { fait ->
+                                viewModel.swapTrade(fait, it, request.dashToCrypto)
+                            }
                         }
                     }
                 }
+            } else {
+                showSwapValueErrorView(swapValueErrorType)
             }
-        } else {
-            showSwapValueErrorView(swapValueErrorType)
         }
     }
 
@@ -324,6 +320,7 @@ class CoinbaseConvertCryptoFragment : Fragment(R.layout.fragment_coinbase_conver
             SwapValueErrorType.MoreThanMax -> setMaxAmountError()
             SwapValueErrorType.NotEnoughBalance -> setNoEnoughBalanceError()
             SwapValueErrorType.SendingConditionsUnmet -> showMinimumBalanceWarning()
+            SwapValueErrorType.ExchangeRateMissing -> showExchangeRateMissing()
             else -> { }
         }
     }
@@ -349,13 +346,8 @@ class CoinbaseConvertCryptoFragment : Fragment(R.layout.fragment_coinbase_conver
             viewModel.dashWalletBalance.value?.let { dash ->
                 convertViewModel.selectedLocalExchangeRate.value?.let { rate ->
                     val currencyRate = ExchangeRate(Coin.COIN, rate.fiat)
-                    val fiatAmount = GenericUtils.fiatToString(currencyRate.coinToFiat(dash))
-
-                    binding.limitDesc.text = "${
-                    getString(
-                        R.string.entered_amount_is_too_high
-                    )
-                    } $fiatAmount"
+                    val fiatAmount = currencyRate.coinToFiat(dash).toFormattedString()
+                    binding.limitDesc.text = "${getString(R.string.entered_amount_is_too_high)} $fiatAmount"
                 }
             }
         } else {
@@ -375,32 +367,35 @@ class CoinbaseConvertCryptoFragment : Fragment(R.layout.fragment_coinbase_conver
                 val fiatAmount = Fiat.parseFiat(currencyRate.fiat.currencyCode, convertViewModel.minAllowedSwapAmount)
                 binding.limitDesc.text = "${getString(
                     R.string.entered_amount_is_too_low
-                )} ${GenericUtils.fiatToString(fiatAmount)}"
+                )} ${fiatAmount.toFormattedString()}"
             }
         }
     }
 
+    private fun showExchangeRateMissing() {
+        binding.limitDesc.text = getString(R.string.exchange_rate_not_found)
+    }
+
     private fun setConvertViewInput() {
         convertViewModel.selectedCryptoCurrencyAccount.value?.let {
-            val iconUrl =
-                if (it.coinBaseUserAccountData.balance?.currency.isNullOrEmpty()
-                    .not()
-                ) {
-                    GenericUtils.getCoinIcon(it.coinBaseUserAccountData.balance?.currency?.lowercase())
-                } else {
-                    null
-                }
-
-            convertViewModel.selectedLocalExchangeRate.value?.let { rate ->
-                binding.convertView.input = ServiceWallet(
-                    it.coinBaseUserAccountData.currency?.name ?: "",
-                    getString(R.string.coinbase),
-                    it.coinBaseUserAccountData.balance?.amount ?: "",
-                    it.coinBaseUserAccountData.balance?.currency ?: "",
-                    it.getCoinBaseExchangeRateConversion(rate).first,
-                    iconUrl
-                )
+            val accountData = it.coinBaseUserAccountData
+            val currency = accountData.balance?.currency?.lowercase()
+            val iconUrl = if (!accountData.balance?.currency.isNullOrEmpty() && currency != null) {
+                GenericUtils.getCoinIcon(currency)
+            } else {
+                null
             }
+
+            binding.convertView.input = ServiceWallet(
+                it.coinBaseUserAccountData.currency?.name ?: "",
+                getString(R.string.coinbase),
+                it.coinBaseUserAccountData.balance?.amount ?: "",
+                it.coinBaseUserAccountData.balance?.currency ?: "",
+                convertViewModel.selectedLocalExchangeRate.value?.let { rate ->
+                    it.getCoinBaseExchangeRateConversion(rate).first
+                } ?: "",
+                iconUrl
+            )
             setConvertViewTopMargin(convertViewModel.selectedCryptoCurrencyAccount.value == null)
         }
     }
@@ -433,7 +428,7 @@ class CoinbaseConvertCryptoFragment : Fragment(R.layout.fragment_coinbase_conver
 
     private fun showNoAssetsError() {
         AdaptiveDialog.create(
-            R.drawable.ic_info_red,
+            R.drawable.ic_error,
             getString(R.string.we_didnt_find_any_assets),
             getString(R.string.you_dont_own_any_crypto),
             getString(R.string.close),
@@ -455,11 +450,5 @@ class CoinbaseConvertCryptoFragment : Fragment(R.layout.fragment_coinbase_conver
     override fun onDestroy() {
         super.onDestroy()
         convertViewModel.clear()
-    }
-
-    private fun monitorNetworkChanges() {
-        lifecycleScope.launchWhenResumed {
-            viewModel.monitorNetworkStateChange()
-        }
     }
 }

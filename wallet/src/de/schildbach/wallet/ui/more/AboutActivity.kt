@@ -17,6 +17,7 @@
 
 package de.schildbach.wallet.ui.more
 
+import android.annotation.SuppressLint
 import android.content.*
 import android.content.Intent.ACTION_VIEW
 import android.net.Uri
@@ -24,6 +25,7 @@ import android.os.Bundle
 import android.text.format.DateUtils
 import androidx.activity.viewModels
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet.Constants
 import de.schildbach.wallet.ui.LockScreenActivity
@@ -31,7 +33,7 @@ import de.schildbach.wallet.ui.ReportIssueDialogBuilder
 import de.schildbach.wallet_test.BuildConfig
 import de.schildbach.wallet_test.R
 import de.schildbach.wallet_test.databinding.ActivityAboutBinding
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import org.bitcoinj.core.VersionMessage
 import org.bitcoinj.params.MainNetParams
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
@@ -39,7 +41,6 @@ import org.dash.wallet.features.exploredash.ExploreSyncWorker
 import org.slf4j.LoggerFactory
 
 @AndroidEntryPoint
-@ExperimentalCoroutinesApi
 class AboutActivity : LockScreenActivity() {
     companion object {
         private val log = LoggerFactory.getLogger(AboutActivity::class.java)
@@ -48,6 +49,7 @@ class AboutActivity : LockScreenActivity() {
     private val viewModel by viewModels<AboutViewModel>()
     private lateinit var binding: ActivityAboutBinding
 
+    @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityAboutBinding.inflate(layoutInflater)
@@ -55,8 +57,10 @@ class AboutActivity : LockScreenActivity() {
 
         binding.title.text = "${getString(R.string.about_title)} ${getString(R.string.app_name_short)}"
         binding.appVersionName.text = getString(R.string.about_version_name, BuildConfig.VERSION_NAME)
-        binding.libraryVersionName.text = getString(R.string.about_credits_bitcoinj_title,
-                VersionMessage.BITCOINJ_VERSION)
+        binding.libraryVersionName.text = getString(
+            R.string.about_credits_bitcoinj_title,
+            VersionMessage.BITCOINJ_VERSION
+        )
 
         binding.githubLink.setOnClickListener {
             val i = Intent(ACTION_VIEW)
@@ -80,7 +84,9 @@ class AboutActivity : LockScreenActivity() {
     private fun handleReportIssue() {
         alertDialog = ReportIssueDialogBuilder.createReportIssueDialog(
             this,
-            viewModel.walletApplication,
+            packageInfoProvider,
+            configuration,
+            walletData.wallet
         ).buildAlertDialog()
         alertDialog.show()
     }

@@ -37,16 +37,16 @@ import org.dash.wallet.common.R
 import org.dash.wallet.common.databinding.AmountViewBinding
 import org.dash.wallet.common.util.Constants
 import org.dash.wallet.common.util.GenericUtils
+import org.dash.wallet.common.util.toFormattedString
 import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.util.*
 
-
 class AmountView(context: Context, attrs: AttributeSet) : ConstraintLayout(context, attrs) {
     private val binding = AmountViewBinding.inflate(LayoutInflater.from(context), this)
-    val dashFormat = MonetaryFormat().withLocale(GenericUtils.getDeviceLocale())
+    val dashFormat: MonetaryFormat = MonetaryFormat().withLocale(GenericUtils.getDeviceLocale())
         .noCode().minDecimals(6).optionalDecimals()
-    val fiatFormat = MonetaryFormat().withLocale(GenericUtils.getDeviceLocale())
+    val fiatFormat: MonetaryFormat = MonetaryFormat().withLocale(GenericUtils.getDeviceLocale())
         .noCode().minDecimals(2).optionalDecimals()
 
     private var onCurrencyToggleClicked: (() -> Unit)? = null
@@ -64,7 +64,7 @@ class AmountView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
             updateAmount()
         }
 
-    var fiatAmount: Fiat = Fiat.valueOf(Constants.USD_CURRENCY, 0)
+    var fiatAmount: Fiat = Fiat.valueOf(Constants.DEFAULT_EXCHANGE_CURRENCY, 0)
         private set
 
     var dashAmount: Coin = Coin.ZERO
@@ -90,15 +90,17 @@ class AmountView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
 
                 if (value) {
                     input = dashFormat.minDecimals(0)
-                        .optionalDecimals(0,6).format(dashAmount).toString()
+                        .optionalDecimals(0, 6).format(dashAmount).toString()
                 } else {
                     binding.resultAmount.text = dashFormat.format(dashAmount)
 
-                    exchangeRate?.let {
-                        fiatAmount = it.coinToFiat(dashAmount)
+                    if (exchangeRate != null) {
+                        fiatAmount = exchangeRate!!.coinToFiat(dashAmount)
                         _input = fiatFormat.minDecimals(0)
-                            .optionalDecimals(0,2).format(fiatAmount).toString()
+                            .optionalDecimals(0, 2).format(fiatAmount).toString()
                         binding.inputAmount.text = formatInputWithCurrency()
+                    } else {
+                        binding.inputAmount.text = resources.getString(R.string.rate_not_available)
                     }
                 }
             }
@@ -109,6 +111,12 @@ class AmountView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
             field = value
             binding.inputCurrencyToggle.isVisible = !dashToFiat && value
             binding.resultCurrencyToggle.isVisible = dashToFiat && value
+        }
+
+    var showResultContainer: Boolean = true
+        set(value) {
+            field = value
+            binding.resultContainer.isVisible = !dashToFiat && value
         }
 
     init {
@@ -157,32 +165,32 @@ class AmountView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
     private fun updateAmount() {
         binding.inputAmount.text = formatInputWithCurrency()
         val rate = exchangeRate
+        val pair = parseAmounts(input, rate)
+        dashAmount = pair.first
 
-        if (rate != null) {
-            val pair = parseAmounts(input, rate)
-            dashAmount = pair.first
-            fiatAmount = pair.second
+        if (pair.second != null) {
+            fiatAmount = pair.second!!
 
             binding.resultAmount.text = if (dashToFiat) {
-                GenericUtils.fiatToString(fiatAmount)
+                fiatAmount.toFormattedString()
             } else {
                 dashFormat.format(dashAmount)
             }
         } else {
-            binding.resultAmount.text = "0"
+            binding.resultAmount.text = resources.getString(R.string.rate_not_available)
             Log.e(AmountView::class.java.name, "Exchange rate is not initialized")
         }
     }
 
-    private fun parseAmounts(input: String, rate: ExchangeRate): Pair<Coin, Fiat> {
+    private fun parseAmounts(input: String, rate: ExchangeRate?): Pair<Coin, Fiat?> {
         val cleanedValue = GenericUtils.formatFiatWithoutComma(input)
-        val dashAmount: Coin
-        val fiatAmount: Fiat
+        var dashAmount: Coin = Coin.ZERO
+        var fiatAmount: Fiat? = null
 
         if (dashToFiat) {
             dashAmount = Coin.parseCoin(cleanedValue)
-            fiatAmount = rate.coinToFiat(dashAmount)
-        } else {
+            fiatAmount = rate?.coinToFiat(dashAmount)
+        } else if (rate != null) {
             fiatAmount = Fiat.parseFiat(rate.fiat.currencyCode, cleanedValue)
             dashAmount = rate.fiatToCoin(fiatAmount)
         }
@@ -242,7 +250,7 @@ class AmountView(context: Context, attrs: AttributeSet) : ConstraintLayout(conte
     private fun isValidInput(input: String): Boolean {
         return try {
             // Only show the Paste popup if the value in the clipboard is valid
-            parseAmounts(input, exchangeRate!!)
+            parseAmounts(input, exchangeRate)
             true
         } catch (ex: Exception) {
             false

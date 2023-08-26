@@ -18,10 +18,11 @@
 package org.dash.wallet.common.services
 
 import kotlinx.coroutines.flow.Flow
-import org.dash.wallet.common.data.ExchangeRate
+import org.dash.wallet.common.data.entity.ExchangeRate
 
 interface ExchangeRatesProvider {
     fun observeExchangeRates(): Flow<List<ExchangeRate>>
-    fun observeExchangeRate(currencyCode: String): Flow<ExchangeRate>
+    fun observeExchangeRate(currencyCode: String): Flow<ExchangeRate?>
     suspend fun getExchangeRate(currencyCode: String): ExchangeRate?
+    suspend fun cleanupObsoleteCurrencies()
 }

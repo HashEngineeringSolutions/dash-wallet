@@ -17,10 +17,7 @@
     <string name="set_pin_verifying_pin">Verifying PIN</string>
     <string name="set_pin_message">This PIN will be required to unlock your app every time when you use it.</string>
     <string name="set_pin_confirm_pin_incorrect">Incorrect PIN</string>
-
-    <string name="home_available_balance">Available balance</string>
-    <string name="home_balance_hidden">Balance hidden</string>
-    <string name="home_balance_show_hint">Tap to unhide balance</string>
+    
     <string name="home_balance_hide_hint">Tap to hide balance</string>
 
     <string name="dialog_confirm_confirm">Confirm</string>
@@ -30,13 +27,13 @@
     <string name="dialog_confirm_total">Total</string>
 
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="shortcut_secure_now">Secure Wallet Now</string>
+    <string name="shortcut_secure_now">Backup</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="shortcut_scan_to_pay">Scan to Pay</string>
+    <string name="shortcut_scan_to_pay">Scan</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="shortcut_pay_to_address">Send to Address</string>
+    <string name="shortcut_pay_to_address">Send</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="shortcut_buy_sell">Buy / Sell Dash</string>
+    <string name="shortcut_buy_sell">Buy &amp; Sell</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_receive">Receive</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
@@ -63,7 +60,6 @@
     <string name="scan_to_pay_error_dialog_title">Scan to Send</string>
     <string name="scan_to_pay_error_dialog_message">Not a valid Dash Address or URL request in clipboard:\n\n%s</string>
     <string name="scan_to_pay_error_dialog_message_no_data">Not a valid Dash Address or URL request in clipboard.</string>
-    <string name="pay_to_confirm_address">Is this the Dash address you want to send payment to?</string>
 
     <string name="receive_title">Receive</string>
     <string name="receive_enter_amount_message">Specify the amount to be received</string>
@@ -209,17 +205,12 @@
     <string name="verify_continue">Continue</string>
     <string name="verify_backup_wallet">Backup Wallet</string>
     <string name="verify_show_recovery_phrase">Show Recovery Phrase</string>
-    <string name="verify_secure_now">Secure Wallet Now</string>
-    <string name="verify_it_is_important">It\'s important</string>
-    <string name="verify_it_is_important_subtitle">We are about to show you the secret key to your wallet.</string>
-    <string name="verify_info_text_1">This recovery phrase is your access to the funds in this wallet.</string>
-    <string name="verify_info_text_2">We do NOT store this recovery phrase.</string>
-    <string name="verify_info_text_3">You will need this recovery phrase to access your funds if this device is lost, damaged or if Dash Wallet ever is accidentally uninstalled from this device.</string>
-    <string name="verify_skip">Skip</string>
-    <string name="verify_secure_now_btn">Secure now</string>
-    <string name="verify_secure_now_message">If you lose this device, you will lose your funds. Get your recovery phrase so that you can restore your wallet on another device.</string>
-    <string name="verify_seed_title">Please write it down</string>
-    <string name="verify_seed_write_down_confirmation">I wrote it down</string>
+    <string name="verify_info_title">Backup your recovery phrase</string>
+    <string name="verify_info_subtitle">You will need this recovery phrase to access your funds if this device is lost, damaged or if Dash Wallet is uninstalled from this device.</string>
+    <string name="verify_info_title_1">Dash Core Group does NOT store this recovery phrase</string>
+    <string name="verify_info_subtitle_1">Anyone that has your recovery phrase can access your funds.</string>
+    <string name="verify_info_title_2">You will NOT be able to restore the wallet without a recovery phrase</string>
+    <string name="verify_info_subtitle_2">Write it in a safe place and don’t show it to anyone.</string>
     <string name="verify_seed_buttons_tip">Please tap on the words from your recovery phrase in the right order</string>
     <string name="verify_seed_success_title">Verified Successfully</string>
     <string name="verify_seed_success_message">Your wallet is secured now. You can use your recovery phrase anytime to recover your account on another device.</string>
@@ -253,6 +244,9 @@
     <string name="transaction_details_moved_from">Moved from</string>
     <string name="transaction_details_moved_internally_to">Internally moved to</string>
     <string name="transaction_failed_details">Transaction failed</string>
+    <string name="transaction_failed_resolve">This could be resolved by</string>
+    <string name="transaction_failed_rescan">rescanning the blockchain</string>
+    <string name="transaction_failed_in_conflict">This is possible if the wallet is installed on two devices.</string>
 
     <string name="authenticate_fingerprint_title">Authenticate</string>
     <string name="authenticate_fingerprint_message">Confirm fingerprint to continue</string>
@@ -331,8 +325,6 @@
     <string name="security_very_high">Very High</string>
     <string name="max">Max</string>
 
-    <string name="enter_amount_available">available</string>
-
     <string name="skip">skip</string>
     <string name="get_started">Get Started</string>
     <string name="welcome_screen_title_1_new_install">Welcome</string>
@@ -357,8 +349,6 @@
     <string name="payment_request_unable_to_send">Unable to Send</string>
     <string name="payment_request_please_try_again">Please try again</string>
     <string name="payment_request_try_again">Try Again</string>
-    <string name="payment_request_problem_title">Payment was not acknowledged</string>
-    <string name="payment_request_problem_message">Your payment could not be processed by the server, please inquire with the merchant</string>
     <string name="payment_request_expired_title">Payment Request Expired</string>
     <string name="payment_request_close">Close</string>
     <string name="payment_request_skip">Skip</string>
@@ -374,7 +364,7 @@
     <string name="yesterday">Yesterday</string>
 
     <string name="syncing">Syncing</string>
-    <string name="syncing_balance">Syncing Balance</string>
+    <string name="syncing_balance">Syncing balance</string>
     <string name="transaction_count">%d transactions</string>
     <string name="all_transactions">All</string>
     <string name="received_transactions">Received</string>
@@ -406,4 +396,24 @@
     <string name="reclassify_transactions_linked_accounts_title">Linked accounts</string>
     <string name="reclassify_transactions_linked_accounts_message">by default all transactions to or from your linked accounts (exchanges, staking, etc) will be marked as transfers.</string>
     <string name="reclassify_transactions_change_explanation">Choose any transaction from the homepage and change the category on the transaction details page.</string>
+
+    <string name="masternode_keys_title">Masternode Keys</string>
+    <string name="masternode_key_type_owner">Owner Keys</string>
+    <string name="masternode_key_type_voting">Voting Keys</string>
+    <string name="masternode_key_type_operator">Operator Keys</string>
+    <string name="masternode_key_type_platform">Evolution Node ID Keys</string>
+    <string name="masternode_key_type_total">%d keys</string>
+    <string name="masternode_key_type_used">%d used</string>
+    <string name="masternode_key_pair_index">Keypair %d</string>
+    <string name="masternode_key_address">Address</string>
+    <string name="masternode_key_id">Key Id</string>
+    <string name="masternode_key_public">Public Key</string>
+    <string name="masternode_key_public_legacy">Public Key (legacy)</string>
+    <string name="masternode_key_private_hex">Private Key</string>
+    <string name="masternode_key_private_wif">Private Key WIF</string>
+    <string name="masternode_key_used">IP: %s</string>
+    <string name="masternode_key_ip_address_unknown">Unknown</string>
+    <string name="masternode_key_not_used">Not used</string>
+    <string name="masternode_key_revoked">Revoked</string>
+    <string name="masternode_key_private_public_base64">Private / Public Keys (base64)</string>
 </resources>

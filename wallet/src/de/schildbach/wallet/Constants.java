@@ -24,26 +24,20 @@ import android.text.format.DateUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.BaseEncoding;
 
-import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.MasternodeSync;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.params.ScrewDriverDevNetParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.utils.MonetaryFormat;
 import org.bitcoinj.wallet.DeterministicKeyChain;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.EnumSet;
-import java.util.concurrent.TimeUnit;
 
 import de.schildbach.wallet_test.BuildConfig;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 
 /**
  * @author Andreas Schildbach
@@ -87,6 +81,19 @@ public final class Constants {
                 FILENAME_NETWORK_SUFFIX = "-testnet";
                 WALLET_NAME_CURRENCY_CODE = "tdash";
                 org.dash.wallet.common.util.Constants.INSTANCE.setEXPLORE_GC_FILE_PATH("explore/explore-testnet.db");
+                SYNC_FLAGS.add(MasternodeSync.SYNC_FLAGS.SYNC_HEADERS_MN_LIST_FIRST);
+                break;
+            }
+            case "devnet": {
+                // Devnet
+                BIP44_PATH = DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH_TESTNET;
+                NETWORK_PARAMETERS = ScrewDriverDevNetParams.get();
+                // TODO: remove this next line when Platform Supports Core 0.18
+                DNS_SEED = NETWORK_PARAMETERS.getDnsSeeds();
+                IS_PROD_BUILD = false;
+                FILENAME_NETWORK_SUFFIX = "-chacha";
+                WALLET_NAME_CURRENCY_CODE = "tdash";
+                org.dash.wallet.common.util.Constants.EXPLORE_GC_FILE_PATH = "explore/explore-devnet.db";
                 SYNC_FLAGS.add(MasternodeSync.SYNC_FLAGS.SYNC_HEADERS_MN_LIST_FIRST);
                 break;
             }
@@ -155,11 +162,6 @@ public final class Constants {
     /** Maximum size of backups. Files larger will be rejected. */
     public static final long BACKUP_MAX_CHARS = 10000000;
 
-    /** URL to fetch version alerts from. */
-    public static final HttpUrl VERSION_URL = HttpUrl.parse("https://wallet.schildbach.de/version");
-    /** URL to fetch dynamic fees from. */
-    public static final HttpUrl DYNAMIC_FEES_URL = HttpUrl.parse("https://wallet.schildbach.de/fees");
-
     /** MIME type used for transmitting single transactions. */
     public static final String MIMETYPE_TRANSACTION = "application/x-dashtx";
 
@@ -171,9 +173,6 @@ public final class Constants {
 
     /** User-agent to use for network access. */
     public static final String USER_AGENT = "Dash Wallet";
-
-    /** Default currency to use if all default mechanisms fail. */
-    public static final String DEFAULT_EXCHANGE_CURRENCY = "USD";
 
     /** Recipient e-mail address for reports. */
     public static final String REPORT_EMAIL = BuildConfig.SUPPORT_EMAIL;
@@ -233,28 +232,12 @@ public final class Constants {
     public static final int ELECTRUM_SERVER_DEFAULT_PORT_TLS = NETWORK_PARAMETERS.getId()
             .equals(NetworkParameters.ID_MAINNET) ? 50002 : 51002;
 
-    /** Shared HTTP client, can reuse connections */
-    public static final OkHttpClient HTTP_CLIENT = new OkHttpClient.Builder()
-            .followRedirects(false)
-            .followSslRedirects(true)
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .addInterceptor(new HttpLoggingInterceptor(
-                    new HttpLoggingInterceptor.Logger() {
-                        @Override
-                        public void log(final String message) {
-                            log.debug(message);
-                        }
-                    }).setLevel(HttpLoggingInterceptor.Level.BASIC))
-            .build();
-
-    private static final Logger log = LoggerFactory.getLogger(Constants.class);
-
     //Dash Specific
     public static long EARLIEST_HD_SEED_CREATION_TIME = 1427610960L;
 
     public static String WALLET_URI_SCHEME = "dashwallet";
+    public static String ANYPAY_SCHEME = "pay";
+    public static String DASH_SCHEME = "dash";
 
     public static boolean ENABLE_ZERO_FEES = false; //Enable Zero Fee's on TestNet only.
 

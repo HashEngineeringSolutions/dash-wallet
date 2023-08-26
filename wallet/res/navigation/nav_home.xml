@@ -36,6 +36,13 @@
             app:enterAnim="@anim/slide_in_bottom"
             app:exitAnim="@anim/activity_stay"
             app:popExitAnim="@anim/slide_out_left" />
+
+        <action
+            android:id="@+id/home_to_addressInput"
+            app:destination="@id/addressInputFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/activity_stay"
+            app:popExitAnim="@anim/slide_out_left" />
     </fragment>
 
     <fragment
@@ -55,7 +62,28 @@
             app:destination="@id/receiveFragment"
             app:enterAnim="@anim/slide_in_bottom"
             app:popExitAnim="@anim/fade_out" />
+
+        <action
+            android:id="@+id/payments_to_addressInput"
+            app:destination="@id/addressInputFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/activity_stay"
+            app:popExitAnim="@anim/slide_out_left" />
     </fragment>
+
+    <dialog
+
+        android:id="@+id/TransactionFragment"
+        android:name="de.schildbach.wallet.ui.transactions.TransactionDetailsDialogFragment"
+        android:label="Payments"
+        tools:layout="@layout/transaction_details_dialog">
+
+        <argument
+            android:name="tx_id"
+            app:argType="string" />
+
+        <deepLink app:uri="android-app://hashengineering.darkcoin.wallet/transactions/{tx_id}"/>
+    </dialog>
 
     <fragment
         android:id="@+id/receiveFragment"
@@ -71,7 +99,7 @@
 
         <action
             android:id="@+id/explore_to_search"
-            app:destination="@id/explore_dash"
+            app:destination="@id/nav_explore"
             app:enterAnim="@anim/slide_in_right"
             app:exitAnim="@anim/activity_stay"
             app:popExitAnim="@anim/slide_out_left">
@@ -79,7 +107,7 @@
             <argument
                 android:name="type"
                 android:defaultValue="Merchants"
-                app:argType="org.dash.wallet.features.exploredash.ui.ExploreTopic" />
+                app:argType="org.dash.wallet.features.exploredash.ui.explore.ExploreTopic" />
         </action>
 
         <action
@@ -106,7 +134,63 @@
             app:enterAnim="@anim/slide_in_right"
             app:exitAnim="@anim/activity_stay"
             app:popExitAnim="@anim/slide_out_left" />
+
+        <action
+            android:id="@+id/more_to_security"
+            app:destination="@id/securityFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/activity_stay"
+            app:popExitAnim="@anim/slide_out_left" />
+
+        <action
+            android:id="@+id/more_to_tools"
+            app:destination="@id/toolsFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/activity_stay"
+            app:popExitAnim="@anim/slide_out_left" />
     </fragment>
+
+    <fragment
+        android:id="@+id/toolsFragment"
+        android:name="de.schildbach.wallet.ui.more.ToolsFragment"
+        android:label="Tools"
+        tools:layout="@layout/fragment_more">
+
+        <action
+            android:id="@+id/tools_to_masternode_keys"
+            app:destination="@id/masternodeKeyTypeFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/activity_stay"
+            app:popExitAnim="@anim/slide_out_left" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/masternodeKeyTypeFragment"
+        android:name="de.schildbach.wallet.ui.more.masternode_keys.MasternodeKeysFragment"
+        android:label="Masternode Keys"
+        tools:layout="@layout/fragment_masternode_key_types">
+
+        <action
+            android:id="@+id/masternode_key_type_to_masternode_keychain"
+            app:destination="@id/masternodeKeyChainFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/activity_stay"
+            app:popExitAnim="@anim/slide_out_left" >
+
+            <argument
+                android:name="type"
+                android:defaultValue="OWNER"
+                app:argType="de.schildbach.wallet.ui.more.masternode_keys.MasternodeKeyType" />
+        </action>
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/masternodeKeyChainFragment"
+        android:name="de.schildbach.wallet.ui.more.masternode_keys.MasternodeKeyChainFragment"
+        android:label="Masternode KeyChain"
+        tools:layout="@layout/fragment_masternode_key_chain"/>
 
     <fragment
         android:id="@+id/buySellFragment"
@@ -118,6 +202,14 @@
             android:id="@+id/buySell_to_overview"
             app:destination="@id/integrationOverviewFragment"
             app:enterAnim="@anim/slide_in_bottom"
+            app:exitAnim="@anim/activity_stay"
+            app:popExitAnim="@anim/slide_out_left" />
+
+        <action
+            android:id="@+id/buySell_to_uphold"
+            app:destination="@id/upholdPortalFragment"
+            app:enterAnim="@anim/slide_in_bottom"
+            app:popEnterAnim="@anim/activity_stay"
             app:exitAnim="@anim/activity_stay"
             app:popExitAnim="@anim/slide_out_left" />
     </fragment>
@@ -134,5 +226,49 @@
             app:argType="de.schildbach.wallet.data.ServiceType" />
     </fragment>
 
-    <include app:graph="@navigation/explore_dash" />
+    <fragment
+        android:id="@+id/upholdPortalFragment"
+        android:name="org.dash.wallet.integration.uphold.ui.UpholdPortalFragment"
+        android:label="upholdPortalFragment"
+        tools:layout="@layout/fragment_integration_portal" />
+
+    <fragment
+        android:id="@+id/securityFragment"
+        android:name="de.schildbach.wallet.ui.more.SecurityFragment"
+        android:label="Security"
+        tools:layout="@layout/fragment_security">
+
+        <action
+            android:id="@+id/security_to_showSeed"
+            app:destination="@id/showSeedFragment"
+            app:enterAnim="@anim/slide_in_right"
+            app:exitAnim="@anim/activity_stay"
+            app:popExitAnim="@anim/slide_out_left" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/showSeedFragment"
+        android:name="de.schildbach.wallet.ui.verify.ShowSeedFragment"
+        android:label="ShowSeed"
+        tools:layout="@layout/fragment_show_seed">
+
+        <argument
+            android:name="seed"
+            app:argType="string[]"
+            app:nullable="true"
+            android:defaultValue="@null" />
+
+        <argument
+            android:name="standalone"
+            app:argType="boolean"
+            android:defaultValue="false" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/addressInputFragment"
+        android:name="de.schildbach.wallet.ui.send.AddressInputFragment"
+        android:label="Address Input"
+        tools:layout="@layout/fragment_address_input" />
+
+    <include app:graph="@navigation/nav_explore" />
 </navigation>
