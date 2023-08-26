@@ -78,10 +78,12 @@ abstract class ExploreDashModule {
 
         @Provides fun provideFirebaseStorage() = Fireplace.storage
 
+        @Provides
         fun provideRemoteDataSource(config: DashDirectConfig): RemoteDataSource {
             return RemoteDataSource(config)
         }
 
+        @Provides
         fun provideAuthApi(remoteDataSource: RemoteDataSource): DashDirectAuthApi {
             return remoteDataSource.buildApi(DashDirectAuthApi::class.java)
         }

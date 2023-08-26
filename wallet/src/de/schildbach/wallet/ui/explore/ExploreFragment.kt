@@ -61,13 +61,13 @@ class ExploreFragment : Fragment(R.layout.fragment_explore) {
             findNavController().popBackStack()
         }
 
-        binding.merchantsBtn.setOnClickListener {
+//        binding.merchantsBtn.setOnClickListener {
 //            safeNavigate(ExploreFragmentDirections.exploreToSearch(ExploreTopic.Merchants))
-        }
+//        }
 
-        binding.atmsBtn.setOnClickListener {
+//        binding.atmsBtn.setOnClickListener {
 //            safeNavigate(ExploreFragmentDirections.exploreToSearch(ExploreTopic.ATMs))
-        }
+//        }
 
         binding.stakingBtn.setOnClickListener {
             viewModel.logEvent(AnalyticsConstants.CrowdNode.STAKING_ENTRY)

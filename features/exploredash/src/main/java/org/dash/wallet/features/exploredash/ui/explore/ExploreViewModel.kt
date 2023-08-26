@@ -220,7 +220,7 @@ class ExploreViewModel @Inject constructor(
                     }
                     progress.status == Status.LOADING && !isOnline -> {
                         if (!observedLastError) {
-                            Resource.error(FirebaseNetworkException("network is offline"))
+                            Resource.error(FireplaceNetworkException("network is offline"))
                         } else {
                             Resource.success(100.0) // hide errors if already observed
                         }

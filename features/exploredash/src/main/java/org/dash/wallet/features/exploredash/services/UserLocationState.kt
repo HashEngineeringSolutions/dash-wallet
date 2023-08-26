@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import org.dash.wallet.common.util.GenericUtils
 import org.dash.wallet.features.exploredash.data.explore.model.GeoBounds
+import org.dash.wallet.features.exploredash.di.FusedLocationProviderClient
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject

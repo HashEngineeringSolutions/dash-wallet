@@ -17,7 +17,9 @@
 
 package org.dash.wallet.common.services.analytics
 
+import android.os.Bundle
 import android.util.Log
+import androidx.core.os.bundleOf
 import org.dash.wallet.common.BuildConfig
 import javax.inject.Inject
 
