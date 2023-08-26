@@ -297,16 +297,11 @@ android {
         }
         foss {
             applicationId = "hashengineering.darkcoin.wallet"
-            def upholdClientId = props.getProperty("UPHOLD_CLIENT_ID")
-            def upholdClientSecret = props.getProperty("UPHOLD_CLIENT_SECRET")
-            if (upholdClientId == null) {
-                upholdClientId = "\"UPHOLD_CLIENT_ID\""
-            }
-            if (upholdClientSecret == null) {
-                upholdClientSecret = "\"UPHOLD_CLIENT_SECRET\""
-            }
-            buildConfigField("String", "UPHOLD_CLIENT_ID", upholdClientId)
-            buildConfigField("String", "UPHOLD_CLIENT_SECRET", upholdClientSecret)
+            buildConfigField("String", "UPHOLD_CLIENT_ID", "\"\"")
+            buildConfigField("String", "UPHOLD_CLIENT_SECRET", "\"\"")
+            buildConfigField("String", "TOPPER_KEY_ID", "\"\"")
+            buildConfigField("String", "TOPPER_WIDGET_ID", "\"\"")
+            buildConfigField("String", "TOPPER_PRIVATE_KEY", "\"\"")
         }
     }
     packagingOptions {
