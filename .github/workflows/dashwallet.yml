@@ -84,4 +84,4 @@ jobs:
       
     - name: Build
       if: github.event_name == 'pull_request'
-      run: bundle exec fastlane build flavor:"prod" type:"release"
+      run: bundle exec fastlane build flavor:"foss" type:"release"
