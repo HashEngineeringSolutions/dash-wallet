@@ -148,7 +148,7 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <!--androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/zenledger_export"
         style="@style/MenuRow.Internal">
 
@@ -199,10 +199,10 @@
             app:layout_constraintTop_toTopOf="parent"
             app:srcCompat="@drawable/ic_menu_row_arrow" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout-->
 
-    <androidx.compose.ui.platform.ComposeView
+    <!--androidx.compose.ui.platform.ComposeView
         android:id="@+id/zen_ledger_view"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content" /-->
 </LinearLayout>

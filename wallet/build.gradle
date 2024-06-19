@@ -53,6 +53,7 @@ dependencies {
     implementation "org.dashj.android:dashj-bls-android:1.0.0"
     implementation "org.dashj.android:dashj-x11-android:0.17.5"
     implementation "org.dashj.android:dashj-scrypt-android:0.17.5"
+    implementation 'com.google.protobuf:protobuf-javalite:3.17.3'
     implementation 'io.grpc:grpc-stub:1.28.0' // CURRENT_GRPC_VERSION
     implementation 'com.google.guava:guava:29.0-android'
     //noinspection GradleDependency
@@ -304,6 +305,8 @@ android {
             buildConfigField("String", "TOPPER_KEY_ID", "\"\"")
             buildConfigField("String", "TOPPER_WIDGET_ID", "\"\"")
             buildConfigField("String", "TOPPER_PRIVATE_KEY", "\"\"")
+            buildConfigField("String", "ZENLEDGER_CLIENT_ID", "\"\"")
+            buildConfigField("String", "ZENLEDGER_CLIENT_SECRET", "\"\"")
         }
     }
     packagingOptions {

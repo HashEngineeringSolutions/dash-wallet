@@ -135,9 +135,9 @@ class ToolsFragment : Fragment(R.layout.fragment_tools) {
             }
         }
 
-        binding.zenledgerExport.setOnClickListener {
-            ZenLedgerDialogFragment().show(requireActivity())
-        }
+//        binding.zenledgerExport.setOnClickListener {
+//            ZenLedgerDialogFragment().show(requireActivity())
+//        }
     }
 
     private fun handleExtendedPublicKey() {
