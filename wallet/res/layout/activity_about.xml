@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@color/background_primary"
+    android:orientation="vertical"
     tools:context="de.schildbach.wallet.ui.more.AboutActivity">
 
     <androidx.appcompat.widget.Toolbar
@@ -20,125 +19,146 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingBottom="40dp"
-        android:orientation="vertical">
-
-    <TextView
-        android:id="@+id/title"
-        style="@style/Headline3"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        tools:text="About Dash" />
-
-    <TextView
-        android:id="@+id/app_version_name"
-        style="@style/Body2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="3dp"
-        tools:text="Dash Wallet v7.0.0-redesign" />
-
-    <TextView
-        android:id="@+id/library_version_name"
-        style="@style/Body2.Tertiary"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="20dp"
-        tools:text="DashJ 17.0.0" />
-
-    <LinearLayout
-        android:id="@+id/about_content"
-        style="@style/ViewRaised"
-        android:orientation="vertical"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="15dp"
-        android:layout_marginHorizontal="15dp"
-        android:paddingVertical="15dp"
-        android:background="@drawable/rounded_background"
-        android:theme="@style/SecondaryBackground">
-
-        <TextView
-            style="@style/Overline.Tertiary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="15dp"
-            android:text="@string/about_fork_disclaimer" />
-
-        <TextView
-            android:id="@+id/github_link"
-            style="@style/Caption.Blue"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="15dp"
-            android:text="@string/about_github_link" />
-    </LinearLayout>
-
-
-    <androidx.cardview.widget.CardView
-        android:id="@+id/feedback_card"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        style="@style/CardViewRaised"
-        android:layout_marginTop="15dp"
-        android:layout_marginHorizontal="15dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingBottom="40dp">
 
             <TextView
-                android:id="@+id/review_and_rate"
-                style="@style/Body2.Medium"
-                android:background="?attr/selectableItemBackground"
+                android:id="@+id/title"
+                style="@style/Headline3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="20dp"
-                android:paddingTop="20dp"
-                android:paddingBottom="14dp"
-                android:text="@string/about_review_and_rate"
-                android:drawableStart="@drawable/ic_rate"
-                android:drawablePadding="21dp" />
+                android:layout_marginStart="20dp"
+                tools:text="About Dash" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="3dp" >
+                <TextView
+                    android:id="@+id/app_version_name"
+                    style="@style/Body2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="DashPay v11.0.x" />
+                <TextView
+                    android:id="@+id/build_number"
+                    style="@style/Body2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="5dp"
+                    tools:text="(10)" />
+            </LinearLayout>
+            <TextView
+                android:id="@+id/library_version_name"
+                style="@style/Body2.Tertiary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                tools:text="DashJ 21.1.0" />
 
             <TextView
-                android:id="@+id/contact_support"
-                style="@style/Body2.Medium"
-                android:background="?attr/selectableItemBackground"
+                android:id="@+id/platform_version_name"
+                style="@style/Body2.Tertiary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="20dp"
-                android:paddingTop="14dp"
-                android:paddingBottom="20dp"
-                android:text="@string/about_contact_support"
-                android:drawableStart="@drawable/ic_contact_support"
-                android:drawablePadding="21dp" />
+                android:layout_marginHorizontal="20dp"
+                tools:text="Platform 1.5.1" />
+
+            <LinearLayout
+                android:id="@+id/about_content"
+                style="@style/ViewRaised"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="15dp"
+                android:layout_marginTop="15dp"
+                android:background="@drawable/rounded_background"
+                android:orientation="vertical"
+                android:paddingVertical="15dp"
+                android:theme="@style/SecondaryBackground">
+
+        <TextView
+            style="@style/Overline.Tertiary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="15dp"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/about_fork_disclaimer" />
+
+                <TextView
+                    android:id="@+id/github_link"
+                    style="@style/Caption.Blue"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="15dp"
+                    android:text="@string/about_github_link" />
+            </LinearLayout>
+
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/feedback_card"
+                style="@style/CardViewRaised"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="15dp"
+                android:layout_marginTop="15dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/review_and_rate"
+                        style="@style/Body2.Medium"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:drawableStart="@drawable/ic_rate"
+                        android:drawablePadding="21dp"
+                        android:paddingHorizontal="20dp"
+                        android:paddingTop="20dp"
+                        android:paddingBottom="14dp"
+                        android:text="@string/about_review_and_rate" />
+
+                    <TextView
+                        android:id="@+id/contact_support"
+                        style="@style/Body2.Medium"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:drawableStart="@drawable/ic_contact_support"
+                        android:drawablePadding="21dp"
+                        android:paddingHorizontal="20dp"
+                        android:paddingTop="14dp"
+                        android:paddingBottom="20dp"
+                        android:text="@string/about_contact_support" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:id="@+id/copyright"
+                style="@style/Overline.Tertiary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:gravity="center"
+                android:text="@string/about_copyright"
+                android:textAlignment="gravity" />
+
+            <TextView
+                android:id="@+id/license"
+                style="@style/Overline.Tertiary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/about_license"
+                android:textAlignment="gravity" />
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
-
-    <TextView
-        android:id="@+id/copyright"
-        style="@style/Overline.Tertiary"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textAlignment="gravity"
-        android:layout_marginTop="15dp"
-        android:text="@string/about_copyright" />
-
-    <TextView
-        android:id="@+id/license"
-        style="@style/Overline.Tertiary"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/about_license"
-        android:gravity="center"
-        android:textAlignment="gravity" />
-    </LinearLayout>
     </ScrollView>
 </LinearLayout>

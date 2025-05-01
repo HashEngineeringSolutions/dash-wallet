@@ -53,6 +53,7 @@ import de.schildbach.wallet.ui.verify.VerifySeedActivity
 import de.schildbach.wallet.ui.widget.PinPreviewView
 import de.schildbach.wallet_test.R
 import de.schildbach.wallet_test.databinding.ActivityLockScreenRootBinding
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.bitcoinj.wallet.Wallet.BalanceType
 import org.dash.wallet.common.Configuration
@@ -116,6 +117,7 @@ open class LockScreenActivity : SecureActivity() {
         intent.getBooleanExtra(INTENT_EXTRA_KEEP_UNLOCKED, false)
     }
 
+    protected var isLocked: Boolean = false
     private val shouldShowBackupReminder
         get() = configuration.remindBackupSeed && configuration.lastBackupSeedReminderMoreThan24hAgo()
 
@@ -130,6 +132,7 @@ open class LockScreenActivity : SecureActivity() {
         binding = ActivityLockScreenRootBinding.inflate(layoutInflater)
         super.setContentView(binding.root)
         setupKeyboardBottomMargin()
+        isLocked = autoLogout.shouldLogout()
 
         initView()
         initViewModel()
@@ -147,10 +150,15 @@ open class LockScreenActivity : SecureActivity() {
     }
 
     private val onLogoutListener = AutoLogout.OnLogoutListener {
+        isLocked = true
         dismissKeyboard()
         biometricHelper.cancelPending()
         setLockState(State.USE_DEFAULT)
         handleLockScreenActivated()
+    }
+
+    open fun imitateUserInteraction() {
+        onUserInteraction()
     }
 
     override fun onUserInteraction() {
@@ -166,9 +174,11 @@ open class LockScreenActivity : SecureActivity() {
     }
 
     private fun setupBackupSeedReminder() {
-        val hasBalance = walletData.wallet?.getBalance(BalanceType.ESTIMATED)?.isPositive ?: false
-        if (hasBalance && configuration.lastBackupSeedTime == 0L) {
-            configuration.setLastBackupSeedTime()
+        lifecycleScope.launch {
+            val hasBalance = walletApplication.observeTotalBalance().first().isPositive
+            if (hasBalance && configuration.lastBackupSeedTime == 0L) {
+                configuration.setLastBackupSeedTime()
+            }
         }
     }
 
@@ -315,6 +325,9 @@ open class LockScreenActivity : SecureActivity() {
                         onCorrectPin(it.data!!)
                     }
                 }
+                else -> {
+                    // ignore
+                }
             }
         }
     }
@@ -324,6 +337,8 @@ open class LockScreenActivity : SecureActivity() {
         autoLogout.keepLockedUntilPinEntered = false
         autoLogout.deviceWasLocked = false
         autoLogout.maybeStartAutoLogoutTimer()
+        isLocked = false
+        onLockScreenDeactivated()
         if (shouldShowBackupReminder) {
             val intent = VerifySeedActivity.createIntent(this, pin, false)
             configuration.resetBackupSeedReminderTimer()
@@ -333,8 +348,6 @@ open class LockScreenActivity : SecureActivity() {
         } else {
             binding.rootViewSwitcher.displayedChild = 1
         }
-
-        onLockScreenDeactivated()
     }
 
     private fun setLockState(suggestedState: State) {

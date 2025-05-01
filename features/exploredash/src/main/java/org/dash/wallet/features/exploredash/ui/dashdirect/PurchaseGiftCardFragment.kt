@@ -86,7 +86,10 @@ class PurchaseGiftCardFragment : Fragment(R.layout.fragment_purchase_gift_card) 
             if (merchant is Merchant && merchant.merchantId != null && !merchant.source.isNullOrEmpty()) {
                 viewModel.giftCardMerchant = merchant
                 binding.paymentHeaderView.setSubtitle(merchant.name.orEmpty())
-                binding.paymentHeaderView.setPaymentAddressViewIcon(merchant.logoLocation)
+                binding.paymentHeaderView.setPaymentAddressViewIcon(
+                    merchant.logoLocation,
+                    R.drawable.ic_image_placeholder
+                )
 
                 lifecycleScope.launch {
                     viewModel.updateMerchantDetails(merchant)
@@ -174,7 +177,7 @@ class PurchaseGiftCardFragment : Fragment(R.layout.fragment_purchase_gift_card) 
 
     private fun setPaymentHeader() {
         binding.paymentHeaderView.setTitle(getString(R.string.explore_option_buy))
-        binding.paymentHeaderView.setProposition(getString(R.string.purchase_gift_card_at))
+        binding.paymentHeaderView.setPreposition(getString(R.string.purchase_gift_card_at))
         binding.paymentHeaderView.setOnShowHideBalanceClicked {
             binding.paymentHeaderView.triggerRevealBalance()
             viewModel.balance.value?.let { balance ->

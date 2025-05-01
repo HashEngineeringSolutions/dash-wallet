@@ -10,9 +10,9 @@ plugins {
 
 android {
     defaultConfig {
-        compileSdk 33
+        compileSdk 34
         minSdkVersion 24
-        targetSdkVersion 33
+        targetSdkVersion 34
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
     }
@@ -68,6 +68,9 @@ dependencies {
     implementation "com.google.android.material:material:$materialVersion"
     implementation "androidx.constraintlayout:constraintlayout:$constrainLayoutVersion"
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:$swipeRefreshLayoutVersion"
+
+    // Logs
+    implementation "org.slf4j:slf4j-api:$slf4jVersion"
 
     // Tests
     testImplementation "junit:junit:$junitVersion"

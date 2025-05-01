@@ -52,8 +52,9 @@ class ResetWalletDialog : DialogFragment() {
                     // 1. wipe the wallet
                     // 2. start OnboardingActivity
                     // 3. close the backstack (Home->More->Security)
-                    WalletApplication.getInstance().triggerWipe()
-                    restartService.performRestart(requireActivity(), true)
+                    WalletApplication.getInstance().triggerWipe() {
+                        restartService.performRestart(requireActivity(), true)
+                    }
                 }
                 positiveText = getString(android.R.string.no)
                 cancelable = false
@@ -70,8 +71,8 @@ class ResetWalletDialog : DialogFragment() {
 
     companion object {
         @JvmStatic
-        fun newInstance(): ResetWalletDialog {
-            return ResetWalletDialog()
+        fun newInstance(analyticsService: AnalyticsService): ResetWalletDialog {
+            return ResetWalletDialog().apply { analytics = analyticsService }
         }
     }
 }
