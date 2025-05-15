@@ -51,7 +51,6 @@ import androidx.multidex.MultiDexApplication;
 import androidx.work.WorkManager;
 
 import com.google.common.base.Stopwatch;
-import com.google.firebase.FirebaseApp;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
@@ -229,7 +228,6 @@ public class WalletApplication extends MultiDexApplication
     public void onCreate() {
         super.onCreate();
         initLogging();
-        FirebaseApp.initializeApp(this);
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
         log.info("WalletApplication.onCreate()");
         config = new Configuration(PreferenceManager.getDefaultSharedPreferences(this), getResources());
