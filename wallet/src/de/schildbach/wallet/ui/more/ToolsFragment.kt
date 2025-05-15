@@ -140,9 +140,6 @@ class ToolsFragment : Fragment(R.layout.fragment_tools) {
             }
         }
 
-//        binding.zenledgerExport.setOnClickListener {
-//            ZenLedgerDialogFragment().show(requireActivity())
-//        }
         lifecycleScope.launch {
             binding.buyCreditsContainer.isVisible = viewModel.hasUsername()
         }
@@ -162,9 +159,9 @@ class ToolsFragment : Fragment(R.layout.fragment_tools) {
             }
         }
 
-        binding.zenledgerExport.setOnClickListener {
-            ZenLedgerDialogFragment().show(requireActivity())
-        }
+//        binding.zenledgerExport.setOnClickListener {
+//            ZenLedgerDialogFragment().show(requireActivity())
+//        }
     }
 
     private fun handleExtendedPublicKey() {
