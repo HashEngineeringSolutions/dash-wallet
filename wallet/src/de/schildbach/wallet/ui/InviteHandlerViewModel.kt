@@ -19,7 +19,6 @@ package de.schildbach.wallet.ui
 import android.content.Intent
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.schildbach.wallet.Constants
 import de.schildbach.wallet.database.dao.DashPayProfileDao
@@ -48,16 +47,17 @@ class InviteHandlerViewModel @Inject constructor(
         get() = inviteData.value!!.data!!
 
     fun handleInvite(intent: Intent) {
-        FirebaseDynamicLinks.getInstance().getDynamicLink(intent).addOnSuccessListener {
-            val link = it?.link
-            if (link != null && InvitationLinkData.isValid(link)) {
-                log.debug("received invite $link")
-                val invite = InvitationLinkData(link, false)
-                handleInvite(invite)
-            } else {
-                log.debug("invalid invite ignored")
-            }
-        }
+//        FirebaseDynamicLinks.getInstance().getDynamicLink(intent).addOnSuccessListener {
+//            val link = it?.link
+//            if (link != null && InvitationLinkData.isValid(link)) {
+//                log.debug("received invite $link")
+//                val invite = InvitationLinkData(link, false)
+//                handleInvite(invite)
+//            } else {
+//                log.debug("invalid invite ignored")
+//            }
+//        }
+        //TODO: convert from intent to invite
     }
 
     fun handleInvite(invite: InvitationLinkData) {

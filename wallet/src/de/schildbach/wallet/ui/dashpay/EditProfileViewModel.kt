@@ -25,7 +25,6 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.google.api.services.drive.Drive
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -82,7 +81,7 @@ class EditProfileViewModel @Inject constructor(
     private var uploadProfilePictureCall: Call? = null
     lateinit var storageService: ProfilePictureStorageService
     private val config by lazy { WalletApplication.getInstance().configuration }
-    var googleDrive: Drive? = null
+    // var googleDrive: Drive? = null
     var pictureSource: String = ""
 
     val profilePictureUploadLiveData = MutableLiveData<Resource<String>>()
@@ -258,10 +257,10 @@ class EditProfileViewModel @Inject constructor(
     }
 
     fun uploadProfilePicture() {
-        when (storageService) {
-            ProfilePictureStorageService.IMGUR -> uploadProfilePictureToImgur(profilePictureFile!!)
-            ProfilePictureStorageService.GOOGLE_DRIVE -> uploadToGoogleDrive(googleDrive!!)
-        }
+//        when (storageService) {
+//            ProfilePictureStorageService.IMGUR -> uploadProfilePictureToImgur(profilePictureFile!!)
+//            ProfilePictureStorageService.GOOGLE_DRIVE -> uploadToGoogleDrive(googleDrive!!)
+//        }
     }
 
     private fun uploadProfilePictureToImgur(file: File) {
@@ -364,28 +363,28 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-    @SuppressLint("HardwareIds")
-    fun uploadToGoogleDrive(drive: Drive) {
-        viewModelScope.launch(Dispatchers.IO) {
-            profilePictureUploadLiveData.postValue(Resource.loading(""))
-            try {
-                val secureId = Settings.Secure.getString(walletApplication.contentResolver, Settings.Secure.ANDROID_ID)
-                val fileId = GoogleDriveService.uploadImage(
-                    drive,
-                    UUID.randomUUID().toString() + ".jpg",
-                    profilePictureFile!!.readBytes(),
-                    secureId
-                )
-
-                log.info("gdrive upload image: complete")
-                profilePictureUploadLiveData.postValue(Resource.success("https://drive.google.com/uc?export=view&id=${fileId}"))
-            } catch (e: Exception) {
-                log.info("gdrive: upload failure: $e")
-                e.printStackTrace()
-                profilePictureUploadLiveData.postValue(Resource.error(e))
-            }
-        }
-    }
+//    @SuppressLint("HardwareIds")
+//    fun uploadToGoogleDrive(drive: Drive) {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            profilePictureUploadLiveData.postValue(Resource.loading(""))
+//            try {
+//                val secureId = Settings.Secure.getString(walletApplication.contentResolver, Settings.Secure.ANDROID_ID)
+//                val fileId = GoogleDriveService.uploadImage(
+//                    drive,
+//                    UUID.randomUUID().toString() + ".jpg",
+//                    profilePictureFile!!.readBytes(),
+//                    secureId
+//                )
+//
+//                log.info("gdrive upload image: complete")
+//                profilePictureUploadLiveData.postValue(Resource.success("https://drive.google.com/uc?export=view&id=${fileId}"))
+//            } catch (e: Exception) {
+//                log.info("gdrive: upload failure: $e")
+//                e.printStackTrace()
+//                profilePictureUploadLiveData.postValue(Resource.error(e))
+//            }
+//        }
+//    }
 
     fun cancelUploadRequest() {
         uploadProfilePictureCall?.cancel()

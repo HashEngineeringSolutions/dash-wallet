@@ -21,10 +21,6 @@ import android.provider.Settings
 import androidx.hilt.work.HiltWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.google.android.gms.auth.GoogleAuthException
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAuthIOException
-import com.google.api.services.drive.Drive
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import de.schildbach.wallet.WalletApplication
@@ -103,9 +99,9 @@ class UpdateProfileWorker @AssistedInject constructor(
             @Suppress("BlockingMethodInNonBlockingContext")
             when (uploadService) {
                 EditProfileViewModel.ProfilePictureStorageService.GOOGLE_DRIVE.name -> {
-                    val avatarFileBytes = avatarFile.readBytes()
-                    val fileId = saveToGoogleDrive(applicationContext, avatarFileBytes)
-                    avatarUrl = "https://drive.google.com/uc?export=view&id=$fileId"
+//                    val avatarFileBytes = avatarFile.readBytes()
+//                    val fileId = saveToGoogleDrive(applicationContext, avatarFileBytes)
+//                    avatarUrl = "https://drive.google.com/uc?export=view&id=$fileId"
                 }
                 EditProfileViewModel.ProfilePictureStorageService.IMGUR.name -> {
                     //TODO:
@@ -136,31 +132,31 @@ class UpdateProfileWorker @AssistedInject constructor(
         }
     }
 
-    private fun saveToGoogleDrive(context: Context, encryptedBackup: ByteArray): String? {
-        return try {
-            val account: GoogleSignInAccount = GoogleDriveService.getSigninAccount(context)
-                    ?: throw GoogleAuthException()
-
-            // 1 - retrieve existing backup so we know whether we have to create a new one, or update existing file
-            val drive: Drive? = Objects.requireNonNull(GoogleDriveService.getDriveServiceFromAccount(context, account), "drive service must not be null")
-
-            // 2 - upload the image
-            val uploadedAvatarFilename = UUID.randomUUID().toString()
-            val secureId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-            return GoogleDriveService.uploadImage(drive!!, uploadedAvatarFilename, encryptedBackup, secureId)
-        } catch (t: Throwable) {
-            analytics.logError(t, "Failed to upload to Google Drive")
-
-            //log.error("failed to save channels backup on google drive", t)
-            if (t is GoogleAuthIOException || t is GoogleAuthException) {
-                //BackupHelper.GoogleDrive.disableGDriveBackup(context)
-            } else if (t.cause != null) {
-                val cause = t.cause
-                if (cause is GoogleAuthIOException || cause is GoogleAuthException) {
-                    //BackupHelper.GoogleDrive.disableGDriveBackup(context)
-                }
-            }
-            null
-        }
-    }
+//    private fun saveToGoogleDrive(context: Context, encryptedBackup: ByteArray): String? {
+//        return try {
+//            val account: GoogleSignInAccount = GoogleDriveService.getSigninAccount(context)
+//                    ?: throw GoogleAuthException()
+//
+//            // 1 - retrieve existing backup so we know whether we have to create a new one, or update existing file
+//            val drive: Drive? = Objects.requireNonNull(GoogleDriveService.getDriveServiceFromAccount(context, account), "drive service must not be null")
+//
+//            // 2 - upload the image
+//            val uploadedAvatarFilename = UUID.randomUUID().toString()
+//            val secureId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
+//            return GoogleDriveService.uploadImage(drive!!, uploadedAvatarFilename, encryptedBackup, secureId)
+//        } catch (t: Throwable) {
+//            analytics.logError(t, "Failed to upload to Google Drive")
+//
+//            //log.error("failed to save channels backup on google drive", t)
+//            if (t is GoogleAuthIOException || t is GoogleAuthException) {
+//                //BackupHelper.GoogleDrive.disableGDriveBackup(context)
+//            } else if (t.cause != null) {
+//                val cause = t.cause
+//                if (cause is GoogleAuthIOException || cause is GoogleAuthException) {
+//                    //BackupHelper.GoogleDrive.disableGDriveBackup(context)
+//                }
+//            }
+//            null
+//        }
+//    }
 }

@@ -81,8 +81,8 @@
                 android:layout_height="match_parent"
                 android:orientation="vertical">
 
-                <!--androidx.constraintlayout.widget.ConstraintLayout
-                    android:id="@+id/merchants_btn"
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/faucet_btn"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="?attr/selectableItemBackground"
@@ -130,7 +130,7 @@
                     android:layout_marginStart="63dp"
                     android:background="@color/divider_color" />
 
-                <androidx.constraintlayout.widget.ConstraintLayout
+                <!--androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/merchants_btn"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

@@ -18,6 +18,7 @@ package de.schildbach.wallet.ui.dashpay
 
 import android.os.Bundle
 import android.view.View
+import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import de.schildbach.wallet_test.R
@@ -58,5 +59,7 @@ class SelectProfilePictureDialog : OffsetDialogFragment(R.layout.dialog_select_p
             sharedViewModel.onFromGravatarCallback.call()
             dismiss()
         }
+        binding.takePicture.isVisible = false
+        binding.choosePicture.isVisible = false
     }
 }

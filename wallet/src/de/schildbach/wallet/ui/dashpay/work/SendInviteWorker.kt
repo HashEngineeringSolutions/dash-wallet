@@ -21,9 +21,6 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.google.firebase.dynamiclinks.DynamicLink
-import com.google.firebase.dynamiclinks.FirebaseDynamicLinks
-import com.google.firebase.dynamiclinks.ShortDynamicLink
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import de.schildbach.wallet.Constants
@@ -46,6 +43,8 @@ import kotlin.coroutines.suspendCoroutine
 
 private val log = LoggerFactory.getLogger(SendInviteWorker::class.java)
 
+data class DynamicLink(val link: Uri)
+data class ShortDynamicLink(val link: Uri)
 
 @HiltWorker
 class SendInviteWorker @AssistedInject constructor(
@@ -92,21 +91,22 @@ class SendInviteWorker @AssistedInject constructor(
         }
 
         return try {
-            val blockchainIdentity = platformRepo.blockchainIdentity
-            val cftx = platformRepo.createInviteFundingTransactionAsync(blockchainIdentity, encryptionKey)
-            val dashPayProfile = platformRepo.getLocalUserProfile()
-            val dynamicLink = createDynamicLink(dashPayProfile!!, cftx, encryptionKey)
-            val shortDynamicLink = buildShortDynamicLink(dynamicLink)
-            val invitation = platformRepo.getInvitation(cftx.identityId.toStringBase58())!!
-            invitation.shortDynamicLink = shortDynamicLink.shortLink.toString()
-            invitation.dynamicLink = dynamicLink.uri.toString()
-            platformRepo.updateInvitation(invitation)
-            Result.success(workDataOf(
-                    KEY_TX_ID to cftx.txId.bytes,
-                    KEY_USER_ID to cftx.identityId.toStringBase58(),
-                    KEY_DYNAMIC_LINK to dynamicLink.uri.toString(),
-                    KEY_SHORT_DYNAMIC_LINK to shortDynamicLink.shortLink.toString()
-            ))
+            throw UnsupportedOperationException("cannot create links")
+//            val blockchainIdentity = platformRepo.blockchainIdentity
+//            val cftx = platformRepo.createInviteFundingTransactionAsync(blockchainIdentity, encryptionKey)
+//            val dashPayProfile = platformRepo.getLocalUserProfile()
+//            val dynamicLink = createDynamicLink(dashPayProfile!!, cftx, encryptionKey)
+//            val shortDynamicLink = buildShortDynamicLink(dynamicLink)
+//            val invitation = platformRepo.getInvitation(cftx.identityId.toStringBase58())!!
+//            invitation.shortDynamicLink = shortDynamicLink.shortLink.toString()
+//            invitation.dynamicLink = dynamicLink.uri.toString()
+//            platformRepo.updateInvitation(invitation)
+//            Result.success(workDataOf(
+//                    KEY_TX_ID to cftx.txId.bytes,
+//                    KEY_USER_ID to cftx.identityId.toStringBase58(),
+//                    KEY_DYNAMIC_LINK to dynamicLink.uri.toString(),
+//                    KEY_SHORT_DYNAMIC_LINK to shortDynamicLink.shortLink.toString()
+//            ))
         } catch (ex: Exception) {
             analytics.logError(ex, "Send Invite: failed to send contact request")
             Result.failure(workDataOf(
@@ -121,45 +121,47 @@ class SendInviteWorker @AssistedInject constructor(
         org.bitcoinj.core.Context.propagate(wallet.context)
         val username = dashPayProfile.username
         val avatarUrlEncoded = URLEncoder.encode(dashPayProfile.avatarUrl, StandardCharsets.UTF_8.displayName())
-        return FirebaseDynamicLinks.getInstance()
-                .createDynamicLink().apply {
-                    link = InvitationLinkData.create(username, dashPayProfile.displayName, avatarUrlEncoded, cftx, aesKeyParameter).link
-                    domainUriPrefix = Constants.Invitation.DOMAIN_URI_PREFIX
-                    setAndroidParameters(DynamicLink.AndroidParameters.Builder().build())
-                    setIosParameters(DynamicLink.IosParameters.Builder(
-                            Constants.Invitation.IOS_APP_BUNDLEID
-                    ).apply {
-                        appStoreId = Constants.Invitation.IOS_APP_APPSTOREID
-                    }.build())
-                }
-                .setSocialMetaTagParameters(DynamicLink.SocialMetaTagParameters.Builder().apply {
-                    title = applicationContext.getString(R.string.invitation_preview_title)
-                    val nameLabel = dashPayProfile.nameLabel
-                    val nameLabelEncoded = URLEncoder.encode(nameLabel, StandardCharsets.UTF_8.displayName())
-                    imageUrl = Uri.parse("https://invitations.dashpay.io/fun/invite-preview?display-name=$nameLabelEncoded&avatar-url=$avatarUrlEncoded")
-                    description = applicationContext.getString(R.string.invitation_preview_message, nameLabel)
-                }.build())
-                .setGoogleAnalyticsParameters(DynamicLink.GoogleAnalyticsParameters.Builder(
-                        applicationContext.getString(R.string.app_name),
-                        Constants.Invitation.UTM_MEDIUM,
-                        Constants.Invitation.UTM_CAMPAIGN
-                ).build())
-                .buildDynamicLink()
+        return DynamicLink(InvitationLinkData.create(username, dashPayProfile.displayName, avatarUrlEncoded, cftx, aesKeyParameter).link)
+//        return FirebaseDynamicLinks.getInstance()
+//                .createDynamicLink().apply {
+//                    link = InvitationLinkData.create(username, dashPayProfile.displayName, avatarUrlEncoded, cftx, aesKeyParameter).link
+//                    domainUriPrefix = Constants.Invitation.DOMAIN_URI_PREFIX
+//                    setAndroidParameters(DynamicLink.AndroidParameters.Builder().build())
+//                    setIosParameters(DynamicLink.IosParameters.Builder(
+//                            Constants.Invitation.IOS_APP_BUNDLEID
+//                    ).apply {
+//                        appStoreId = Constants.Invitation.IOS_APP_APPSTOREID
+//                    }.build())
+//                }
+//                .setSocialMetaTagParameters(DynamicLink.SocialMetaTagParameters.Builder().apply {
+//                    title = applicationContext.getString(R.string.invitation_preview_title)
+//                    val nameLabel = dashPayProfile.nameLabel
+//                    val nameLabelEncoded = URLEncoder.encode(nameLabel, StandardCharsets.UTF_8.displayName())
+//                    imageUrl = Uri.parse("https://invitations.dashpay.io/fun/invite-preview?display-name=$nameLabelEncoded&avatar-url=$avatarUrlEncoded")
+//                    description = applicationContext.getString(R.string.invitation_preview_message, nameLabel)
+//                }.build())
+//                .setGoogleAnalyticsParameters(DynamicLink.GoogleAnalyticsParameters.Builder(
+//                        applicationContext.getString(R.string.app_name),
+//                        Constants.Invitation.UTM_MEDIUM,
+//                        Constants.Invitation.UTM_CAMPAIGN
+//                ).build())
+//                .buildDynamicLink()
     }
 
     private suspend fun buildShortDynamicLink(dynamicLink: DynamicLink): ShortDynamicLink {
-        return suspendCoroutine { continuation ->
-            FirebaseDynamicLinks.getInstance().createDynamicLink()
-                    .setLongLink(dynamicLink.uri)
-                    .buildShortDynamicLink()
-                    .addOnSuccessListener {
-                        log.debug("dynamic link successfully created")
-                        continuation.resume(it)
-                    }
-                    .addOnFailureListener {
-                        log.error(it.message, it)
-                        continuation.resumeWithException(it)
-                    }
-        }
+        return ShortDynamicLink(dynamicLink.link)
+//        return suspendCoroutine { continuation ->
+//            FirebaseDynamicLinks.getInstance().createDynamicLink()
+//                    .setLongLink(dynamicLink.uri)
+//                    .buildShortDynamicLink()
+//                    .addOnSuccessListener {
+//                        log.debug("dynamic link successfully created")
+//                        continuation.resume(it)
+//                    }
+//                    .addOnFailureListener {
+//                        log.error(it.message, it)
+//                        continuation.resumeWithException(it)
+//                    }
+//        }
     }
 }

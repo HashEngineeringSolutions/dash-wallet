@@ -48,12 +48,6 @@ import androidx.lifecycle.lifecycleScope
 import com.amulyakhare.textdrawable.TextDrawable
 import com.bumptech.glide.Glide
 import com.bumptech.glide.signature.ObjectKey
-import com.google.android.gms.auth.GoogleAuthException
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount
-import com.google.android.gms.common.api.ApiException
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAuthIOException
-import com.google.api.services.drive.Drive
 import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet.Constants
 import de.schildbach.wallet.data.PaymentIntent
@@ -109,7 +103,7 @@ class EditProfileActivity : LockScreenActivity() {
     private lateinit var cropImageLauncher: ActivityResultLauncher<Intent>
     private lateinit var googleDriveSignInLauncher: ActivityResultLauncher<Intent>
 
-    private var mDrive: Drive? = null
+    // private var mDrive: Drive? = null
     private var showSaveReminderDialog = false
     private var initialDisplayName = ""
     private var initialAboutMe = ""
@@ -281,12 +275,12 @@ class EditProfileActivity : LockScreenActivity() {
             }
         }
 
-        googleDriveSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                // Handle Google Drive Sign In Result
-                handleGdriveSigninResult(result.data!!)
-            }
-        }
+//        googleDriveSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+//            if (result.resultCode == Activity.RESULT_OK) {
+//                // Handle Google Drive Sign In Result
+//                handleGdriveSigninResult(result.data!!)
+//            }
+//        }
     }
 
     private fun pictureFromGravatar() {
@@ -349,11 +343,7 @@ class EditProfileActivity : LockScreenActivity() {
                     showUploadedProfilePicture(it.data)
                 }
                 Status.ERROR -> {
-                    val error = if (it.exception is GoogleAuthException || it.exception is GoogleAuthIOException) {
-                        UpdateProfileError.AUTHENTICATION
-                    } else {
-                        UpdateProfileError.UPLOAD
-                    }
+                    val error = UpdateProfileError.UPLOAD
                     showUploadErrorDialog(error)
                 }
                 else -> {
@@ -377,10 +367,10 @@ class EditProfileActivity : LockScreenActivity() {
     }
 
     private fun startUploadProcess() {
-        when (editProfileViewModel.storageService) {
-            EditProfileViewModel.ProfilePictureStorageService.IMGUR -> editProfileViewModel.uploadProfilePicture()
-            EditProfileViewModel.ProfilePictureStorageService.GOOGLE_DRIVE -> requestGDriveAccess()
-        }
+//        when (editProfileViewModel.storageService) {
+//            EditProfileViewModel.ProfilePictureStorageService.IMGUR -> editProfileViewModel.uploadProfilePicture()
+//            EditProfileViewModel.ProfilePictureStorageService.GOOGLE_DRIVE -> requestGDriveAccess()
+//        }
     }
 
     private fun showUploadingDialog() {
@@ -593,58 +583,58 @@ class EditProfileActivity : LockScreenActivity() {
 //if the signed in do we need to do it again?
     // TODO (ashikhmin): might be better to move GDrive related code to a separate service
     // and inject it here or into the viewModel
-    private fun checkGDriveAccess() {
-        object : Thread() {
-            override fun run() {
-                val signInAccount: GoogleSignInAccount? = GoogleDriveService.getSigninAccount(applicationContext)
-                if (signInAccount != null) {
-                    runOnUiThread { applyGdriveAccessGranted(signInAccount) }
-                } else {
-                    runOnUiThread { applyGdriveAccessDenied() }
-                }
-            }
-        }.start()
-    }
+//    private fun checkGDriveAccess() {
+//        object : Thread() {
+//            override fun run() {
+//                val signInAccount: GoogleSignInAccount? = GoogleDriveService.getSigninAccount(applicationContext)
+//                if (signInAccount != null) {
+//                    runOnUiThread { applyGdriveAccessGranted(signInAccount) }
+//                } else {
+//                    runOnUiThread { applyGdriveAccessDenied() }
+//                }
+//            }
+//        }.start()
+//    }
 
-    private fun requestGDriveAccess() {
-        val signInAccount = GoogleDriveService.getSigninAccount(applicationContext)
-        val googleSignInClient = GoogleSignIn.getClient(this, GoogleDriveService.getGoogleSigninOptions())
-        if (signInAccount == null) {
-            googleDriveSignInLauncher.launch(googleSignInClient.signInIntent)
-        } else {
-            googleSignInClient.revokeAccess()
-                .addOnSuccessListener { googleDriveSignInLauncher.launch(googleSignInClient.signInIntent) }
-                .addOnFailureListener { e: java.lang.Exception? ->
-                    log.error("could not revoke access to drive: ", e)
-                    applyGdriveAccessDenied()
-                }
-        }
-    }
-
-    private fun applyGdriveAccessDenied() {
-        showUploadErrorDialog(UpdateProfileError.AUTHENTICATION)
-    }
-
-    private fun handleGdriveSigninResult(data: Intent) {
-        try {
-            log.info("gdrive: attempting to sign in to a google account")
-            val account = GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException::class.java)
-                ?: throw RuntimeException("empty account")
-            applyGdriveAccessGranted(account)
-        } catch (e: Exception) {
-            log.error("Google Drive sign-in failed, could not get account: ", e)
-            applyGdriveAccessDenied()
-        }
-    }
-
-    private fun applyGdriveAccessGranted(signInAccount: GoogleSignInAccount) {
-        log.info("gdrive: access granted to ${signInAccount.email} with: ${signInAccount.grantedScopes}")
-        mDrive = GoogleDriveService.getDriveServiceFromAccount(applicationContext, signInAccount)
-        log.info("gdrive: drive $mDrive")
-
-        editProfileViewModel.googleDrive = mDrive
-        editProfileViewModel.uploadProfilePicture()
-    }
+//    private fun requestGDriveAccess() {
+//        val signInAccount = GoogleDriveService.getSigninAccount(applicationContext)
+//        val googleSignInClient = GoogleSignIn.getClient(this, GoogleDriveService.getGoogleSigninOptions())
+//        if (signInAccount == null) {
+//            googleDriveSignInLauncher.launch(googleSignInClient.signInIntent)
+//        } else {
+//            googleSignInClient.revokeAccess()
+//                .addOnSuccessListener { googleDriveSignInLauncher.launch(googleSignInClient.signInIntent) }
+//                .addOnFailureListener { e: java.lang.Exception? ->
+//                    log.error("could not revoke access to drive: ", e)
+//                    applyGdriveAccessDenied()
+//                }
+//        }
+//    }
+//
+//    private fun applyGdriveAccessDenied() {
+//        showUploadErrorDialog(UpdateProfileError.AUTHENTICATION)
+//    }
+//
+//    private fun handleGdriveSigninResult(data: Intent) {
+//        try {
+//            log.info("gdrive: attempting to sign in to a google account")
+//            val account = GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException::class.java)
+//                ?: throw RuntimeException("empty account")
+//            applyGdriveAccessGranted(account)
+//        } catch (e: Exception) {
+//            log.error("Google Drive sign-in failed, could not get account: ", e)
+//            applyGdriveAccessDenied()
+//        }
+//    }
+//
+//    private fun applyGdriveAccessGranted(signInAccount: GoogleSignInAccount) {
+//        log.info("gdrive: access granted to ${signInAccount.email} with: ${signInAccount.grantedScopes}")
+//        mDrive = GoogleDriveService.getDriveServiceFromAccount(applicationContext, signInAccount)
+//        log.info("gdrive: drive $mDrive")
+//
+//        editProfileViewModel.googleDrive = mDrive
+//        editProfileViewModel.uploadProfilePicture()
+//    }
 
     override fun finish() {
         if (showSaveReminderDialog) {
