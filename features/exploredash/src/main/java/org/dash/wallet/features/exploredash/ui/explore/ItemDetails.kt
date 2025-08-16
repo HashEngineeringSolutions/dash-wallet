@@ -20,7 +20,6 @@ package org.dash.wallet.features.exploredash.ui.explore
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View.OnClickListener
@@ -28,6 +27,7 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.net.toUri
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
@@ -43,6 +43,8 @@ import org.dash.wallet.features.exploredash.R
 import org.dash.wallet.features.exploredash.data.explore.model.*
 import org.dash.wallet.features.exploredash.databinding.ItemDetailsViewBinding
 import org.dash.wallet.features.exploredash.ui.extensions.isMetric
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.*
 
 class ItemDetails(context: Context, attrs: AttributeSet) : LinearLayout(context, attrs) {
@@ -56,10 +58,12 @@ class ItemDetails(context: Context, attrs: AttributeSet) : LinearLayout(context,
     private var onDialPhoneButtonClicked: (() -> Unit)? = null
     private var onOpenWebsiteButtonClicked: (() -> Unit)? = null
     private var onBuyGiftCardButtonClicked: (() -> Unit)? = null
-    private var onDashDirectLogOutClicked: (() -> Unit)? = null
+    private var onExploreLogOutClicked: (() -> Unit)? = null
 
     private var isLoggedIn = false
     private var isAtm = false
+
+    var log: Logger = LoggerFactory.getLogger(ItemDetails::class.java)
 
     init {
         orientation = VERTICAL
@@ -71,12 +75,11 @@ class ItemDetails(context: Context, attrs: AttributeSet) : LinearLayout(context,
         if (item is Merchant) {
             isAtm = false
             bindMerchantDetails(item)
+            refreshEmailVisibility()
         } else if (item is Atm) {
             isAtm = true
             bindAtmDetails(item)
         }
-
-        refreshEmailVisibility()
     }
 
     fun setOnSendDashClicked(listener: (Boolean) -> Unit) {
@@ -111,26 +114,26 @@ class ItemDetails(context: Context, attrs: AttributeSet) : LinearLayout(context,
         onBuyGiftCardButtonClicked = listener
     }
 
-    fun setOnDashDirectLogOutClicked(listener: () -> Unit) {
-        onDashDirectLogOutClicked = listener
+    fun setOnCTXSpendLogOutClicked(listener: () -> Unit) {
+        onExploreLogOutClicked = listener
     }
 
     @SuppressLint("SetTextI18n")
-    fun setDashDirectLogInUser(email: String?, userSignIn: Boolean) {
+    fun setCTXSpendLogInUser(email: String?, userSignIn: Boolean) {
         isLoggedIn = email?.isNotEmpty() == true && userSignIn
         refreshEmailVisibility()
         email?.let {
-            binding.loginDashDirectUser.text =
+            binding.loginExploreUser.text =
                 context.resources.getString(R.string.logged_in_as, email.maskEmail()) +
                 " " +
                 context.resources.getString(R.string.log_out)
 
-            binding.loginDashDirectUser.makeLinks(
+            binding.loginExploreUser.makeLinks(
                 Pair(
                     context.resources.getString(R.string.log_out),
                     OnClickListener {
-                        onDashDirectLogOutClicked?.invoke()
-                        binding.loginDashDirectUser.isGone = true
+                        onExploreLogOutClicked?.invoke()
+                        binding.loginExploreUser.isGone = true
                     }
                 ),
                 isUnderlineText = true
@@ -211,13 +214,15 @@ class ItemDetails(context: Context, attrs: AttributeSet) : LinearLayout(context,
                 payBtnTxt.text = context.getText(R.string.explore_pay_with_dash)
                 payBtn.setRoundedRippleBackground(R.style.PrimaryButtonTheme_Large_Blue)
                 payBtn.setOnClickListener { onSendDashClicked?.invoke(true) }
-            } else {
-                // DashDirect allows payments via API, other sources require a deeplink
-                payBtn.isVisible = merchant.source?.lowercase() == ServiceName.DashDirect ||
-                    !merchant.deeplink.isNullOrBlank()
+                payBtn.isEnabled = merchant.active ?: true
+                temporaryUnavailableText.isVisible = merchant.active == false
+            } else if (merchant.source!!.lowercase() == ServiceName.CTXSpend.lowercase()) {
+                payBtn.isVisible = true
                 payBtnTxt.text = context.getText(R.string.explore_buy_gift_card)
                 payBtn.setRoundedRippleBackground(R.style.PrimaryButtonTheme_Large_Orange)
                 payBtn.setOnClickListener { onBuyGiftCardButtonClicked?.invoke() }
+                payBtn.isEnabled = merchant.active ?: true
+                temporaryUnavailableText.isVisible = merchant.active == false
             }
 
             showAllBtn.setOnClickListener { onShowAllLocationsClicked?.invoke() }
@@ -235,6 +240,18 @@ class ItemDetails(context: Context, attrs: AttributeSet) : LinearLayout(context,
             }
 
             bindCommonDetails(merchant, isOnline)
+
+            if (merchant.savingsFraction != 0.0) {
+                binding.discountValue.isVisible = true
+                binding.discountStem.isVisible = true
+                binding.discountValue.text = root.context.getString(
+                    R.string.explore_pay_with_dash_save,
+                    merchant.savingsPercentageAsDouble
+                )
+            } else {
+                binding.discountValue.isVisible = false
+                binding.discountStem.isVisible = false
+            }
         }
     }
 
@@ -245,6 +262,7 @@ class ItemDetails(context: Context, attrs: AttributeSet) : LinearLayout(context,
             itemType.isVisible = false
             showAllBtn.isVisible = false
             backButton.isVisible = false
+            buySellContainer.isVisible = true
 
             sellBtn.setOnClickListener { onSendDashClicked?.invoke(false) }
             buyBtn.setOnClickListener { onReceiveDashClicked?.invoke() }
@@ -281,25 +299,26 @@ class ItemDetails(context: Context, attrs: AttributeSet) : LinearLayout(context,
     }
 
     private fun openMaps(item: SearchResult) {
-        val uri =
-            if (!item.googleMaps.isNullOrBlank()) {
-                item.googleMaps
-            } else {
-                context.getString(R.string.explore_maps_intent_uri, item.latitude!!, item.longitude!!)
-            }
+        val uri = if (!item.googleMaps.isNullOrBlank()) {
+            item.googleMaps
+        } else {
+            context.getString(R.string.explore_maps_intent_uri, item.latitude!!, item.longitude!!)
+        }
 
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
-        context.startActivity(intent)
+        uri?.let {
+            val intent = Intent(Intent.ACTION_VIEW, uri.toUri())
+            context.startActivity(intent)
+        }
     }
 
     private fun dialPhone(phone: String) {
-        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel: $phone"))
+        val intent = Intent(Intent.ACTION_DIAL, "tel: $phone".toUri())
         context.startActivity(intent)
     }
 
     private fun openWebsite(website: String) {
         val fixedUrl = if (!website.startsWith("http")) "https://$website" else website
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(fixedUrl))
+        val intent = Intent(Intent.ACTION_VIEW, fixedUrl.toUri())
         context.startActivity(intent)
     }
 
@@ -308,6 +327,6 @@ class ItemDetails(context: Context, attrs: AttributeSet) : LinearLayout(context,
     }
 
     private fun refreshEmailVisibility() {
-        binding.loginDashDirectUser.isVisible = isLoggedIn && !isAtm
+        binding.loginExploreUser.isVisible = isLoggedIn && !isAtm
     }
 }

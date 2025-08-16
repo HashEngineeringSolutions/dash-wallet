@@ -49,9 +49,8 @@ class RestoreWalletFromSeedViewModel @Inject constructor(
 
     private val log = LoggerFactory.getLogger(RestoreWalletFromSeedViewModel::class.java)
 
-    internal val showRestoreWalletFailureAction = SingleLiveEvent<MnemonicException>()
     internal val startActivityAction = SingleLiveEvent<Intent>()
-    private val securityGuard = SecurityGuard()
+    private val securityGuard = SecurityGuard.getInstance()
 
     private suspend fun recover(words: List<String>): String? = withContext(Dispatchers.Default) {
         try {
@@ -87,7 +86,14 @@ class RestoreWalletFromSeedViewModel @Inject constructor(
             configuration.isRestoringBackup = true
             viewModelScope.launch { dashPayConfig.disableNotifications() }
             walletApplication.resetBlockchainState()
-            startActivityAction.call(SetPinActivity.createIntent(walletApplication, R.string.set_pin_restore_wallet, onboarding = true))
+            startActivityAction.call(
+                SetPinActivity.createIntent(
+                    walletApplication,
+                    R.string.set_pin_restore_wallet,
+                    onboarding = true,
+                    onboardingPath = OnboardingPath.RestoreSeed
+                )
+            )
         }
     }
 

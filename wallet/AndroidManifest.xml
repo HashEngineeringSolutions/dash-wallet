@@ -91,6 +91,11 @@
         </activity>
 
         <activity
+            android:name="de.schildbach.wallet.ui.onboarding.SelectSecurityLevelActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/My.Theme.ChildActivity" />
+
+        <activity
             android:name="de.schildbach.wallet.ui.verify.VerifySeedActivity"
             android:screenOrientation="portrait"
             android:theme="@style/My.Theme.ChildActivity"  />
@@ -417,12 +422,6 @@
             android:name="de.schildbach.wallet.offline.AcceptBluetoothService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" /-->
-
-        <!-- WorkManager -->
-        <service
-            android:name="androidx.work.impl.foreground.SystemForegroundService"
-            android:foregroundServiceType="dataSync"
-            android:exported="false" />
 
         <!-- Prompt Google Play services to install the backported photo picker module -->
         <!-- required to support Android 7 to 12 -->

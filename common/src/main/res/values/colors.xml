@@ -112,11 +112,14 @@
     <color name="dash_blue_0.08">#14008DE4</color>
     <color name="system_red_0.1">#1AE85C4A</color>
     <color name="dash_white_0.25">#40FFFFFF</color>
+    <color name="dash_white_0.50">#80FFFFFF</color>
+    <color name="dash_white_0.10">#1AFFFFFF</color>
 
     <color name="blue_50">#F0F8FE</color>
     <color name="light_blue">#1A008DE4</color>
 
     <color name="gray_40">#F2F3F5</color>
+    <color name="gray_50">#F5F6F7</color>
     <color name="gray_100">#E1E3E6</color>
     <color name="gray_200">#C4C8CC</color>
     <color name="gray_300">#AAAEB3</color>

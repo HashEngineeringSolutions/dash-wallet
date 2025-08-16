@@ -26,10 +26,13 @@ import de.schildbach.wallet.payments.parsers.PaymentIntentParser
 import de.schildbach.wallet.security.SecurityFunctions
 import de.schildbach.wallet.security.SecurityGuard
 import de.schildbach.wallet.service.CoinJoinMode
+import de.schildbach.wallet.service.CoinJoinService
+import de.schildbach.wallet.service.MixingStatus
 import de.schildbach.wallet.service.PackageInfoProvider
 import de.schildbach.wallet.ui.dashpay.PlatformRepo
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import okhttp3.CacheControl
@@ -53,6 +56,7 @@ import org.dash.wallet.common.WalletDataProvider
 import org.dash.wallet.common.services.DirectPayException
 import org.dash.wallet.common.services.LeftoverBalanceException
 import org.dash.wallet.common.services.SendPaymentService
+import org.dash.wallet.common.services.TransactionMetadataProvider
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.services.analytics.AnalyticsService
 import org.dash.wallet.common.transactions.ByAddressCoinSelector
@@ -60,6 +64,8 @@ import org.dash.wallet.common.util.Constants
 import org.dash.wallet.common.util.call
 import org.dash.wallet.common.util.ensureSuccessful
 import org.slf4j.LoggerFactory
+import java.util.function.Consumer
+import java.util.function.Predicate
 import javax.inject.Inject
 
 class SendCoinsTaskRunner @Inject constructor(
@@ -70,22 +76,40 @@ class SendCoinsTaskRunner @Inject constructor(
     private val analyticsService: AnalyticsService,
     private val identityConfig: BlockchainIdentityConfig,
     coinJoinConfig: CoinJoinConfig,
-    private val platformRepo: PlatformRepo
+    coinJoinService: CoinJoinService,
+    private val platformRepo: PlatformRepo,
+    private val metadataProvider: TransactionMetadataProvider
 ) : SendPaymentService {
     companion object {
         private const val WALLET_EXCEPTION_MESSAGE = "this method can't be used before creating the wallet"
         private val log = LoggerFactory.getLogger(SendCoinsTaskRunner::class.java)
     }
     private var coinJoinSend = false
+    private var coinJoinMode = CoinJoinMode.NONE
+    private var coinJoinMixingState = MixingStatus.NOT_STARTED
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     init {
         coinJoinConfig
             .observeMode()
             .filterNotNull()
             .onEach { mode ->
-                coinJoinSend = mode != CoinJoinMode.NONE
+                coinJoinMode = mode
+                updateCoinJoinSend()
             }
             .launchIn(coroutineScope)
+        coinJoinService
+            .observeMixingState()
+            .onEach { mixingState ->
+                coinJoinMixingState = mixingState
+                updateCoinJoinSend()
+            }
+            .launchIn(coroutineScope)
+    }
+
+    // use CoinJoin mode of Sending if CoinJoin is not OFF [CoinJoinMode.NONE]
+    // and is not finishing [MixingStatus.FINISHING]
+    private fun updateCoinJoinSend() {
+        coinJoinSend = coinJoinMode != CoinJoinMode.NONE && coinJoinMixingState != MixingStatus.FINISHING
     }
 
     @Throws(LeftoverBalanceException::class)
@@ -94,7 +118,9 @@ class SendCoinsTaskRunner @Inject constructor(
         amount: Coin,
         coinSelector: CoinSelector?,
         emptyWallet: Boolean,
-        checkBalanceConditions: Boolean
+        checkBalanceConditions: Boolean,
+        beforeSending: Consumer<Transaction>?,
+        canSendLockedOutput: Predicate<TransactionOutput>?
     ): Transaction {
         val wallet = walletData.wallet ?: throw RuntimeException(WALLET_EXCEPTION_MESSAGE)
         Context.propagate(wallet.context)
@@ -104,8 +130,12 @@ class SendCoinsTaskRunner @Inject constructor(
             walletData.checkSendingConditions(address, amount)
         }
 
-        val sendRequest = createSendRequest(address, amount, coinSelector, emptyWallet)
-        return sendCoins(sendRequest, checkBalanceConditions = false)
+        val sendRequest = createSendRequest(address, amount, coinSelector, emptyWallet, canSendLockedOutput = canSendLockedOutput)
+        return sendCoins(
+            sendRequest,
+            checkBalanceConditions = false,
+            beforeSending = beforeSending
+        )
     }
 
     override suspend fun estimateNetworkFee(
@@ -115,7 +145,7 @@ class SendCoinsTaskRunner @Inject constructor(
     ): SendPaymentService.TransactionDetails {
         val wallet = walletData.wallet ?: throw RuntimeException(WALLET_EXCEPTION_MESSAGE)
         var sendRequest = createSendRequest(address, amount, null, emptyWallet, false)
-        val securityGuard = SecurityGuard()
+        val securityGuard = SecurityGuard.getInstance()
         val password = securityGuard.retrievePassword()
         val encryptionKey = securityFunctions.deriveKey(wallet, password)
         sendRequest.aesKey = encryptionKey
@@ -143,14 +173,14 @@ class SendCoinsTaskRunner @Inject constructor(
         return SendPaymentService.TransactionDetails(txFee?.toPlainString() ?: "", amountToSend, totalAmount)
     }
 
-    override suspend fun payWithDashUrl(dashUri: String): Transaction {
+    override suspend fun payWithDashUrl(dashUri: String, serviceName: String?): Transaction {
         return withContext(Dispatchers.IO) {
             val paymentIntent = PaymentIntentParser.parse(dashUri, false)
-            createPaymentRequest(paymentIntent)
+            createPaymentRequest(paymentIntent, serviceName)
         }
     }
 
-    private suspend fun createPaymentRequest(basePaymentIntent: PaymentIntent): Transaction {
+    private suspend fun createPaymentRequest(basePaymentIntent: PaymentIntent, serviceName: String?): Transaction {
         val requestUrl = basePaymentIntent.paymentRequestUrl
             ?: throw InvalidPaymentRequestURL("Payment request URL is null")
 
@@ -173,10 +203,10 @@ class SendCoinsTaskRunner @Inject constructor(
         }
 
         val sendRequest = createRequestFromPaymentIntent(paymentIntent)
-        return sendPayment(paymentIntent, sendRequest)
+        return sendPayment(paymentIntent, sendRequest, serviceName)
     }
 
-    fun createRequestFromPaymentIntent(paymentIntent: PaymentIntent): SendRequest {
+    private fun createRequestFromPaymentIntent(paymentIntent: PaymentIntent): SendRequest {
         val wallet = walletData.wallet ?: throw RuntimeException(WALLET_EXCEPTION_MESSAGE)
         Context.propagate(de.schildbach.wallet.Constants.CONTEXT)
         var sendRequest = createSendRequest(
@@ -202,7 +232,8 @@ class SendCoinsTaskRunner @Inject constructor(
 
     private suspend fun sendPayment(
         finalPaymentIntent: PaymentIntent,
-        sendRequest: SendRequest
+        sendRequest: SendRequest,
+        serviceName: String?
     ): Transaction {
         val finalSendRequest = createSendRequest(
             false,
@@ -212,15 +243,19 @@ class SendCoinsTaskRunner @Inject constructor(
         )
         signSendRequest(finalSendRequest)
 
-        return directPay(finalSendRequest, finalPaymentIntent)
+        return directPay(finalSendRequest, finalPaymentIntent, serviceName)
     }
 
     private suspend fun directPay(
         sendRequest: SendRequest,
-        finalPaymentIntent: PaymentIntent
+        finalPaymentIntent: PaymentIntent,
+        serviceName: String?
     ): Transaction {
         val wallet = walletData.wallet ?: throw RuntimeException(WALLET_EXCEPTION_MESSAGE)
         wallet.completeTx(sendRequest)
+        serviceName?.let {
+            metadataProvider.setTransactionService(sendRequest.tx.txId, serviceName)
+        }
         val refundAddress = wallet.freshAddress(KeyChain.KeyPurpose.REFUND)
         val payment = PaymentProtocol.createPaymentMessage(
             listOf(sendRequest.tx),
@@ -234,22 +269,61 @@ class SendCoinsTaskRunner @Inject constructor(
             ?: throw InvalidPaymentRequestURL("Final payment intent URL is null")
         log.info("trying to send tx to {}", requestUrl)
         val request = buildOkHttpDirectPayRequest(requestUrl, payment)
-        val response = Constants.HTTP_CLIENT.call(request)
-        response.ensureSuccessful()
-        log.info("tx sent via http")
+        try {
+            val response = Constants.HTTP_CLIENT.call(request)
+            response.ensureSuccessful()
+            log.info("tx sent via http")
 
-        val byteStream = response.body?.byteStream()
-            ?: throw IOException("Null response for the payment request: $requestUrl")
+            val byteStream = response.body?.byteStream()
+                ?: throw IOException("Null response for the payment request: $requestUrl")
 
-        val paymentAck = byteStream.use { Protos.PaymentACK.parseFrom(byteStream) }
-        val acknowledged = PaymentProtocol.parsePaymentAck(paymentAck).memo != "nack"
-        log.info("received {} via http", if (acknowledged) "ack" else "nack")
+            val paymentAck = byteStream.use { Protos.PaymentACK.parseFrom(byteStream) }
+            val acknowledged = PaymentProtocol.parsePaymentAck(paymentAck).memo != "nack"
+            log.info("received {} via http", if (acknowledged) "ack" else "nack")
 
-        if (!acknowledged) {
-            throw DirectPayException("Payment was not acknowledged by the server")
+            if (!acknowledged) {
+                throw DirectPayException("Payment was not acknowledged by the server")
+            }
+        } catch (e: Exception) {
+            if (e !is DirectPayException) {
+                log.warn("Payment submission failed, but transaction may have been sent: ${sendRequest.tx.txId}", e)
+                val tx = sendRequest.tx
+                val delays = listOf(0L, 1000L, 3000L, 5000L)
+
+                for (delayMs in delays) {
+                    delay(delayMs)
+                    if (isTransactionOnNetwork(tx)) {
+                        log.info("Transaction found on network despite HTTP timeout: ${tx.txId}")
+                        wallet.commitTx(tx)
+                        return tx
+                    }
+                }
+
+                log.warn("Transaction not found on network after timeout, treating as failed: ${tx.txId}")
+                // throw exception below
+            }
+            throw e
         }
 
+
         return sendCoins(sendRequest, txCompleted = true, checkBalanceConditions = true)
+    }
+
+    private fun isTransactionOnNetwork(transaction: Transaction): Boolean {
+        return try {
+            val wallet = walletData.wallet ?: return false
+            val inWalletTx = wallet.getTransaction(transaction.txId)
+            val confidence = (inWalletTx ?: transaction).confidence ?: return false
+
+            // If we have the wallet’s instance, also accept network source as proof
+            (inWalletTx != null && confidence.source == TransactionConfidence.Source.NETWORK) ||
+                    confidence.isChainLocked ||
+                    confidence.isTransactionLocked ||
+                    confidence.numBroadcastPeers() > 0
+        } catch (e: Exception) {
+            log.debug("Error checking transaction network status: ${e.message}")
+            false
+        }
     }
 
     fun createSendRequest(
@@ -299,7 +373,8 @@ class SendCoinsTaskRunner @Inject constructor(
         amount: Coin,
         coinSelector: CoinSelector? = null,
         emptyWallet: Boolean = false,
-        forceMinFee: Boolean = true
+        forceMinFee: Boolean = true,
+        canSendLockedOutput: Predicate<TransactionOutput>? = null
     ): SendRequest {
         return SendRequest.to(address, amount).apply {
             this.feePerKb = Constants.ECONOMIC_FEE
@@ -307,6 +382,7 @@ class SendCoinsTaskRunner @Inject constructor(
             this.emptyWallet = emptyWallet
 
             val selector = coinSelector ?: getCoinSelector()
+            this.canUseLockedOutputPredicate = canSendLockedOutput
             this.coinSelector = selector
 
             if (selector is ByAddressCoinSelector) {
@@ -335,7 +411,8 @@ class SendCoinsTaskRunner @Inject constructor(
     suspend fun sendCoins(
         sendRequest: SendRequest,
         txCompleted: Boolean = false,
-        checkBalanceConditions: Boolean = true
+        checkBalanceConditions: Boolean = true,
+        beforeSending: Consumer<Transaction>? = null
     ): Transaction = withContext(Dispatchers.IO) {
         val wallet = walletData.wallet ?: throw RuntimeException(WALLET_EXCEPTION_MESSAGE)
         Context.propagate(wallet.context)
@@ -355,6 +432,7 @@ class SendCoinsTaskRunner @Inject constructor(
             }
 
             val transaction = sendRequest.tx
+            beforeSending?.accept(transaction)
             log.info("send successful, transaction committed: {}", transaction.txId.toString())
             walletApplication.broadcastTransaction(transaction)
             logSendTxEvent(transaction, wallet)
@@ -408,7 +486,7 @@ class SendCoinsTaskRunner @Inject constructor(
     fun signSendRequest(sendRequest: SendRequest) {
         val wallet = walletData.wallet ?: throw RuntimeException("this method can't be used before creating the wallet")
 
-        val securityGuard = SecurityGuard()
+        val securityGuard = SecurityGuard.getInstance()
         val password = securityGuard.retrievePassword()
         val encryptionKey = securityFunctions.deriveKey(wallet, password)
 

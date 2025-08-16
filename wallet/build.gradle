@@ -6,6 +6,7 @@ plugins {
     id 'com.google.devtools.ksp'
     id 'dagger.hilt.android.plugin'
     id 'androidx.navigation.safeargs.kotlin'
+    id 'org.jetbrains.kotlin.plugin.compose'
 }
 
 ext {
@@ -32,6 +33,8 @@ dependencies {
     implementation(project(':integration-android')) {
         exclude(group: 'com.google.android', module: 'android')
     }
+    implementation 'com.google.android.libraries.identity.googleid:googleid:1.1.1'
+    implementation 'com.google.android.gms:play-services-auth:21.3.0'
 
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$desugaringLibraryVersion"
     implementation 'com.google.android.material:material:1.3.0'
@@ -78,6 +81,10 @@ dependencies {
     implementation 'com.squareup.moshi:moshi:1.11.0'
     implementation 'com.squareup.moshi:moshi-kotlin:1.11.0'
     implementation 'com.squareup.retrofit2:converter-moshi:2.6.4'
+    implementation 'org.conscrypt:conscrypt-android:2.5.2' // TLS 1.3 support for Android <= 9.0
+
+    // Credential Manager
+    implementation "androidx.credentials:credentials:1.3.0"
 
     // UI
     implementation "androidx.appcompat:appcompat:$appCompatVersion"
@@ -90,12 +97,14 @@ dependencies {
     ksp "com.github.bumptech.glide:compiler:$glideVersion"
     implementation 'com.github.MikeOrtiz:TouchImageView:3.0.6'
     implementation "io.coil-kt:coil:$coilVersion"
-    implementation(platform("androidx.compose:compose-bom:2023.03.00"))
+
+    // Compose
+    implementation(platform("androidx.compose:compose-bom:$composeBom"))
     implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.compose.material3:material3")
-    debugImplementation 'androidx.compose.ui:ui-tooling:1.0.0'
     implementation("androidx.activity:activity-compose:1.7.2")
+    implementation "androidx.lifecycle:lifecycle-runtime-compose:$lifecycleVersion"
 
     // Navigation
     implementation "androidx.navigation:navigation-fragment-ktx:$navigationVersion"
@@ -184,8 +193,8 @@ android {
         minSdkVersion 24
         targetSdkVersion 34
         // version code: MMmmppbb; MM = Major Version, mm = minor version, pp == patch version, bb = build
-        versionCode project.hasProperty('versionCode') ? project.property('versionCode') as int : 11010205
-        versionName project.hasProperty('versionName') ? project.property('versionName') : "11.1.2"
+        versionCode project.hasProperty('versionCode') ? project.property('versionCode') as int : 11030202
+        versionName project.hasProperty('versionName') ? project.property('versionName') : "11.3.2"
         multiDexEnabled true
         generatedDensities = ['hdpi', 'xhdpi']
         vectorDrawables.useSupportLibrary = true
@@ -199,8 +208,6 @@ android {
 
         buildConfigField("String", "COINBASE_CLIENT_ID", "\"COINBASE_CLIENT_ID\"")
         buildConfigField("String", "COINBASE_CLIENT_SECRET", "\"COINBASE_CLIENT_SECRET\"")
-
-        buildConfigField("String", "DASHDIRECT_CLIENT_ID", "\"DASHDIRECT_CLIENT_ID\"")
 
         def supportEmail = localProps.getProperty("SUPPORT_EMAIL")
         if (supportEmail != null) {
@@ -265,7 +272,7 @@ android {
             res.srcDirs = ["staging/res"]
         }
         devnet {
-            res.srcDirs = ["schnapps/res"]
+            res.srcDirs = ["devnet/res"]
         }
         foss {
             fossBuild = true
@@ -278,9 +285,6 @@ android {
             def coinbaseClientSecret = props.getProperty("COINBASE_CLIENT_SECRET", "\"COINBASE_CLIENT_SECRET\"")
             buildConfigField("String", "COINBASE_CLIENT_ID", coinbaseClientId)
             buildConfigField("String", "COINBASE_CLIENT_SECRET", coinbaseClientSecret)
-
-            def dashDirectClientId = props.getProperty("DASHDIRECT_CLIENT_ID", "\"DASHDIRECT_CLIENT_ID\"")
-            buildConfigField("String", "DASHDIRECT_CLIENT_ID", dashDirectClientId)
         }
         prod {
             applicationId = "hashengineering.darkcoin.wallet"
@@ -318,11 +322,6 @@ android {
             buildConfigField("String", "TOPPER_PRIVATE_KEY", topperPrivateKey)
             buildConfigField("String", "ZENLEDGER_CLIENT_ID", "\"\"")
             buildConfigField("String", "ZENLEDGER_CLIENT_SECRET", "\"\"")
-            def dashDirectClientId = props.getProperty("DASHDIRECT_CLIENT_ID")
-            if (dashDirectClientId == null) {
-                dashDirectClientId = "\"DASHDIRECT_CLIENT_ID\""
-            }
-            buildConfigField("String", "DASHDIRECT_CLIENT_ID", dashDirectClientId)
         }
         staging {
             applicationId = "org.dash.dashpay.testnet"
@@ -344,14 +343,9 @@ android {
             buildConfigField("String", "TOPPER_PRIVATE_KEY", topperPrivateKey)
             buildConfigField("String", "ZENLEDGER_CLIENT_ID", "\"\"")
             buildConfigField("String", "ZENLEDGER_CLIENT_SECRET", "\"\"")
-            def dashDirectClientId = props.getProperty("DASHDIRECT_CLIENT_ID")
-            if (dashDirectClientId == null) {
-                dashDirectClientId = "\"DASHDIRECT_CLIENT_ID\""
-            }
-            buildConfigField("String", "DASHDIRECT_CLIENT_ID", dashDirectClientId)
         }
         devnet {
-            applicationId = "org.dash.dashpay.schnapps"
+            applicationId = "org.dash.dashpay.devnet"
             def imgurClientId = props.getProperty("UPHOLD_CLIENT_ID_SANDBOX")
             def imgurClientSecret = props.getProperty("UPHOLD_CLIENT_SECRET_SANDBOX")
             if (imgurClientId == null) {
@@ -360,9 +354,14 @@ android {
             if (imgurClientSecret == null) {
                 imgurClientSecret = "\"UPHOLD_CLIENT_SECRET\""
             }
-            applicationId = "org.dash.wallet.devnet"
             buildConfigField("String", "UPHOLD_CLIENT_ID", "\"UPHOLD_CLIENT_ID\"")
             buildConfigField("String", "UPHOLD_CLIENT_SECRET", "\"UPHOLD_CLIENT_SECRET\"")
+            def topperKeyId = props.getProperty("TOPPER_KEY_ID_SANDBOX", "\"TOPPER_KEY_ID\"")
+            def topperWidgetId = props.getProperty("TOPPER_WIDGET_ID_SANDBOX", "\"TOPPER_WIDGET_ID\"")
+            def topperPrivateKey = props.getProperty("TOPPER_PRIVATE_KEY_SANDBOX", "\"TOPPER_PRIVATE_KEY\"")
+            buildConfigField("String", "TOPPER_KEY_ID", topperKeyId)
+            buildConfigField("String", "TOPPER_WIDGET_ID", topperWidgetId)
+            buildConfigField("String", "TOPPER_PRIVATE_KEY", topperPrivateKey)
             buildConfigField("String", "ZENLEDGER_CLIENT_ID", "\"\"")
             buildConfigField("String", "ZENLEDGER_CLIENT_SECRET", "\"\"")
         }
@@ -379,11 +378,18 @@ android {
     }
     packagingOptions {
         jniLibs {
-            excludes += ['lib/x86_64/freebsd/libscrypt.so', 'lib/x86_64/linux/libscrypt.so']
+            excludes += [
+                // android libscrypt.so is in dashj-x11-android
+                'lib/x86_64/freebsd/libscrypt.so',
+                'lib/x86_64/linux/libscrypt.so',
+                'lib/x86_64/darwin/libscrypt.dylib',
+                // 32-bit Platform SDK is not supported
+                'lib/x86/libsdklib.so',
+                'lib/armeabi-v7a/libsdklib.so'
+            ]
         }
         resources {
             excludes += [
-                    'lib/x86_64/darwin/libscrypt.dylib',
                     'com/google/thirdparty/publicsuffix/PublicSuffixPatterns.gwt.xml',
                     'com/google/thirdparty/publicsuffix/PublicSuffixType.gwt.xml',
                     'org/bitcoinj/crypto/mnemonic/wordlist/english.txt',

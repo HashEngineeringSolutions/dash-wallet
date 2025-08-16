@@ -34,24 +34,28 @@ interface MerchantDao : BaseDao<Merchant> {
         """
         SELECT *
         FROM merchant
-        WHERE (:merchantId = -1 OR merchantId = :merchantId)
+        WHERE (:merchantId = '' OR merchantId = :merchantId)
             AND (:source = '' OR source = :source COLLATE NOCASE)
             AND (:territoryFilter = '' OR territory = :territoryFilter)
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND type IN (:types)
+            AND redeemType <> 'url'
         ORDER BY
-            CASE WHEN :sortByDistance = 1 THEN (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) END ASC,
-            CASE WHEN :sortByDistance = 0 THEN merchant.name END COLLATE NOCASE ASC
+            CASE WHEN :sortOption = 0 THEN merchant.name END COLLATE NOCASE ASC,
+            CASE WHEN :sortOption = 1 THEN (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) END ASC,
+            CASE WHEN :sortOption = 2 THEN savingsPercentage END DESC
         LIMIT :limit
     """
     )
     suspend fun getByTerritory(
-        merchantId: Long,
+        merchantId: String,
         source: String,
         territoryFilter: String,
         types: List<String>,
         paymentMethod: String,
-        sortByDistance: Boolean,
+        denomType: String,
+        sortOption: Int,
         anchorLat: Double,
         anchorLng: Double,
         limit: Int
@@ -64,25 +68,29 @@ interface MerchantDao : BaseDao<Merchant> {
         FROM merchant 
         WHERE type IN (:types)
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND latitude < :northLat
             AND latitude > :southLat
             AND longitude < :eastLng
             AND longitude > :westLng
+            AND redeemType <> 'url'
         GROUP BY source, merchantId
         HAVING (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) = MIN((latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng))
         ORDER BY
-            CASE WHEN :sortByDistance = 1 THEN (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) END ASC, 
-            CASE WHEN :sortByDistance = 0 THEN name END COLLATE NOCASE ASC
+            CASE WHEN :sortOption = 0 THEN merchant.name END COLLATE NOCASE ASC,
+            CASE WHEN :sortOption = 1 THEN (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) END ASC,
+            CASE WHEN :sortOption = 2 THEN savingsPercentage END DESC
     """
     )
     fun pagingGetByCoordinates(
         types: List<String>,
         paymentMethod: String,
+        denomType: String,
         northLat: Double,
         eastLng: Double,
         southLat: Double,
         westLng: Double,
-        sortByDistance: Boolean,
+        sortOption: Int,
         anchorLat: Double,
         anchorLng: Double
     ): PagingSource<Int, MerchantInfo>
@@ -93,15 +101,18 @@ interface MerchantDao : BaseDao<Merchant> {
         FROM merchant
         WHERE type IN (:types)
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND latitude < :northLat
             AND latitude > :southLat
             AND longitude < :eastLng
             AND longitude > :westLng
+            AND redeemType <> 'url'
     """
     )
     suspend fun getByCoordinatesResultCount(
         types: List<String>,
         paymentMethod: String,
+        denomType: String,
         northLat: Double,
         eastLng: Double,
         southLat: Double,
@@ -116,27 +127,31 @@ interface MerchantDao : BaseDao<Merchant> {
         JOIN merchant_fts ON merchant.id = merchant_fts.docid
         WHERE merchant_fts MATCH :query
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND type IN (:types)
             AND latitude < :northLat
             AND latitude > :southLat
             AND longitude < :eastLng
             AND longitude > :westLng
+            AND redeemType <> 'url'
         GROUP BY source, merchantId
         HAVING (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) = MIN((latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng))
         ORDER BY
-            CASE WHEN :sortByDistance = 1 THEN (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) END ASC, 
-            CASE WHEN :sortByDistance = 0 THEN merchant.name END COLLATE NOCASE ASC
+            CASE WHEN :sortOption = 0 THEN merchant.name END COLLATE NOCASE ASC,
+            CASE WHEN :sortOption = 1 THEN (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) END ASC,
+            CASE WHEN :sortOption = 2 THEN savingsPercentage END DESC
     """
     )
     fun pagingSearchByCoordinates(
         query: String,
         types: List<String>,
         paymentMethod: String,
+        denomType: String,
         northLat: Double,
         eastLng: Double,
         southLat: Double,
         westLng: Double,
-        sortByDistance: Boolean,
+        sortOption: Int,
         anchorLat: Double,
         anchorLng: Double
     ): PagingSource<Int, MerchantInfo>
@@ -148,17 +163,20 @@ interface MerchantDao : BaseDao<Merchant> {
         JOIN merchant_fts ON merchant.id = merchant_fts.docid
         WHERE merchant_fts MATCH :query
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND type IN (:types)
             AND latitude < :northLat
             AND latitude > :southLat
             AND longitude < :eastLng
             AND longitude > :westLng
+            AND redeemType <> 'url'
     """
     )
     suspend fun searchByCoordinatesResultCount(
         query: String,
         types: List<String>,
         paymentMethod: String,
+        denomType: String,
         northLat: Double,
         eastLng: Double,
         southLat: Double,
@@ -172,7 +190,9 @@ interface MerchantDao : BaseDao<Merchant> {
         FROM merchant 
         WHERE (:territoryFilter = '' OR territory = :territoryFilter)
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND type IN (:types)
+            AND redeemType <> 'url'
         GROUP BY source, merchantId
         HAVING (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) = MIN((latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng))
         ORDER BY 
@@ -181,15 +201,17 @@ interface MerchantDao : BaseDao<Merchant> {
                 WHEN "both"     THEN 1
                 WHEN "physical" THEN :physicalOrder
             END,
-            CASE WHEN :sortByDistance = 1 THEN (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) END ASC,
-            CASE WHEN :sortByDistance = 0 THEN merchant.name END COLLATE NOCASE ASC
+            CASE WHEN :sortOption = 0 THEN merchant.name END COLLATE NOCASE ASC,
+            CASE WHEN :sortOption = 1 THEN (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) END ASC,
+            CASE WHEN :sortOption = 2 THEN savingsPercentage END DESC
     """
     )
     fun pagingGetByTerritory(
         territoryFilter: String,
         types: List<String>,
         paymentMethod: String,
-        sortByDistance: Boolean,
+        denomType: String,
+        sortOption: Int,
         anchorLat: Double,
         anchorLng: Double,
         onlineOrder: Int,
@@ -202,10 +224,17 @@ interface MerchantDao : BaseDao<Merchant> {
         FROM merchant 
         WHERE (:territoryFilter = '' OR territory = :territoryFilter)
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND type IN (:types)
+            AND redeemType <> 'url'
     """
     )
-    suspend fun getByTerritoryResultCount(territoryFilter: String, types: List<String>, paymentMethod: String): Int
+    suspend fun getByTerritoryResultCount(
+        territoryFilter: String,
+        types: List<String>,
+        paymentMethod: String,
+        denomType: String
+    ): Int
 
     @Transaction
     @Query(
@@ -216,7 +245,9 @@ interface MerchantDao : BaseDao<Merchant> {
         WHERE merchant_fts MATCH :query
             AND (:territoryFilter = '' OR territory = :territoryFilter)
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND type IN (:types)
+            AND redeemType <> 'url'
         GROUP BY source, merchantId
         HAVING (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) = MIN((latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng))
         ORDER BY
@@ -225,8 +256,9 @@ interface MerchantDao : BaseDao<Merchant> {
                 WHEN "both"     THEN 1
                 WHEN "physical" THEN :physicalOrder
             END,
-            CASE WHEN :sortByDistance = 1 THEN (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) END ASC,
-            CASE WHEN :sortByDistance = 0 THEN merchant.name END COLLATE NOCASE ASC
+            CASE WHEN :sortOption = 0 THEN merchant.name END COLLATE NOCASE ASC,
+            CASE WHEN :sortOption = 1 THEN (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) END ASC,
+            CASE WHEN :sortOption = 2 THEN savingsPercentage END DESC
     """
     )
     fun pagingSearchByTerritory(
@@ -234,7 +266,8 @@ interface MerchantDao : BaseDao<Merchant> {
         territoryFilter: String,
         types: List<String>,
         paymentMethod: String,
-        sortByDistance: Boolean,
+        denomType: String,
+        sortOption: Int,
         anchorLat: Double,
         anchorLng: Double,
         onlineOrder: Int,
@@ -249,14 +282,17 @@ interface MerchantDao : BaseDao<Merchant> {
         WHERE merchant_fts MATCH :query
             AND (:territoryFilter = '' OR territory = :territoryFilter)
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND type IN (:types)
+            AND redeemType <> 'url'
     """
     )
     suspend fun searchByTerritoryResultCount(
         query: String,
         territoryFilter: String,
         types: List<String>,
-        paymentMethod: String
+        paymentMethod: String,
+        denomType: String
     ): Int
 
     @Transaction
@@ -265,15 +301,21 @@ interface MerchantDao : BaseDao<Merchant> {
         SELECT *, COUNT(*) AS physical_amount
         FROM merchant
         WHERE (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND type IN (:types)
+            AND redeemType <> 'url'
         GROUP BY source, merchantId
         HAVING (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) = MIN((latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng))
-        ORDER BY name COLLATE NOCASE ASC
+        ORDER BY
+            CASE WHEN :sortByDiscount = 0 THEN name END COLLATE NOCASE ASC,
+            CASE WHEN :sortByDiscount = 1 THEN savingsPercentage END DESC
     """
     )
     fun pagingGetGrouped(
         types: List<String>,
         paymentMethod: String,
+        denomType: String,
+        sortByDiscount: Boolean,
         anchorLat: Double,
         anchorLng: Double
     ): PagingSource<Int, MerchantInfo>
@@ -283,10 +325,12 @@ interface MerchantDao : BaseDao<Merchant> {
         SELECT COUNT(DISTINCT merchantId)
         FROM merchant
         WHERE (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND type IN (:types)
+            AND redeemType <> 'url'
     """
     )
-    suspend fun getGroupedResultCount(types: List<String>, paymentMethod: String): Int
+    suspend fun getGroupedResultCount(types: List<String>, paymentMethod: String, denomType: String): Int
 
     @Transaction
     @Query(
@@ -296,16 +340,22 @@ interface MerchantDao : BaseDao<Merchant> {
         JOIN merchant_fts ON merchant.id = merchant_fts.docid
         WHERE merchant_fts MATCH :query
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND type IN (:types)
+            AND redeemType <> 'url'
         GROUP BY source, merchantId
         HAVING (latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng) = MIN((latitude - :anchorLat)*(latitude - :anchorLat) + (longitude - :anchorLng)*(longitude - :anchorLng))
-        ORDER BY name COLLATE NOCASE ASC
+        ORDER BY
+            CASE WHEN :sortByDiscount = 0 THEN merchant.name END COLLATE NOCASE ASC,
+            CASE WHEN :sortByDiscount = 1 THEN savingsPercentage END DESC
     """
     )
     fun pagingSearchGrouped(
         query: String,
         types: List<String>,
         paymentMethod: String,
+        denomType: String,
+        sortByDiscount: Boolean,
         anchorLat: Double,
         anchorLng: Double
     ): PagingSource<Int, MerchantInfo>
@@ -317,31 +367,41 @@ interface MerchantDao : BaseDao<Merchant> {
         JOIN merchant_fts ON merchant.id = merchant_fts.docid
         WHERE merchant_fts MATCH :query
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND type IN (:types)
+            AND redeemType <> 'url'
     """
     )
-    suspend fun searchGroupedResultCount(query: String, types: List<String>, paymentMethod: String): Int
+    suspend fun searchGroupedResultCount(
+        query: String,
+        types: List<String>,
+        paymentMethod: String,
+        denomType: String
+    ): Int
 
     @Query(
         """
         SELECT * 
         FROM merchant
-        WHERE (:merchantId = -1 OR merchantId = :merchantId)
+        WHERE (:merchantId = '' OR merchantId = :merchantId)
             AND (:source = '' OR source = :source COLLATE NOCASE)
             AND (:excludeType = '' OR type != :excludeType)
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND latitude < :northLat
             AND latitude > :southLat
             AND longitude < :eastLng
             AND longitude > :westLng
+            AND redeemType <> 'url'
         LIMIT :limit
     """
     )
     fun observe(
-        merchantId: Long,
+        merchantId: String,
         source: String,
         excludeType: String,
         paymentMethod: String,
+        denomType: String,
         northLat: Double,
         eastLng: Double,
         southLat: Double,
@@ -357,16 +417,19 @@ interface MerchantDao : BaseDao<Merchant> {
         WHERE merchant_fts MATCH :query
             AND (:excludeType = '' OR type != :excludeType)
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND latitude < :northLat
             AND latitude > :southLat
             AND longitude < :eastLng
             AND longitude > :westLng
+            AND redeemType <> 'url'
     """
     )
     fun observeSearchResults(
         query: String,
         excludeType: String,
         paymentMethod: String,
+        denomType: String,
         northLat: Double,
         eastLng: Double,
         southLat: Double,
@@ -377,20 +440,23 @@ interface MerchantDao : BaseDao<Merchant> {
         """
         SELECT * 
         FROM merchant 
-        WHERE (:merchantId = -1 OR merchantId = :merchantId)
+        WHERE (:merchantId = '' OR merchantId = :merchantId)
             AND (:source = '' OR source = :source COLLATE NOCASE) 
             AND (:territoryFilter = '' OR territory = :territoryFilter)
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND (:excludeType = '' OR type != :excludeType)
+            AND redeemType <> 'url'
         LIMIT :limit
     """
     )
     fun observeByTerritory(
-        merchantId: Long,
+        merchantId: String,
         source: String,
         territoryFilter: String,
         excludeType: String,
         paymentMethod: String,
+        denomType: String,
         limit: Int
     ): Flow<List<Merchant>>
 
@@ -402,17 +468,20 @@ interface MerchantDao : BaseDao<Merchant> {
         WHERE merchant_fts MATCH :query
             AND (:territoryFilter = '' OR territory = :territoryFilter)
             AND (:paymentMethod = '' OR paymentMethod = :paymentMethod)
+            AND (:denomType = '' OR paymentMethod = 'dash' OR denominationsType = :denomType)
             AND (:excludeType = '' OR type != :excludeType)
+            AND redeemType <> 'url'
     """
     )
     fun searchByTerritory(
         query: String,
         territoryFilter: String,
         excludeType: String,
-        paymentMethod: String
+        paymentMethod: String,
+        denomType: String
     ): Flow<List<Merchant>>
 
-    @Query("SELECT DISTINCT territory FROM merchant")
+    @Query("SELECT DISTINCT territory FROM merchant WHERE territory IS NOT NULL")
     suspend fun getTerritories(): List<String>
 
     @Query("DELETE FROM merchant")
@@ -420,4 +489,7 @@ interface MerchantDao : BaseDao<Merchant> {
 
     @Query("SELECT count(*) FROM merchant")
     suspend fun getCount(): Int
+
+    @Query("SELECT * FROM merchant where merchantId = :merchantId")
+    suspend fun getMerchantById(merchantId: String): Merchant?
 }

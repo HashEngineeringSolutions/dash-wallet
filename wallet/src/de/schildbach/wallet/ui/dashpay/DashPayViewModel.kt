@@ -25,13 +25,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import de.schildbach.wallet.WalletApplication
 import de.schildbach.wallet.data.CreditBalanceInfo
 import de.schildbach.wallet.data.UsernameSearch
+import de.schildbach.wallet.data.UsernameSearchResult
 import de.schildbach.wallet.data.UsernameSortOrderBy
 import de.schildbach.wallet.database.dao.BlockchainStateDao
 import de.schildbach.wallet.database.dao.DashPayContactRequestDao
 import de.schildbach.wallet.database.dao.DashPayProfileDao
 import de.schildbach.wallet.database.dao.InvitationsDao
 import de.schildbach.wallet.database.entity.BlockchainIdentityConfig
-import de.schildbach.wallet.database.entity.BlockchainIdentityConfig.Companion.IDENTITY_ID
 import de.schildbach.wallet.database.entity.DashPayContactRequest
 import de.schildbach.wallet.livedata.Resource
 import de.schildbach.wallet.service.platform.PlatformBroadcastService
@@ -42,16 +42,14 @@ import de.schildbach.wallet.ui.username.CreateUsernameArgs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.bouncycastle.crypto.params.KeyParameter
-import org.dash.wallet.common.data.WalletUIConfig
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.services.analytics.AnalyticsService
 import org.dash.wallet.common.services.analytics.AnalyticsTimer
@@ -83,13 +81,9 @@ open class DashPayViewModel @Inject constructor(
     private val contactsLiveData = MutableLiveData<UsernameSearch>()
     private val contactUserIdLiveData = MutableLiveData<String?>()
 
-    val contactsUpdatedLiveData = ContactsUpdatedLiveData(walletApplication, platformSyncService)
-    val frequentContactsLiveData = FrequentContactsLiveData(
-        walletApplication,
-        platformRepo,
-        platformSyncService,
-        viewModelScope
-    )
+    val contactsUpdatedLiveData = ContactsUpdatedLiveData(platformSyncService)
+    val _frequentContacts = MutableStateFlow<List<UsernameSearchResult>>(listOf())
+    val frequentContacts = _frequentContacts.asStateFlow()
     val blockchainStateData = blockchainState.observeState()
 
     private val contactRequestLiveData = MutableLiveData<Pair<String, KeyParameter?>>()
@@ -106,6 +100,18 @@ open class DashPayViewModel @Inject constructor(
     val recentlyModifiedContactsLiveData = MutableLiveData<HashSet<String>>()
 
     private var timerUsernameSearch: AnalyticsTimer? = null
+
+    init {
+        dashPayConfig.observe(DashPayConfig.FREQUENT_CONTACTS)
+            .filterNotNull()
+            .onEach { frequentContacts ->
+                _frequentContacts.value = frequentContacts.mapNotNull { contactIdentifier ->
+                    val profile = platformRepo.loadProfileByUserId(contactIdentifier)
+                    platformRepo.loadContactRequestsAndReturn(profile)
+                }
+            }
+            .launchIn(viewModelScope)
+    }
 
     suspend fun isDashPayInfoShown(): Boolean =
         dashPayConfig.get(DashPayConfig.HAS_DASH_PAY_INFO_SCREEN_BEEN_SHOWN) ?: false
@@ -125,6 +131,7 @@ open class DashPayViewModel @Inject constructor(
             )
         )
     }
+
     val getUsernameLiveData = usernameLiveData.switchMap { username ->
         getUsernameJob.cancel()
         getUsernameJob = Job()
@@ -283,10 +290,6 @@ open class DashPayViewModel @Inject constructor(
         } catch (ex: Exception) {
             emit(Resource.error(ex, null))
         }
-    }
-
-    fun getFrequentContacts() {
-        frequentContactsLiveData.getFrequentContacts()
     }
 
     fun logEvent(event: String) {
