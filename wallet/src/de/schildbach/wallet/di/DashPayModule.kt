@@ -34,7 +34,6 @@ import de.schildbach.wallet.service.platform.PlatformSyncService
 import de.schildbach.wallet.service.platform.PlatformSynchronizationService
 import de.schildbach.wallet.service.platform.TopUpRepository
 import de.schildbach.wallet.service.platform.TopUpRepositoryImpl
-import de.schildbach.wallet.ui.dashpay.utils.GoogleDriveService
 import de.schildbach.wallet.ui.dashpay.utils.ImgurService
 import org.dash.wallet.common.Configuration
 import org.dash.wallet.common.services.analytics.AnalyticsService
@@ -44,11 +43,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class DashPayModule {
     companion object {
-        @Provides
-        fun provideGoogleDrive(
-            @ApplicationContext context: Context
-        ): GoogleDriveService = GoogleDriveService(context)
-
         @Provides
         fun provideImgurService(
             analyticsService: AnalyticsService,

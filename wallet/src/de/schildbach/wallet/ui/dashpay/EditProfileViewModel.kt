@@ -33,7 +33,6 @@ import de.schildbach.wallet.database.entity.BlockchainIdentityConfig
 import de.schildbach.wallet.database.entity.DashPayProfile
 import de.schildbach.wallet.livedata.Resource
 import de.schildbach.wallet.ui.dashpay.utils.DashPayConfig
-import de.schildbach.wallet.ui.dashpay.utils.GoogleDriveService
 import de.schildbach.wallet.ui.dashpay.utils.ImgurService
 import de.schildbach.wallet.ui.dashpay.work.UpdateProfileOperation
 import de.schildbach.wallet.ui.dashpay.work.UpdateProfileStatusLiveData
@@ -63,7 +62,6 @@ class EditProfileViewModel @Inject constructor(
     dashPayProfileDao: DashPayProfileDao,
     val platformRepo: PlatformRepo,
     private val imgurService: ImgurService,
-    private val googleDriveService: GoogleDriveService,
     private val dashPayConfig: DashPayConfig
 ) : BaseProfileViewModel(blockchainIdentityDataDao, dashPayProfileDao) {
     enum class ProfilePictureStorageService {
@@ -189,12 +187,13 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-    fun uploadProfilePicture(credential: HttpRequestInitializer? = null) {
+    fun uploadProfilePicture() {
         when (storageService) {
 //            ProfilePictureStorageService.IMGUR -> uploadToImgur()
 //            ProfilePictureStorageService.GOOGLE_DRIVE -> {
 //
 //            }
+            else -> {}
         }
     }
 
@@ -251,9 +250,5 @@ class EditProfileViewModel @Inject constructor(
 
     suspend fun hasEnoughCredits(): CreditBalanceInfo {
         return platformRepo.getIdentityBalance()
-    }
-
-    fun getGoogleDriveAuthRequest(): AuthorizationRequest {
-        return googleDriveService.getAuthRequest()
     }
 }

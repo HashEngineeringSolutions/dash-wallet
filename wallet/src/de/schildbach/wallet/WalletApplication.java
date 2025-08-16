@@ -50,8 +50,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.multidex.MultiDexApplication;
 import androidx.work.WorkManager;
 
-import com.google.api.client.util.Lists;
 import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;

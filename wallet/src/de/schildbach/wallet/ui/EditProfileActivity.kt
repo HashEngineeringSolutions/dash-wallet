@@ -51,7 +51,6 @@ import de.schildbach.wallet.Constants
 import de.schildbach.wallet.database.entity.DashPayProfile
 import de.schildbach.wallet.livedata.Status
 import de.schildbach.wallet.ui.dashpay.*
-import de.schildbach.wallet.ui.dashpay.utils.GoogleDriveService
 import de.schildbach.wallet.ui.dashpay.utils.display
 import de.schildbach.wallet.ui.dashpay.work.UpdateProfileError
 import de.schildbach.wallet.ui.send.SendCoinsActivity
@@ -308,6 +307,7 @@ class EditProfileActivity : LockScreenActivity() {
 //            EditProfileViewModel.ProfilePictureStorageService.IMGUR -> {
 //                editProfileViewModel.uploadProfilePicture()
 //            }
+            else -> {}
         }
     }
 

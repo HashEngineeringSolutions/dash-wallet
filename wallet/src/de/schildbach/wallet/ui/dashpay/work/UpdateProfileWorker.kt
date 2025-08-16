@@ -28,7 +28,6 @@ import de.schildbach.wallet.database.entity.DashPayProfile
 import de.schildbach.wallet.ui.dashpay.EditProfileViewModel
 import de.schildbach.wallet.ui.dashpay.PlatformRepo
 import de.schildbach.wallet.ui.dashpay.utils.DashPayConfig
-import de.schildbach.wallet.ui.dashpay.utils.GoogleDriveService
 import de.schildbach.wallet.security.SecurityGuard
 import de.schildbach.wallet.service.platform.PlatformBroadcastService
 import de.schildbach.wallet.service.work.BaseWorker
@@ -48,7 +47,6 @@ class UpdateProfileWorker @AssistedInject constructor(
     val analytics: AnalyticsService,
     val platformRepo: PlatformRepo,
     val platformBroadcastService: PlatformBroadcastService,
-    val googleDriveService: GoogleDriveService,
     val dashPayConfig: DashPayConfig)
     : BaseWorker(context, parameters) {
 
