@@ -19,15 +19,12 @@ package org.dash.wallet.features.exploredash.ui.explore
 
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 
 @ExperimentalCoroutinesApi
 @AndroidEntryPoint
-open class SupportMapFragment : Fragment() {
-
-}
+open class SupportMapFragment : Fragment()
 
 @AndroidEntryPoint
 class ExploreMapFragment : SupportMapFragment() {

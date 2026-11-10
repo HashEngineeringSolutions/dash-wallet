@@ -34,9 +34,9 @@ import org.dash.wallet.features.exploredash.services.UserLocationStateInt
 import org.dash.wallet.features.exploredash.utils.CTXSpendConfig
 import java.io.File
 
-class FireplaceAuth {}
-class FireplaceStorage {}
-class FireplaceUser {}
+class FireplaceAuth
+class FireplaceStorage
+class FireplaceUser
 
 class StorageResult {
     val bytesTransferred = 0
