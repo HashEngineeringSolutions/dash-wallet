@@ -23,19 +23,15 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 import net.lingala.zip4j.ZipFile
-import org.dash.wallet.common.util.Constants
-import org.dash.wallet.features.exploredash.utils.ExploreConfig
 import org.dash.wallet.features.exploredash.di.FireplaceAuth
 import org.dash.wallet.features.exploredash.di.FireplaceStorage
 import org.dash.wallet.features.exploredash.di.FireplaceUser
 import org.dash.wallet.features.exploredash.di.StorageReference
+import org.dash.wallet.features.exploredash.utils.ExploreConfig
 import org.slf4j.LoggerFactory
 import java.io.*
 import java.lang.System.currentTimeMillis
 import javax.inject.Inject
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.math.max
 
 interface ExploreRepository {
     suspend fun getRemoteTimestamp(): Long
@@ -196,7 +192,7 @@ class GCExploreDatabase @Inject constructor(
         configScope.launch {
             val prefs = exploreConfig.exploreDatabasePrefs.first()
             exploreConfig.saveExploreDatabasePrefs(
-                prefs.copy(localDbTimestamp = max(prefs.localDbTimestamp, updateTimestampCache))
+                prefs.copy(localDbTimestamp = updateTimestampCache)
             )
         }
     }

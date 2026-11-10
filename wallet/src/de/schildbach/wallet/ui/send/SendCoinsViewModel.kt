@@ -19,7 +19,6 @@ package de.schildbach.wallet.ui.send
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.google.common.base.Preconditions.checkState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.schildbach.wallet.Constants
 import de.schildbach.wallet.WalletApplication
@@ -33,22 +32,25 @@ import de.schildbach.wallet.payments.MaxOutputAmountCoinJoinCoinSelector
 import de.schildbach.wallet.payments.MaxOutputAmountCoinSelector
 import de.schildbach.wallet.payments.SendCoinsTaskRunner
 import de.schildbach.wallet.security.BiometricHelper
-import de.schildbach.wallet.service.CoinJoinMode
+import de.schildbach.wallet.service.CoinJoinService
 import de.schildbach.wallet.ui.dashpay.PlatformRepo
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.withContext
 import org.bitcoinj.core.Address
 import org.bitcoinj.core.Coin
+import org.bitcoinj.core.Context
 import org.bitcoinj.core.ECKey
 import org.bitcoinj.core.InsufficientMoneyException
 import org.bitcoinj.core.Transaction
-import org.bitcoinj.crypto.IKey
 import org.bitcoinj.utils.ExchangeRate
 import org.bitcoinj.wallet.AuthenticationKeyChain
 import org.bitcoinj.wallet.SendRequest
@@ -78,7 +80,8 @@ class SendCoinsViewModel @Inject constructor(
     private val notificationService: NotificationService,
     private val platformRepo: PlatformRepo,
     private val dashPayContactRequestDao: DashPayContactRequestDao,
-    coinJoinConfig: CoinJoinConfig
+    coinJoinConfig: CoinJoinConfig,
+    coinJoinService: CoinJoinService
 ) : SendCoinsBaseViewModel(walletDataProvider, configuration) {
     companion object {
         private val log = LoggerFactory.getLogger(SendCoinsViewModel::class.java)
@@ -90,6 +93,8 @@ class SendCoinsViewModel @Inject constructor(
         SENDING, SENT, FAILED // sending states
     }
 
+    var isQuickSend: Boolean = false
+
     private val _state = MutableLiveData(State.INPUT)
     val state: LiveData<State>
         get() = _state
@@ -98,11 +103,9 @@ class SendCoinsViewModel @Inject constructor(
     val maxOutputAmount: LiveData<Coin>
         get() = _maxOutputAmount
 
+    private val _currentAmount = MutableStateFlow(Coin.ZERO)
     var currentAmount: Coin = Coin.ZERO
-        set(value) {
-            field = value
-            executeDryrun(value)
-        }
+        private set
 
     var dryrunSendRequest: SendRequest? = null
         private set
@@ -131,9 +134,9 @@ class SendCoinsViewModel @Inject constructor(
     val contactData: LiveData<UsernameSearchResult>
         get() = _contactData
 
-    private var _coinJoinMode = MutableStateFlow(CoinJoinMode.NONE)
-    val coinJoinMode: Flow<CoinJoinMode>
-        get() = _coinJoinMode
+    private var _coinJoinActive = MutableStateFlow(false)
+    val coinJoinActive: Flow<Boolean>
+        get() = _coinJoinActive
     /** the resulting transaction is an asset lock transaction (default = false) */
     var isAssetLock = false
 
@@ -145,10 +148,10 @@ class SendCoinsViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
 
-        coinJoinConfig.observeMode()
-            .map { mode ->
-                _coinJoinMode.value = mode
-                if (mode == CoinJoinMode.NONE) {
+        coinJoinService.observeMixing()
+            .map { isMixing ->
+                _coinJoinActive.value = isMixing
+                if (!isMixing) {
                     MaxOutputAmountCoinSelector()
                 } else {
                     MaxOutputAmountCoinJoinCoinSelector(wallet)
@@ -160,6 +163,19 @@ class SendCoinsViewModel @Inject constructor(
             .distinctUntilChanged()
             .onEach(_maxOutputAmount::postValue)
             .launchIn(viewModelScope)
+
+        _currentAmount
+            .debounce(150)
+            .onEach { amount ->
+                withContext(Dispatchers.IO) {
+                    executeDryrun(amount)
+                }
+            }
+            .launchIn(viewModelScope)
+
+        _currentAmount.onEach { amount ->
+            currentAmount = amount
+        }.launchIn(viewModelScope)
 
         walletApplication.startBlockchainService(false)
     }
@@ -173,12 +189,16 @@ class SendCoinsViewModel @Inject constructor(
         }
 
         log.info("got {}", paymentIntent)
-        val finalIntent = checkIdentity(paymentIntent)
+        val finalIntent = withContext(Dispatchers.IO) {
+            checkIdentity(paymentIntent)
+        }
 
         log.info("proceeding with {}", finalIntent)
         super.initPaymentIntent(finalIntent)
         _state.value = State.INPUT
-        executeDryrun(currentAmount)
+        withContext(Dispatchers.IO) {
+            executeDryrun(currentAmount)
+        }
     }
 
     fun everythingPlausible(): Boolean {
@@ -275,11 +295,11 @@ class SendCoinsViewModel @Inject constructor(
         return currentAmount.isLessThan(thresholdAmount)
     }
 
-    fun getPendingBalance(): Coin {
+    suspend fun getPendingBalance(): Coin = withContext(Dispatchers.IO) {
         val estimated = wallet.getBalance(Wallet.BalanceType.ESTIMATED)
         val available = wallet.getBalance(Wallet.BalanceType.AVAILABLE)
 
-        return estimated.subtract(available)
+        estimated.subtract(available)
     }
 
     fun shouldAdjustAmount(): Boolean {
@@ -296,12 +316,46 @@ class SendCoinsViewModel @Inject constructor(
         _state.value = State.INPUT
     }
 
-    fun logSentEvent(dashToFiat: Boolean) {
-        if (dashToFiat) {
-            analytics.logEvent(AnalyticsConstants.SendReceive.ENTER_AMOUNT_DASH, mapOf())
+    fun logSendSuccess(dashToFiat: Boolean, source: String) {
+        if (isQuickSend) {
+            analytics.logEvent(AnalyticsConstants.LockScreen.SCAN_TO_SEND_SUCCESS, mapOf())
+        } else if (source == "explore") {
+            analytics.logEvent(AnalyticsConstants.Explore.PAY_WITH_DASH_SUCCESS, mapOf())
         } else {
-            analytics.logEvent(AnalyticsConstants.SendReceive.ENTER_AMOUNT_FIAT, mapOf())
+            analytics.logEvent(if (contactData.value == null) {
+                AnalyticsConstants.SendReceive.SEND_SUCCESS
+            } else {
+                AnalyticsConstants.SendReceive.SEND_USERNAME_SUCCESS
+            }, mapOf())
+
+            analytics.logEvent(if (dashToFiat) {
+                AnalyticsConstants.SendReceive.ENTER_AMOUNT_DASH
+            } else {
+                AnalyticsConstants.SendReceive.ENTER_AMOUNT_FIAT
+            }, mapOf())
         }
+    }
+
+    fun logSendError(source: String) {
+         if (source == "explore") {
+            analytics.logEvent(AnalyticsConstants.Explore.PAY_WITH_DASH_ERROR, mapOf())
+        } else {
+             analytics.logEvent(
+                 if (contactData.value == null) {
+                     AnalyticsConstants.SendReceive.SEND_ERROR
+                 } else {
+                     AnalyticsConstants.SendReceive.SEND_USERNAME_ERROR
+                 }, mapOf()
+             )
+         }
+    }
+
+    fun logSend() {
+        analytics.logEvent(if (isQuickSend) {
+            AnalyticsConstants.LockScreen.SCAN_TO_SEND_SEND
+        } else {
+            AnalyticsConstants.SendReceive.ENTER_AMOUNT_SEND
+        }, mapOf())
     }
 
     fun logEvent(eventName: String) {
@@ -337,12 +391,16 @@ class SendCoinsViewModel @Inject constructor(
         }
     }
 
+    fun setAmount(amount: Coin) {
+        _currentAmount.value = amount
+    }
+
     private fun executeDryrun(amount: Coin) {
         dryrunSendRequest = null
         dryRunException = null
 
         if (state.value != State.INPUT || amount == Coin.ZERO) {
-            _dryRunSuccessful.value = false
+            _dryRunSuccessful.postValue(false)
             return
         }
 
@@ -350,6 +408,7 @@ class SendCoinsViewModel @Inject constructor(
         val finalPaymentIntent = basePaymentIntent.mergeWithEditedValues(amount, dummyAddress)
 
         try {
+            Context.propagate(wallet.context)
             // check regular payment
             var sendRequest = createSendRequest(
                 basePaymentIntent.mayEditAmount(),
@@ -370,14 +429,14 @@ class SendCoinsViewModel @Inject constructor(
             }
 
             dryrunSendRequest = sendRequest
-            _dryRunSuccessful.value = true
+            _dryRunSuccessful.postValue(true)
         } catch (ex: Exception) {
-            dryRunException = if (ex is InsufficientMoneyException && _coinJoinMode.value != CoinJoinMode.NONE && !currentAmount.isGreaterThan(wallet.getBalance(MaxOutputAmountCoinSelector()))) {
+            dryRunException = if (ex is InsufficientMoneyException && _coinJoinActive.value && !currentAmount.isGreaterThan(wallet.getBalance(MaxOutputAmountCoinSelector()))) {
                  InsufficientCoinJoinMoneyException(ex)
             } else {
                 ex
             }
-            _dryRunSuccessful.value = false
+            _dryRunSuccessful.postValue(false)
         }
     }
 
@@ -394,14 +453,14 @@ class SendCoinsViewModel @Inject constructor(
     }
 
     private suspend fun checkIdentity(paymentIntent: PaymentIntent): PaymentIntent {
-        var isDashUserOrNotMe = platformRepo.hasIdentity
+        var isDashUserOrNotMe = platformRepo.hasIdentity()
 
         // make sure that this payment intent is not to me
         if (paymentIntent.isIdentityPaymentRequest &&
             paymentIntent.payeeUsername != null &&
-            platformRepo.hasIdentity &&
-            platformRepo.blockchainIdentity.currentUsername != null &&
-            paymentIntent.payeeUsername == platformRepo.blockchainIdentity.currentUsername
+            platformRepo.hasIdentity() &&
+            platformRepo.hasUsername() &&
+            paymentIntent.payeeUsername == platformRepo.getUsername()
         ) {
             isDashUserOrNotMe = false
         }

@@ -33,7 +33,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.*
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.ConcatAdapter
@@ -41,12 +43,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.launch
 import org.dash.wallet.common.data.Resource
 import org.dash.wallet.common.data.Status
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.services.analytics.FireplaceNetworkException
 import org.dash.wallet.common.ui.decorators.ListDividerDecorator
+import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
 import org.dash.wallet.common.ui.observeOnDestroy
 import org.dash.wallet.common.ui.viewBinding
 import org.dash.wallet.common.util.*
@@ -60,10 +64,11 @@ import org.dash.wallet.features.exploredash.ui.adapters.MerchantLocationsHeaderA
 import org.dash.wallet.features.exploredash.ui.adapters.MerchantsAtmsResultAdapter
 import org.dash.wallet.features.exploredash.ui.adapters.MerchantsLocationsAdapter
 import org.dash.wallet.features.exploredash.ui.adapters.SearchHeaderAdapter
-import org.dash.wallet.features.exploredash.ui.dashdirect.DashDirectUserAuthFragment
-import org.dash.wallet.features.exploredash.ui.dashdirect.DashDirectViewModel
-import org.dash.wallet.features.exploredash.ui.dashdirect.dialogs.DashDirectLoginInfoDialog
-import org.dash.wallet.features.exploredash.ui.dashdirect.dialogs.DashDirectTermsDialog
+import org.dash.wallet.features.exploredash.ui.ctxspend.CTXSpendUserAuthFragment
+import org.dash.wallet.features.exploredash.ui.ctxspend.CTXSpendViewModel
+import org.dash.wallet.features.exploredash.ui.ctxspend.dialogs.CTXSpendLoginInfoDialog
+import org.dash.wallet.features.exploredash.ui.ctxspend.dialogs.CTXSpendTermsDialog
+import org.dash.wallet.features.exploredash.ui.explore.dialogs.ExploreDashInfoDialog
 import org.dash.wallet.features.exploredash.ui.extensions.*
 import org.dash.wallet.features.exploredash.utils.exploreViewModels
 
@@ -75,7 +80,7 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
 
     private val binding by viewBinding(FragmentSearchBinding::bind)
     private val viewModel by exploreViewModels<ExploreViewModel>()
-    private val dashDirectViewModel by exploreViewModels<DashDirectViewModel>()
+    private val ctxSpendViewModel by exploreViewModels<CTXSpendViewModel>()
     private val args by navArgs<SearchFragmentArgs>()
 
     private var bottomSheetWasExpanded: Boolean = false
@@ -110,14 +115,20 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
         hideKeyboard()
 
         if (item is Merchant) {
-            viewModel.openMerchantDetails(item, true)
+            lifecycleScope.launch {
+                viewModel.openMerchantDetails(item, true)
+                updateIsEnabled(item)
+            }
         } else if (item is Atm) {
             viewModel.openAtmDetails(item)
         }
     }
 
     private val merchantLocationsAdapter = MerchantsLocationsAdapter { merchant, _ ->
-        viewModel.openMerchantDetails(merchant)
+        lifecycleScope.launch {
+            viewModel.openMerchantDetails(merchant)
+            updateIsEnabled(merchant)
+        }
     }
 
     private val searchResultsDecorator: ListDividerDecorator by lazy {
@@ -133,14 +144,6 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     private var savedLocationsScrollPosition: Int = -1
 
     private var lastSyncProgress: Resource<Double> = Resource.success(100.0)
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        lifecycleScope.launch {
-            viewModel.setIsInfoShown(false)
-        }
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -170,6 +173,14 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
 
         binding.toolbarTitle.text = getToolbarTitle()
         binding.recenterMapBtn.setOnClickListener { viewModel.recenterMapCallback.call() }
+
+        binding.infoButton.setOnClickListener {
+            ExploreDashInfoDialog().show(requireActivity())
+        }
+
+        binding.infoButton.setOnClickListener {
+            ExploreDashInfoDialog().show(requireActivity())
+        }
 
         binding.manageGpsView.managePermissionsBtn.setOnClickListener {
             lifecycleScope.launch {
@@ -221,6 +232,31 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
                 }
             }
         }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                if (args.type != ExploreTopic.Merchants) {
+                    return@repeatOnLifecycle
+                }
+
+                if (ctxSpendViewModel.isUserSignedInCTXSpend()) {
+                    // The merchant list is served by DashSpend, refresh it while we're here
+                    ctxSpendViewModel.updateDatabase()
+                } else if (ctxSpendViewModel.isMerchantDatabaseEmpty()) {
+                    // Nothing to show without an account, so ask the user to sign in
+                    AdaptiveDialog.create(
+                        null,
+                        getString(R.string.token_expired_title),
+                        getString(R.string.token_expired_message),
+                        getString(R.string.button_okay)
+                    ).show(requireActivity()) {
+                        if (isAdded) {
+                            showLoginDialog()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun showError(binding: FragmentSearchBinding) {
@@ -268,7 +304,11 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
 
     override fun onDestroy() {
         super.onDestroy()
-        viewModel.onExitSearch()
+        try {
+            viewModel.onExitSearch()
+        } catch (e: IllegalArgumentException) {
+            // Handle case where nav graph is no longer on back stack after process death
+        }
         // clear this listener
         requireActivity().window?.decorView?.let { decor ->
             ViewCompat.setOnApplyWindowInsetsListener(decor) { _, _ ->
@@ -321,7 +361,6 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
         }
 
         viewModel.filterMode.observe(viewLifecycleOwner) { mode ->
-            searchHeaderAdapter.isFilterButtonVisible = mode != FilterMode.Online
             binding.noResultsPanel.isVisible = false
             searchHeaderAdapter.title = getSearchTitle()
             searchHeaderAdapter.subtitle = getSearchSubtitle()
@@ -357,29 +396,29 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     }
 
     private fun showLoginDialog() {
-        DashDirectLoginInfoDialog().show(
+        CTXSpendLoginInfoDialog().show(
             requireActivity(),
             onResult = {
                 if (it == true) {
-                    DashDirectTermsDialog().show(requireActivity()) {
-                        viewModel.logEvent(AnalyticsConstants.DashDirect.CREATE_ACCOUNT)
+                    CTXSpendTermsDialog().show(requireActivity()) {
+                        viewModel.logEvent(AnalyticsConstants.DashSpend.CREATE_ACCOUNT)
                         safeNavigate(
-                            SearchFragmentDirections.searchToDashDirectUserAuthFragment(
-                                DashDirectUserAuthFragment.DashDirectUserAuthType.CREATE_ACCOUNT
+                            SearchFragmentDirections.searchToCtxSpendUserAuthFragment(
+                                CTXSpendUserAuthFragment.CTXSpendUserAuthType.CREATE_ACCOUNT
                             )
                         )
                     }
                 } else {
-                    viewModel.logEvent(AnalyticsConstants.DashDirect.LOGIN)
+                    viewModel.logEvent(AnalyticsConstants.DashSpend.LOGIN)
                     safeNavigate(
-                        SearchFragmentDirections.searchToDashDirectUserAuthFragment(
-                            DashDirectUserAuthFragment.DashDirectUserAuthType.SIGN_IN
+                        SearchFragmentDirections.searchToCtxSpendUserAuthFragment(
+                            CTXSpendUserAuthFragment.CTXSpendUserAuthType.SIGN_IN
                         )
                     )
                 }
             },
             onExtraMessageAction = {
-                requireActivity().openCustomTab(getString(R.string.dash_direct_url))
+                requireActivity().openCustomTab(getString(R.string.ctx_terms_url))
             }
         )
     }
@@ -418,9 +457,6 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
 
         binding.upButton.setOnClickListener {
             binding.searchResults.scrollToPosition(0)
-            if (isMerchantTopic) {
-                viewModel.logEvent(AnalyticsConstants.Explore.MERCHANT_DETAILS_SCROLL_UP)
-            }
         }
 
         binding.resetFiltersBtn.setOnClickListener {
@@ -450,11 +486,13 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
                 filters.territory.isNotEmpty()
         }
 
-        viewModel.selectedTerritory.observe(viewLifecycleOwner) {
-            val bottomSheet = BottomSheetBehavior.from(binding.contentPanel)
-            bottomSheet.isDraggable = isBottomSheetDraggable()
-            bottomSheet.state = setBottomSheetState()
-        }
+        viewModel.appliedFilters
+            .distinctUntilChangedBy { it.territory }
+            .observe(viewLifecycleOwner) {
+                val bottomSheet = BottomSheetBehavior.from(binding.contentPanel)
+                bottomSheet.isDraggable = isBottomSheetDraggable()
+                bottomSheet.state = setBottomSheetState()
+            }
 
         viewLifecycleOwner.observeOnDestroy {
             binding.searchResults.adapter = null
@@ -467,9 +505,13 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
                 viewModel.logEvent(AnalyticsConstants.Explore.MERCHANT_DETAILS_PAY_WITH_DASH)
             }
 
-            deepLinkNavigate(DeepLinkDestination.SendDash)
+            deepLinkNavigate(DeepLinkDestination.SendDash(source = "explore"))
         }
-        binding.itemDetails.setOnReceiveDashClicked { deepLinkNavigate(DeepLinkDestination.ReceiveDash) }
+        binding.itemDetails.setOnReceiveDashClicked {
+            deepLinkNavigate(
+                DeepLinkDestination.ReceiveDash(source = "explore")
+            )
+        }
         binding.itemDetails.setOnBackButtonClicked { viewModel.backFromMerchantLocation() }
         binding.itemDetails.setOnShowAllLocationsClicked {
             viewModel.selectedItem.value?.let { merchant ->
@@ -485,6 +527,30 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
                 binding.toolbarTitle.text = item.name
             } else {
                 binding.toolbarTitle.text = getToolbarTitle()
+            }
+        }
+
+        binding.itemDetails.setOnBuyGiftCardButtonClicked {
+            lifecycleScope.launch {
+                if (!ctxSpendViewModel.isUserSignedInCTXSpend()) {
+                    showLoginDialog()
+                } else {
+                    openPurchaseGiftCardFragment()
+                }
+            }
+        }
+
+        binding.itemDetails.setOnCTXSpendLogOutClicked {
+            lifecycleScope.launch {
+                if (ctxSpendViewModel.isUserSignedInCTXSpend()) {
+                    ctxSpendViewModel.logout()
+                }
+            }
+        }
+
+        ctxSpendViewModel.userEmail.observe(viewLifecycleOwner) { email ->
+            lifecycleScope.launch {
+                binding.itemDetails.setCTXSpendLogInUser(email, ctxSpendViewModel.isUserSignedInCTXSpend())
             }
         }
 
@@ -522,7 +588,9 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
 
                         if (viewModel.selectedItem.value is Merchant) {
                             launch {
-                                dashDirectViewModel.updateMerchantDetails(viewModel.selectedItem.value as Merchant)
+                                val merchant = viewModel.selectedItem.value as Merchant
+                                ctxSpendViewModel.updateMerchantDetails(merchant)
+                                updateIsEnabled(merchant)
                             }
                         }
                         transitToDetails()
@@ -558,16 +626,10 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
 
         binding.toolbar.setNavigationOnClickListener {
             hardBackAction.invoke()
-            if (isMerchantTopic) {
-                viewModel.logEvent(AnalyticsConstants.Explore.MERCHANT_DETAILS_BACK_TOP)
-            }
         }
 
         onBackPressedCallback = requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
             hardBackAction.invoke()
-            if (isMerchantTopic) {
-                viewModel.logEvent(AnalyticsConstants.Explore.MERCHANT_DETAILS_BACK_BOTTOM)
-            }
         }
     }
 
@@ -614,7 +676,7 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
         }
 
         binding.searchResults.adapter = ConcatAdapter(searchHeaderAdapter, searchResultsAdapter)
-        searchHeaderAdapter.searchText = viewModel.searchQuery
+        searchHeaderAdapter.searchText = viewModel.appliedFilters.value.query
 
         val layoutParams = binding.searchResults.layoutParams as ConstraintLayout.LayoutParams
         layoutParams.topMargin = resources.getDimensionPixelOffset(R.dimen.search_results_margin_top)
@@ -711,17 +773,14 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             return ""
         }
 
-        val searchLocation =
-            if (viewModel.selectedTerritory.value?.isNotEmpty() == true) {
-                viewModel.selectedTerritory.value
-            } else {
-                val radiusOption = viewModel.selectedRadiusOption.value ?: ExploreViewModel.DEFAULT_RADIUS_OPTION
-                resources.getQuantityString(
-                    if (viewModel.isMetric) R.plurals.radius_kilometers else R.plurals.radius_miles,
-                    radiusOption,
-                    radiusOption
-                )
-            }
+        val searchLocation = viewModel.appliedFilters.value.territory.ifEmpty {
+            val radiusOption = viewModel.appliedFilters.value.radius
+            resources.getQuantityString(
+                if (viewModel.isMetric) R.plurals.radius_kilometers else R.plurals.radius_miles,
+                radiusOption,
+                radiusOption
+            )
+        }
 
         val resultSize = viewModel.pagingSearchResultsCount.value ?: 0
         val quantityStr =
@@ -788,8 +847,8 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
         return viewModel.selectedItem.value == null &&
             viewModel.isLocationEnabled.value == true &&
             (
-                isPhysicalSearch || viewModel.paymentMethodFilter.isNotEmpty() ||
-                    viewModel.selectedTerritory.value?.isNotEmpty() == true
+                isPhysicalSearch || viewModel.appliedFilters.value.payment.isNotEmpty() ||
+                    viewModel.appliedFilters.value.territory.isNotEmpty()
                 )
     }
 
@@ -810,8 +869,8 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     private fun isBottomSheetDraggable(): Boolean {
         val screenState = viewModel.screenState.value
         val isDetails = screenState == ScreenState.DetailsGrouped || screenState == ScreenState.Details
-        val nearbySearch =
-            viewModel.selectedTerritory.value.isNullOrEmpty() && viewModel.isLocationEnabled.value == true
+        val nearbySearch = viewModel.appliedFilters.value.territory.isEmpty() &&
+            viewModel.isLocationEnabled.value == true
 
         return !isDetails && nearbySearch
     }
@@ -820,8 +879,8 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     private fun setBottomSheetState(forceExpand: Boolean = false): Int {
         val screenState = viewModel.screenState.value
         val isDetails = screenState == ScreenState.DetailsGrouped || screenState == ScreenState.Details
-        val nearbySearch =
-            viewModel.selectedTerritory.value.isNullOrEmpty() && viewModel.isLocationEnabled.value == true
+        val nearbySearch = viewModel.appliedFilters.value.territory.isEmpty() &&
+            viewModel.isLocationEnabled.value == true
 
         return when {
             forceExpand -> BottomSheetBehavior.STATE_EXPANDED
@@ -832,12 +891,6 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     }
 
     private fun trackMerchantDetailsEvents(binding: FragmentSearchBinding) {
-        binding.itemDetails.setOnNavigationButtonClicked {
-            if (isMerchantTopic) {
-                viewModel.logEvent(AnalyticsConstants.Explore.MERCHANT_DETAILS_NAVIGATION)
-            }
-        }
-
         binding.itemDetails.setOnDialPhoneButtonClicked {
             if (isMerchantTopic) {
                 viewModel.logEvent(AnalyticsConstants.Explore.MERCHANT_DETAILS_DIAL_PHONE_CALL)
@@ -848,6 +901,15 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             if (isMerchantTopic) {
                 viewModel.logEvent(AnalyticsConstants.Explore.MERCHANT_DETAILS_OPEN_WEBSITE)
             }
+        }
+    }
+
+    private suspend fun updateIsEnabled(merchant: Merchant) {
+        val wasEnabled = merchant.active
+        ctxSpendViewModel.updateMerchantDetails(merchant)
+
+        if (merchant.active != wasEnabled) {
+            binding.itemDetails.bindItem(merchant)
         }
     }
 }

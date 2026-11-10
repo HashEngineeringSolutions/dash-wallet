@@ -29,7 +29,6 @@ import androidx.annotation.LayoutRes
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
-import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
@@ -190,16 +189,6 @@ open class AdaptiveDialog(@LayoutRes private val layout: Int): DialogFragment() 
         if (isMessageShown) {
             messageView?.post {
                 messageView.setTextIsSelectable(isMessageSelectable)
-
-                if (messageView.lineCount > 3) {
-                    titleView?.gravity = Gravity.START
-                    messageView.gravity = Gravity.START
-                    if (iconView?.layoutParams is LinearLayout.LayoutParams) {
-                        iconView.updateLayoutParams<LinearLayout.LayoutParams> {
-                            gravity = Gravity.START
-                        }
-                    }
-                }
             }
         }
 

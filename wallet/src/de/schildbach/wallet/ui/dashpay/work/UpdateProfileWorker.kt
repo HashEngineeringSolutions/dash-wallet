@@ -27,7 +27,7 @@ import de.schildbach.wallet.WalletApplication
 import de.schildbach.wallet.database.entity.DashPayProfile
 import de.schildbach.wallet.ui.dashpay.EditProfileViewModel
 import de.schildbach.wallet.ui.dashpay.PlatformRepo
-import de.schildbach.wallet.ui.dashpay.utils.GoogleDriveService
+import de.schildbach.wallet.ui.dashpay.utils.DashPayConfig
 import de.schildbach.wallet.security.SecurityGuard
 import de.schildbach.wallet.service.platform.PlatformBroadcastService
 import de.schildbach.wallet.service.work.BaseWorker
@@ -46,7 +46,8 @@ class UpdateProfileWorker @AssistedInject constructor(
     @Assisted parameters: WorkerParameters,
     val analytics: AnalyticsService,
     val platformRepo: PlatformRepo,
-    val platformBroadcastService: PlatformBroadcastService)
+    val platformBroadcastService: PlatformBroadcastService,
+    val dashPayConfig: DashPayConfig)
     : BaseWorker(context, parameters) {
 
     companion object {
@@ -76,7 +77,7 @@ class UpdateProfileWorker @AssistedInject constructor(
 
         val encryptionKey: KeyParameter
         try {
-            val password = SecurityGuard().retrievePassword()
+            val password = SecurityGuard.getInstance().retrievePassword()
             encryptionKey = WalletApplication.getInstance().wallet!!.keyCrypter!!.deriveKey(password)
         } catch (ex: KeyCrypterException) {
             return Result.failure(workDataOf(KEY_ERROR_MESSAGE to UpdateProfileError.DECRYPTION.name))
@@ -131,32 +132,4 @@ class UpdateProfileWorker @AssistedInject constructor(
                     KEY_ERROR_MESSAGE to UpdateProfileError.BROADCAST.name))
         }
     }
-
-//    private fun saveToGoogleDrive(context: Context, encryptedBackup: ByteArray): String? {
-//        return try {
-//            val account: GoogleSignInAccount = GoogleDriveService.getSigninAccount(context)
-//                    ?: throw GoogleAuthException()
-//
-//            // 1 - retrieve existing backup so we know whether we have to create a new one, or update existing file
-//            val drive: Drive? = Objects.requireNonNull(GoogleDriveService.getDriveServiceFromAccount(context, account), "drive service must not be null")
-//
-//            // 2 - upload the image
-//            val uploadedAvatarFilename = UUID.randomUUID().toString()
-//            val secureId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-//            return GoogleDriveService.uploadImage(drive!!, uploadedAvatarFilename, encryptedBackup, secureId)
-//        } catch (t: Throwable) {
-//            analytics.logError(t, "Failed to upload to Google Drive")
-//
-//            //log.error("failed to save channels backup on google drive", t)
-//            if (t is GoogleAuthIOException || t is GoogleAuthException) {
-//                //BackupHelper.GoogleDrive.disableGDriveBackup(context)
-//            } else if (t.cause != null) {
-//                val cause = t.cause
-//                if (cause is GoogleAuthIOException || cause is GoogleAuthException) {
-//                    //BackupHelper.GoogleDrive.disableGDriveBackup(context)
-//                }
-//            }
-//            null
-//        }
-//    }
 }

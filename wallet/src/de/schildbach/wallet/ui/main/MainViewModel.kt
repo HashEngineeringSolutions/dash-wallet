@@ -18,7 +18,6 @@
 package de.schildbach.wallet.ui.main
 
 import android.os.LocaleList
-import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
@@ -66,16 +65,18 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.bitcoinj.core.Coin
 import org.bitcoinj.core.Context
 import org.bitcoinj.core.NetworkParameters
@@ -83,7 +84,6 @@ import org.bitcoinj.core.PeerGroup
 import org.bitcoinj.core.Sha256Hash
 import org.bitcoinj.core.Transaction
 import org.bitcoinj.utils.MonetaryFormat
-import org.bitcoinj.wallet.Wallet
 import org.bitcoinj.wallet.WalletEx
 import org.dash.wallet.common.Configuration
 import org.dash.wallet.common.WalletDataProvider
@@ -105,7 +105,6 @@ import org.dash.wallet.common.transactions.TransactionUtils.isEntirelySelf
 import org.dash.wallet.common.transactions.TransactionWrapper
 import org.dash.wallet.common.transactions.batchAndFilterUpdates
 import org.dash.wallet.common.util.toBigDecimal
-import org.dash.wallet.integrations.crowdnode.api.CrowdNodeApi
 import org.dash.wallet.integrations.crowdnode.transactions.FullCrowdNodeSignUpTxSetFactory
 import org.slf4j.LoggerFactory
 import java.math.BigDecimal
@@ -144,8 +143,7 @@ class MainViewModel @Inject constructor(
     dashPayConfig: DashPayConfig,
     dashPayContactRequestDao: DashPayContactRequestDao,
     private val coinJoinConfig: CoinJoinConfig,
-    private val coinJoinService: CoinJoinService,
-    private val crowdNodeApi: CrowdNodeApi
+    private val coinJoinService: CoinJoinService
 ) : BaseContactsViewModel(blockchainIdentityDataDao, dashPayProfileDao, dashPayContactRequestDao) {
     companion object {
         private const val BATCHING_PERIOD = 500L
@@ -157,15 +155,15 @@ class MainViewModel @Inject constructor(
     private val workerJob = SupervisorJob()
 
     @VisibleForTesting
-    val viewModelWorkerScope = CoroutineScope(Dispatchers.IO + workerJob)
+    val viewModelWorkerScope = CoroutineScope(Dispatchers.IO.limitedParallelism(1) + workerJob)
 
     val balanceDashFormat: MonetaryFormat = config.format.noCode().minDecimals(0)
     val fiatFormat: MonetaryFormat = Constants.LOCAL_FORMAT.minDecimals(0).optionalDecimals(0, 2)
 
     var transactionsLoaded = false
         private set
-    private val _transactions = MutableLiveData<Map<LocalDate, List<TransactionRowView>>>()
-    val transactions: LiveData<Map<LocalDate, List<TransactionRowView>>>
+    private val _transactions = MutableStateFlow<Map<LocalDate, List<TransactionRowView>>>(mapOf())
+    val transactions: StateFlow<Map<LocalDate, List<TransactionRowView>>>
         get() = _transactions
     private val _transactionsDirection = MutableStateFlow(TxFilterType.ALL)
     var transactionsDirection: TxFilterType
@@ -205,9 +203,9 @@ class MainViewModel @Inject constructor(
         get() = _rateStale.value
     var rateStaleDismissed = false
 
-    private val _balance = MutableLiveData<Coin>()
-    val balance: LiveData<Coin>
-        get() = _balance
+    private val _totalBalance = MutableLiveData<Coin>()
+    val totalBalance: LiveData<Coin>
+        get() = _totalBalance
     private val _mixedBalance = MutableLiveData<Coin>()
     val mixedBalance: LiveData<Coin>
         get() = _mixedBalance
@@ -218,29 +216,22 @@ class MainViewModel @Inject constructor(
     private var minContactCreatedDate: LocalDate = LocalDate.now()
     private lateinit var crowdNodeWrapperFactory: FullCrowdNodeSignUpTxSetFactory
     private lateinit var coinJoinWrapperFactory: CoinJoinTxWrapperFactory
-    private val _mostRecentTransaction = MutableLiveData<Transaction>()
-    val mostRecentTransaction: LiveData<Transaction>
-        get() = _mostRecentTransaction
-
     private val _temporaryHideBalance = MutableStateFlow<Boolean?>(null)
     val hideBalance = walletUIConfig.observe(WalletUIConfig.AUTO_HIDE_BALANCE)
         .combine(_temporaryHideBalance) { autoHide, temporaryHide ->
             temporaryHide ?: autoHide ?: false
         }
-        .asLiveData()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
 
-    val showTapToHideHint = walletUIConfig.observe(WalletUIConfig.SHOW_TAP_TO_HIDE_HINT).asLiveData()
+    val showTapToHideHint = walletUIConfig.observe(WalletUIConfig.SHOW_TAP_TO_HIDE_HINT)
 
     private val _isNetworkUnavailable = MutableLiveData<Boolean>()
     val isNetworkUnavailable: LiveData<Boolean>
         get() = _isNetworkUnavailable
-
-    private val _stakingAPY = MutableLiveData<Double>()
-
-    val isPassphraseVerified: Boolean
-        get() = !config.remindBackupSeed
-    val stakingAPY: LiveData<Double>
-        get() = _stakingAPY
 
     val currencyChangeDetected = SingleLiveEvent<Pair<String, String>>()
 
@@ -256,7 +247,7 @@ class MainViewModel @Inject constructor(
 
     var decimalFormat: DecimalFormat = DecimalFormat("0.000")
     val walletBalanceString: String
-        get() = decimalFormat.format(balance.value?.toBigDecimal() ?: BigDecimal.ZERO)
+        get() = decimalFormat.format(totalBalance.value?.toBigDecimal() ?: BigDecimal.ZERO)
 
     val mixedBalanceString: String
         get() = decimalFormat.format(mixedBalance.value?.toBigDecimal() ?: BigDecimal.ZERO)
@@ -275,7 +266,7 @@ class MainViewModel @Inject constructor(
         addSource(blockchainIdentity) {
             value = combineLatestData()
         }
-        addSource(_balance) {
+        addSource(_totalBalance) {
             value = combineLatestData()
         }
     }
@@ -288,8 +279,7 @@ class MainViewModel @Inject constructor(
     val seriousErrorLiveData = SeriousErrorLiveData(platformRepo)
     var processingSeriousError = false
 
-    val notificationCountData =
-        NotificationCountLiveData(walletApplication, platformRepo, platformSyncService, dashPayConfig, viewModelScope)
+    val notificationCountData = NotificationCountLiveData(platformRepo, platformSyncService, dashPayConfig, viewModelScope)
     val notificationCount: Int
         get() = notificationCountData.value ?: 0
 
@@ -325,12 +315,13 @@ class MainViewModel @Inject constructor(
             UsernameSortOrderBy.LAST_ACTIVITY,
             false
         ).distinctUntilChanged()
-         .onEach { contacts ->
+        .onEach { contacts ->
             this.minContactCreatedDate = contacts.minOfOrNull { it.dashPayProfile.createdAt }?.let {
-                Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+               Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
             } ?: LocalDate.now()
             val contactsByIdentity = contacts.associate { it.dashPayProfile.userId to it.dashPayProfile }
             this.contacts = contactsByIdentity
+            refreshContactsForAllTransactions()
         }.launchIn(viewModelWorkerScope)
 
         walletData.observeWalletReset()
@@ -353,16 +344,17 @@ class MainViewModel @Inject constructor(
             }
             .launchIn(viewModelWorkerScope)
 
+        // we need the total wallet balance for mixing progress,
         walletData.observeTotalBalance()
-            .onEach(_balance::postValue)
+            .onEach {
+                _totalBalance.value = it
+            }
             .launchIn(viewModelScope)
 
         walletData.observeMixedBalance()
-            .onEach(_mixedBalance::postValue)
-            .launchIn(viewModelScope)
-
-        walletData.observeMostRecentTransaction()
-            .onEach(_mostRecentTransaction::postValue)
+            .onEach {
+                _mixedBalance.value = it
+            }
             .launchIn(viewModelScope)
 
         walletUIConfig
@@ -426,8 +418,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun triggerHideBalance() {
-        val isHiding = hideBalance.value ?: false
-        _temporaryHideBalance.value = !isHiding
+        _temporaryHideBalance.value = !hideBalance.value
 
         if (_temporaryHideBalance.value == true) {
             logEvent(AnalyticsConstants.Home.HIDE_BALANCE)
@@ -453,20 +444,12 @@ class MainViewModel @Inject constructor(
         )
 
         if (direction == TxFilterType.GIFT_CARD) {
-            analytics.logEvent(AnalyticsConstants.DashDirect.FILTER_GIFT_CARD, mapOf())
+            analytics.logEvent(AnalyticsConstants.DashSpend.FILTER_GIFT_CARD, mapOf())
         }
     }
 
     fun processDirectTransaction(tx: Transaction) {
         walletData.processDirectTransaction(tx)
-    }
-
-    fun getLastStakingAPY() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val withoutFees = (100.0 - crowdNodeApi.getFee()) / 100
-            log.info("fees: without $withoutFees")
-            _stakingAPY.postValue(withoutFees * blockchainStateProvider.getLastMasternodeAPY())
-        }
     }
 
     suspend fun getCoinJoinMode(): CoinJoinMode {
@@ -484,7 +467,7 @@ class MainViewModel @Inject constructor(
             coinJoinService.updateTimeSkew(timeSkew)
             log.info("timeskew: {} ms", timeSkew)
             return Pair(abs(timeSkew) > maxAllowedTimeSkew, timeSkew)
-        } catch (ex: Exception) {
+        } catch (_: Exception) {
             // Ignore errors
             Pair(false, 0)
         }
@@ -555,12 +538,12 @@ class MainViewModel @Inject constructor(
                     transactions.sortedByDescending { it.time }
                 }
 
-            viewModelScope.launch {
-                transactionsLoaded = true
-                _transactions.value = allTransactionViews
-                this@MainViewModel.txByHash = txByHash
-                updateContacts(contactsToUpdate)
-            }
+
+            transactionsLoaded = true
+            _transactions.value = allTransactionViews
+            this@MainViewModel.txByHash = txByHash
+
+            getContactsAndMetadataForTransactions(contactsToUpdate)
         }
     }
 
@@ -573,7 +556,7 @@ class MainViewModel @Inject constructor(
         contacts: Map<Sha256Hash, DashPayProfile>
     ) {
         Context.propagate(Constants.CONTEXT)
-        val items = _transactions.value!!.toMutableMap()
+        val items = _transactions.value.toMutableMap()
         val txByHash = this.txByHash.toMutableMap()
         val contactsToUpdate = mutableListOf<Transaction>()
 
@@ -596,7 +579,7 @@ class MainViewModel @Inject constructor(
                 }
 
                 if (included && wrapper != null) {
-                    itemId = wrapper!!.id
+                    itemId = wrapper.id
                 } else {
                     this.crowdNodeWrapperFactory.tryInclude(tx).also {
                         included = it.first
@@ -604,7 +587,7 @@ class MainViewModel @Inject constructor(
                     }
 
                     if (included && wrapper != null) {
-                        itemId = wrapper!!.id
+                        itemId = wrapper.id
                     }
                 }
             }
@@ -624,7 +607,7 @@ class MainViewModel @Inject constructor(
                 )
             } else {
                 TransactionRowView.fromTransactionWrapper(
-                    wrapper!!,
+                    wrapper,
                     walletData.transactionBag,
                     Constants.CONTEXT,
                     null,
@@ -639,7 +622,11 @@ class MainViewModel @Inject constructor(
                 // update the current item by replacing the current item
                 items[dateKey]?.toMutableList()?.let { list ->
                     val itemIndex = list.indexOfFirst { it.id == rowView.id }
-                    list[itemIndex] = transactionRow
+                    if (itemIndex == -1) {
+                        log.info("cannot find {} in list of {} items", rowView.id, list.size)
+                    } else {
+                        list[itemIndex] = transactionRow
+                    }
                     items[dateKey] = list
                 }
             } else {
@@ -666,27 +653,44 @@ class MainViewModel @Inject constructor(
             }
         }
 
-        viewModelScope.launch {
-            _transactions.value = items
-            this@MainViewModel.txByHash = txByHash
-            updateContacts(contactsToUpdate)
-        }
+        _transactions.value = items
+        this@MainViewModel.txByHash = txByHash
+        getContactsAndMetadataForTransactions(contactsToUpdate)
     }
 
-    private suspend fun updateContacts(txs: List<Transaction>) {
-        if (this.contacts.isEmpty() || txs.isEmpty()) {
+    private fun refreshContactsForAllTransactions() {
+        val transactions = walletData.getTransactions()
+        val contactsToUpdate = mutableListOf<Transaction>()
+
+        for (tx in transactions) {
+            val dateKey = tx.updateTime.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+
+            if (dateKey >= minContactCreatedDate) {
+                contactsToUpdate.add(tx)
+            }
+        }
+
+        getContactsAndMetadataForTransactions(contactsToUpdate)
+    }
+
+    private fun getContactsAndMetadataForTransactions(txs: List<Transaction>) {
+        if (txs.isEmpty()) {
             return
         }
 
-        withContext(Dispatchers.Default) {
-            val contactsMap = txs.filterNot { it.isEntirelySelf(walletData.transactionBag) }
-                .mapNotNull { tx ->
-                    platformRepo.blockchainIdentity.getContactForTransaction(tx)?.let { contactId ->
-                        contacts[contactId]?.let { contact ->
-                            tx.txId to contact
+        viewModelWorkerScope.launch {
+            val contactsMap = if (this@MainViewModel.contacts.isNotEmpty()) {
+                txs.filterNot { it.isEntirelySelf(walletData.transactionBag) }
+                    .mapNotNull { tx ->
+                        platformRepo.blockchainIdentity.getContactForTransaction(tx)?.let { contactId ->
+                            contacts[contactId]?.let { contact ->
+                                tx.txId to contact
+                            }
                         }
-                    }
-                }.toMap()
+                    }.toMap()
+            } else {
+                mapOf()
+            }
 
             updateContactsAndMetadata(mapOf(), metadata, contactsMap)
         }
@@ -697,7 +701,7 @@ class MainViewModel @Inject constructor(
         metadata: Map<Sha256Hash, PresentableTxMetadata>,
         contacts: Map<Sha256Hash, DashPayProfile>
     ) {
-        val items = _transactions.value?.toMutableMap() ?: return
+        val items = _transactions.value.toMutableMap()
         if (items.isEmpty()) return
 
         val txByHash = this.txByHash.toMutableMap()
@@ -731,22 +735,13 @@ class MainViewModel @Inject constructor(
             }
         }
 
-        viewModelScope.launch {
-            _transactions.value = items
-            this@MainViewModel.txByHash = txByHash
-        }
+        _transactions.value = items
+        this@MainViewModel.txByHash = txByHash
     }
 
     private fun updateSyncStatus(state: BlockchainState) {
         if (_isBlockchainSynced.value != state.isSynced()) {
             _isBlockchainSynced.postValue(state.isSynced())
-
-            if (state.isSynced()) {
-                viewModelScope.launch(Dispatchers.IO) {
-                    val withoutFees = (100.0 - crowdNodeApi.getFee()) / 100
-                    _stakingAPY.postValue(withoutFees * blockchainStateProvider.getMasternodeAPY())
-                }
-            }
         }
 
         _isBlockchainSyncFailed.postValue(state.syncFailed())
@@ -773,7 +768,7 @@ class MainViewModel @Inject constructor(
     }
 
     private fun TransactionWrapper.isGiftCard(metadata: Map<Sha256Hash, PresentableTxMetadata>): Boolean {
-        return metadata[transactions.values.first().txId]?.service == ServiceName.DashDirect
+        return metadata[transactions.values.first().txId]?.service == ServiceName.CTXSpend
     }
 
     /**
@@ -936,7 +931,5 @@ class MainViewModel @Inject constructor(
         (walletApplication.wallet as WalletEx).initializeCoinJoin(encryptionKey, 0)
     }
 
-    fun isTestNet(): Boolean {
-        return walletData.wallet?.params?.id != NetworkParameters.ID_MAINNET
-    }
+    fun observeMostRecentTransaction() = walletData.observeMostRecentTransaction().distinctUntilChanged()
 }

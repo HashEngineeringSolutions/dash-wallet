@@ -178,6 +178,7 @@
     <string name="transaction_row_status_coinjoin_make_collateral">Залоговое обеспечение CoinJoin</string>
     <string name="transaction_row_status_coinjoin_mixing">Перемешивание CoinJoin</string>
     <string name="transaction_row_status_coinjoin_create_denominations">Создать деноминации CoinJoin</string>
+    <string name="transaction_row_status_coinjoin_combine_dust">Объединение мелких сумм через CoinJoin</string>
     <string name="network_monitor_activity_title">Сетевой монитор</string>
     <string name="network_monitor_peer_list_title">Узлы</string>
     <string name="network_monitor_block_list_title">Блоки</string>
@@ -294,7 +295,6 @@
     <string name="report_issue_dialog_collect_installed_packages">Добавить список установленных пакетов</string>
     <string name="report_issue_dialog_collect_application_log">Добавить лог приложения</string>
     <string name="report_issue_dialog_collect_wallet_dump">Добавить дамп памяти кошелька</string>
-    <string name="report_issue_dialog_mail_intent_chooser">Отправить отчёт, используя…</string>
     <string name="report_issue_dialog_mail_intent_failed">Ошибка при отправке отчёта.</string>
     <string name="report_issue_dialog_generating_report">Создание отчёта</string>
     <string name="report_transaction_history_export">Экспортировать</string>
@@ -415,4 +415,10 @@
     <string name="battery_optimization_dialog_button_change">Открыть настройки</string>
     <string name="credits_profile_change_message">Обновить информацию в профиле</string>
 
+    <string name="block_explorer_selection_title">Выбрать обозреватель блоков</string>
+
+    <!-- Shortcuts -->
+    <string name="select_option">Выбрать опцию</string>
+    <string name="customize_shortcuts">Настроить меню быстрого доступа</string>
+    <string name="customize_shortcuts_description">Зажмите любую кнопку, чтобы заменить её нужной вам функцией</string>
 </resources>

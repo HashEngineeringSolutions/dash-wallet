@@ -31,9 +31,9 @@
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_secure_now">Сохранить</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="shortcut_scan_to_pay">Скан.</string>
+    <string name="shortcut_scan_to_pay">Сканировать QR</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="shortcut_pay_to_address">Отправить</string>
+    <string name="shortcut_send">Отправить</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_pay_to_contact">Отправить человеку в списке контактов</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
@@ -42,8 +42,6 @@
     <string name="shortcut_receive">Получить</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_import_key">Импорт ключа</string>
-    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="shortcut_add_shortcut">Добавить</string>
 
     <!-- Lock Screen: Button: 2 lines, 9 characters across -->
     <string name="lock_action_quick_receive">Получить быстро</string>
@@ -122,7 +120,7 @@
     <string name="request_coins_clipboard_address_msg">Адрес скопирован в буфер обмена</string>
     <string name="backup_wallet_to_seed_show_recovery_phrase">Показать</string>
     <string name="restore_wallet_from_invalid_seed_warning_message">«%s» не является словом из фразы восстановления</string>
-    <string name="restore_wallet_from_invalid_seed_not_twelve_words">Фраза восстановления должна состоять из 12 слов</string>
+    <string name="restore_wallet_from_invalid_seed_not_twelve_words">Фраза восстановления должна состоять из 12 или 24 слов</string>
     <string name="restore_wallet_from_invalid_seed_bad_checksum">Некорректная фраза восстановления</string>
     <string name="restore_wallet_from_invalid_seed_failure">Кошелёк не может быть восстановлен:\n\n%s\n\nПроверьте правильность фразы восстановления.</string>
 
@@ -297,7 +295,7 @@
     <string name="about_review_and_rate">Напишите отзыв и оцените приложение</string>
     <string name="about_contact_support">Связаться с поддержкой</string>
     <string name="about_fork_disclaimer">Это приложение с открытым кодом, основанное на Bitcoin Wallet</string>
-    <string name="about_copyright">Авторские права © 2024 Dash Core Group</string>
+    <string name="about_copyright">Авторские права © 2025 Dash Core Group</string>
     <string name="about_license">GNU General Public License v3.0</string>
     <string name="about_version_name">Кошелёк DashPay %s</string>
     <string name="about_last_explore_device_sync">Последняя синхронизация с Explore</string>
@@ -471,4 +469,10 @@
     <string name="stale_exchange_rates_error">Данные о курсе не были получены. Курс валют может быть неточным.</string>
     <string name="stale_exchange_rates_stale">Данные о курсе были получены не менее 30 минут назад. Курс валют может быть неточным.</string>
     <string name="stale_exchange_rates_volatile">Курс изменился более чем на 50% с момента последнего обновления.</string>
+    <string name="select_security_level_title">Выбрать уровень безопасности</string>
+    <string name="select_security_level_message">Вы можете защитить свой кошелёк фразой восстановления, состоящей из 12 или 24 слов</string>
+    <string name="select_security_level_12_words_title">Безопасно</string>
+    <string name="select_security_level_12_words_message">Фраза восстановления из 12 слов</string>
+    <string name="select_security_level_24_words_title">Очень безопасно</string>
+    <string name="select_security_level_24_words_message">Фраза восстановления из 24 слов</string>
 </resources>

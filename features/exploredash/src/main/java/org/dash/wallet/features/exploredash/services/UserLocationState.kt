@@ -20,16 +20,12 @@ package org.dash.wallet.features.exploredash.services
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Geocoder
-import android.os.Looper
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import org.dash.wallet.common.util.GenericUtils
 import org.dash.wallet.features.exploredash.data.explore.model.GeoBounds
 import org.dash.wallet.features.exploredash.di.FusedLocationProviderClient
 import org.slf4j.LoggerFactory
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.math.*
 
@@ -56,7 +52,6 @@ constructor(private val context: Context, private val client: FusedLocationProvi
 
     @SuppressLint("MissingPermission")
     override fun observeUpdates(): Flow<UserLocation> = callbackFlow {
-
     }
 
     override fun getCurrentLocationAddress(lat: Double, lng: Double): Address? {
@@ -100,6 +95,6 @@ constructor(private val context: Context, private val client: FusedLocationProvi
     }
 
     override fun getRadiusBounds(centerLat: Double, centerLng: Double, radius: Double): GeoBounds {
-        return GeoBounds(0.0,0.0,0.0,0.0,0.0,0.0,0.0f)
+        return GeoBounds(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0f)
     }
 }

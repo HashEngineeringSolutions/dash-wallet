@@ -44,6 +44,7 @@ import de.schildbach.wallet.database.entity.UsernameRequest
 import de.schildbach.wallet.livedata.SeriousError
 import de.schildbach.wallet.livedata.Status
 import de.schildbach.wallet.security.SecurityGuard
+import de.schildbach.wallet.security.SecurityGuardException
 import de.schildbach.wallet.service.BlockchainService
 import de.schildbach.wallet.service.BlockchainServiceImpl
 import de.schildbach.wallet.service.platform.work.RestoreIdentityOperation
@@ -78,7 +79,6 @@ import org.dashj.platform.sdk.platform.DomainDocument
 import org.dashj.platform.wallet.IdentityVerify
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
@@ -150,10 +150,9 @@ class PlatformSynchronizationService @Inject constructor(
     private val onContactsUpdatedListeners = arrayListOf<OnContactsUpdated>()
     private val onPreBlockContactListeners = arrayListOf<OnPreBlockProgressListener>()
     private var lastPreBlockStage: PreBlockStage = PreBlockStage.None
-
-    private val syncScope = CoroutineScope(
-        Executors.newFixedThreadPool(5).asCoroutineDispatcher()
-    )
+    // TODO: cancel these on shutdown?
+    private val syncJob = SupervisorJob()
+    private val syncScope = CoroutineScope(Dispatchers.IO + syncJob)
 
     override fun init() {
         syncScope.launch { platformRepo.init() }
@@ -189,7 +188,7 @@ class PlatformSynchronizationService @Inject constructor(
     }
 
     override fun shutdown() {
-        if (platformSyncJob != null && platformRepo.hasIdentity) {
+        if (platformSyncJob != null && platformRepo.hasBlockchainIdentity) {
             Preconditions.checkState(platformSyncJob!!.isActive)
             log.info("Shutting down the platform sync job")
             syncScope.coroutineContext.cancelChildren(CancellationException("shutdown the platform sync"))
@@ -210,13 +209,13 @@ class PlatformSynchronizationService @Inject constructor(
     override suspend fun updateContactRequests(initialSync: Boolean) {
 
         // if there is no wallet or identity, then skip the remaining steps of the update
-        if (!platformRepo.hasIdentity || walletApplication.wallet == null) {
+        if (!platformRepo.hasBlockchainIdentity || walletApplication.wallet == null) {
             return
         }
 
         // only allow this method to execute once at a time
         if (updatingContacts.get()) {
-            log.info("updateContactRequests is already running")
+            log.info("updateContactRequests is already running: {}", lastPreBlockStage)
             return
         }
 
@@ -231,7 +230,8 @@ class PlatformSynchronizationService @Inject constructor(
                 // Is the Voting Period complete?
                 if (blockchainIdentityData.creationState == BlockchainIdentityData.CreationState.VOTING) {
                     val timeWindow = UsernameRequest.VOTING_PERIOD_MILLIS
-                    if (System.currentTimeMillis() - blockchainIdentityData.votingPeriodStart!! >= timeWindow) {
+                    val votingPeriodStart = blockchainIdentityData.votingPeriodStart ?: 0L
+                    if (System.currentTimeMillis() - votingPeriodStart >= timeWindow) {
                         val resource = platformRepo.getUsername(blockchainIdentityData.username!!)
                         if (resource.status == Status.SUCCESS && resource.data != null) {
                             val domainDocument = DomainDocument(resource.data)
@@ -366,6 +366,10 @@ class PlatformSynchronizationService @Inject constructor(
                 }
 
                 updateSyncStatus(PreBlockStage.GetUpdatedProfiles)
+            } else {
+                if (config.get(DashPayConfig.FREQUENT_CONTACTS) == null) {
+                    platformRepo.updateFrequentContacts()
+                }
             }
             // fire listeners if there were new contacts
             if (addedContact) {
@@ -424,9 +428,9 @@ class PlatformSynchronizationService @Inject constructor(
                 if (encryptionKey == null && platformRepo.walletApplication.wallet!!.isEncrypted) {
                     val password = try {
                         // always create a SecurityGuard when it is required
-                        val securityGuard = SecurityGuard()
+                        val securityGuard = SecurityGuard.getInstance()
                         securityGuard.retrievePassword()
-                    } catch (e: IllegalArgumentException) {
+                    } catch (e: SecurityGuardException) {
                         log.error("There was an error retrieving the wallet password", e)
                         analytics.logError(e, "There was an error retrieving the wallet password")
                         platformRepo.fireSeriousErrorListeners(SeriousError.MissingEncryptionIV)
@@ -472,9 +476,9 @@ class PlatformSynchronizationService @Inject constructor(
                 if (encryptionKey == null && platformRepo.walletApplication.wallet!!.isEncrypted) {
                     val password = try {
                         // always create a SecurityGuard when it is required
-                        val securityGuard = SecurityGuard()
+                        val securityGuard = SecurityGuard.getInstance()
                         securityGuard.retrievePassword()
-                    } catch (e: IllegalArgumentException) {
+                    } catch (e: SecurityGuardException) {
                         log.error("There was an error retrieving the wallet password", e)
                         analytics.logError(e, "There was an error retrieving the wallet password")
                         platformRepo.fireSeriousErrorListeners(SeriousError.MissingEncryptionIV)
@@ -583,7 +587,7 @@ class PlatformSynchronizationService @Inject constructor(
                             DashPayProfile(identityId.toString(), username)
                         }
 
-                        dashPayProfileDao.insert(profile!!)
+                        dashPayProfileDao.insert(profile)
                         if (checkingIntegrity) {
                             log.info("check database integrity: adding missing profile $username:$id")
                         }
@@ -953,7 +957,7 @@ class PlatformSynchronizationService @Inject constructor(
     }
 
     private fun publishTransactionMetadata(txMetadataItems: List<TransactionMetadataCacheItem>) {
-        if (!platformRepo.hasIdentity) {
+        if (!platformRepo.hasBlockchainIdentity) {
             return
         }
         Log.i("PUBLISH", txMetadataItems.joinToString("\n") { it.toString() })

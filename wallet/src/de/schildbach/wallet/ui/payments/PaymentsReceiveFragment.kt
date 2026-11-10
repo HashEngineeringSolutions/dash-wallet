@@ -26,14 +26,16 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet_test.R
 import de.schildbach.wallet_test.databinding.FragmentPaymentsReceiveBinding
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import org.dash.wallet.common.WalletDataProvider
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
-import org.dash.wallet.common.services.analytics.AnalyticsService
 import org.dash.wallet.common.ui.viewBinding
 import javax.inject.Inject
 
@@ -45,41 +47,43 @@ class PaymentsReceiveFragment : Fragment(R.layout.fragment_payments_receive) {
     companion object {
         private const val SHOW_IMPORT_PRIVATE_KEY_ARG = "showImportPrivateKey"
         private const val CENTER_VERTICALLY_KEY_ARG = "centerVertically"
+        private const val FROM_QUICK_RECEIVE_KEY_ARG = "fromQuickReceive"
 
         @JvmStatic
         fun newInstance(): PaymentsReceiveFragment {
             return PaymentsReceiveFragment().apply {
                 arguments = bundleOf(
                     SHOW_IMPORT_PRIVATE_KEY_ARG to true,
-                    CENTER_VERTICALLY_KEY_ARG to false
+                    CENTER_VERTICALLY_KEY_ARG to false,
+                    FROM_QUICK_RECEIVE_KEY_ARG to false
                 )
             }
         }
     }
 
     private val args by navArgs<PaymentsReceiveFragmentArgs>()
-    @Inject lateinit var analytics: AnalyticsService
     @Inject lateinit var walletDataProvider: WalletDataProvider
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        analytics.logEvent(AnalyticsConstants.SendReceive.SHOW_QR_CODE, mapOf())
+        viewModel.fromQuickReceive = args.fromQuickReceive
+        viewModel.logEvent(AnalyticsConstants.SendReceive.SHOW_QR_CODE)
 
         binding.receiveInfo.setOnSpecifyAmountClicked {
-            analytics.logEvent(AnalyticsConstants.SendReceive.SPECIFY_AMOUNT, mapOf())
+            viewModel.logSpecifyAmount()
             findNavController().navigate(PaymentsFragmentDirections.paymentsToReceive())
         }
         binding.receiveInfo.setOnAddressClicked {
-            analytics.logEvent(AnalyticsConstants.SendReceive.COPY_ADDRESS, mapOf())
+            viewModel.logEvent(AnalyticsConstants.SendReceive.COPY_ADDRESS)
         }
         binding.receiveInfo.setOnShareClicked {
-            analytics.logEvent(AnalyticsConstants.SendReceive.SHARE, mapOf())
+            viewModel.logEvent(AnalyticsConstants.SendReceive.SHARE)
         }
-
-        binding.receiveInfo.setInfo(walletDataProvider.freshReceiveAddress(), null)
 
         binding.importPrivateKeyBtn.isVisible = args.showImportPrivateKey
         binding.importPrivateKeyBtn.setOnClickListener {
+            viewModel.logEvent(AnalyticsConstants.SendReceive.IMPORT_PRIVATE_KEY)
             SweepWalletActivity.start(requireContext(), false)
         }
 
@@ -92,6 +96,12 @@ class PaymentsReceiveFragment : Fragment(R.layout.fragment_payments_receive) {
 
         viewModel.dashPayProfile.observe(viewLifecycleOwner) {
             binding.receiveInfo.setProfile(it?.username, it?.displayName, it?.avatarUrl, it?.avatarHash)
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            // get current address is much faster, because the wallet doesn't need to be saved
+            val freshAddress = viewModel.getCurrentAddress()
+            binding.receiveInfo.setInfo(freshAddress, null)
         }
     }
 }

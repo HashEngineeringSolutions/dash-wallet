@@ -178,6 +178,7 @@
     <string name="transaction_row_status_coinjoin_make_collateral">Input Agunan CoinJoin</string>
     <string name="transaction_row_status_coinjoin_mixing">CoinJoin Mixing</string>
     <string name="transaction_row_status_coinjoin_create_denominations">CoinJoin Buat Denominasi</string>
+    <string name="transaction_row_status_coinjoin_combine_dust">CoinJoin Gabungkan Debu</string>
     <string name="network_monitor_activity_title">Monitor Jaringan</string>
     <string name="network_monitor_peer_list_title">Peer</string>
     <string name="network_monitor_block_list_title">Blok</string>
@@ -294,8 +295,8 @@
     <string name="report_issue_dialog_collect_installed_packages">Tambahkan daftar paket yang dipasang</string>
     <string name="report_issue_dialog_collect_application_log">Tambahkan catatan aplikasi</string>
     <string name="report_issue_dialog_collect_wallet_dump">Tambahkan dump dompet</string>
-    <string name="report_issue_dialog_mail_intent_chooser">Kirim laporan dgn…</string>
     <string name="report_issue_dialog_mail_intent_failed">Gagal mengirim laporan.</string>
+    <string name="report_issue_dialog_generating_report">Membuat laporan</string>
     <string name="report_transaction_history_export">Ekspor</string>
     <string name="report_transaction_history_title">Ekspor CSV</string>
     <string name="report_transaction_history_not_synced_title">Ekspor CSV</string>
@@ -412,4 +413,12 @@
     <string name="battery_optimization_dialog_unrestricted_title">Apakah anda ingin menerima pembayaran di latar belakang?</string>
     <string name="battery_optimization_dialog_message_not_optimized">Aplikasi ini dikonfigurasi untuk terus berjalan setelah tidak terlihat selama beberapa waktu.\n\nKami menyarankan agar aplikasi ini selalu mengikuti perkembangan blockchain, bahkan di latar belakang.\n\nJangan khawatir, kami akan melakukannya selalu perhatikan penggunaan baterai Anda.</string>
     <string name="battery_optimization_dialog_button_change">Buka Pengaturan</string>
-    </resources>
+    <string name="credits_profile_change_message">Perbarui informasi profil</string>
+
+    <string name="block_explorer_selection_title">Pilih penjelajah blok</string>
+
+    <!-- Shortcuts -->
+    <string name="select_option">Pilih opsi</string>
+    <string name="customize_shortcuts">Sesuaikan bilah pintasan</string>
+    <string name="customize_shortcuts_description">Tahan tombol apa pun di atas untuk menggantinya dengan fungsi yang Anda butuhkan</string>
+</resources>

@@ -33,13 +33,13 @@ import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet.data.PaymentIntent
 import de.schildbach.wallet.data.UsernameSearchResult
 import de.schildbach.wallet.database.entity.BlockchainIdentityConfig
-import de.schildbach.wallet.livedata.Status
 import de.schildbach.wallet.payments.parsers.PaymentIntentParser
 import de.schildbach.wallet.payments.parsers.PaymentIntentParserException
 import de.schildbach.wallet.ui.dashpay.ContactsScreenMode
 import de.schildbach.wallet.ui.dashpay.DashPayViewModel
 import de.schildbach.wallet.ui.dashpay.FrequentContactsAdapter
 import de.schildbach.wallet.ui.dashpay.OnContactItemClickListener
+import de.schildbach.wallet.ui.payments.PaymentsFragment.Companion.ARG_SOURCE
 import de.schildbach.wallet.ui.scan.ScanActivity
 import de.schildbach.wallet.ui.send.SendCoinsActivity
 import de.schildbach.wallet_test.R
@@ -56,7 +56,13 @@ import javax.inject.Inject
 class PaymentsPayFragment : Fragment(R.layout.fragment_payments_pay), OnContactItemClickListener {
     companion object {
         @JvmStatic
-        fun newInstance() = PaymentsPayFragment()
+        fun newInstance(source: String): PaymentsPayFragment {
+            val fragment = PaymentsPayFragment()
+            val args = Bundle()
+            args.putString(ARG_SOURCE, source)
+            fragment.arguments = args
+            return fragment
+        }
     }
 
     private var frequentContactsAdapter: FrequentContactsAdapter = FrequentContactsAdapter()
@@ -109,7 +115,6 @@ class PaymentsPayFragment : Fragment(R.layout.fragment_payments_pay), OnContactI
         this.frequentContactsAdapter.itemClickListener = this
 
         initViewModel()
-        dashPayViewModel.getFrequentContacts()
     }
 
     private fun initViewModel() {
@@ -117,27 +122,23 @@ class PaymentsPayFragment : Fragment(R.layout.fragment_payments_pay), OnContactI
             val visibility = if (it == null) View.GONE else View.VISIBLE
             binding.contactsPane.visibility = visibility
         }
-
-        dashPayViewModel.frequentContactsLiveData.observe(viewLifecycleOwner) {
-            if (Status.SUCCESS == it.status) {
-                if (it.data == null || it.data.isEmpty()) {
-                    binding.frequentContactsRv.visibility = View.GONE
-                    // TODO: how do we show an arrow
-                    // binding.payByContactSelect.showForwardArrow(false)
-                } else {
-                    binding.frequentContactsRv.visibility = View.VISIBLE
-                    // TODO: how do we show an arrow
-                    // binding.payByContactSelect.showForwardArrow(true)
-                }
-                binding.frequentContactsRv.visibility = binding.frequentContactsRv.visibility
-
-                if (it.data != null) {
-                    val results = arrayListOf<UsernameSearchResult>()
-                    results.addAll(it.data)
-                    frequentContactsAdapter.results = results
-                }
-            } else if (it.status == Status.ERROR) {
+        binding.frequentContactsRv.visibility = View.GONE
+        dashPayViewModel.frequentContacts.observe(viewLifecycleOwner) { frequentContacts ->
+            if (frequentContacts.isEmpty()) {
                 binding.frequentContactsRv.visibility = View.GONE
+                // TODO: how do we show an arrow
+                // binding.payByContactSelect.showForwardArrow(false)
+            } else {
+                binding.frequentContactsRv.visibility = View.VISIBLE
+                // TODO: how do we show an arrow
+                // binding.payByContactSelect.showForwardArrow(true)
+            }
+            binding.frequentContactsRv.visibility = binding.frequentContactsRv.visibility
+
+            if (frequentContacts.isNotEmpty()) {
+                val results = arrayListOf<UsernameSearchResult>()
+                results.addAll(frequentContacts)
+                frequentContactsAdapter.results = results
             }
         }
     }
@@ -147,7 +148,8 @@ class PaymentsPayFragment : Fragment(R.layout.fragment_payments_pay), OnContactI
         findNavController().navigate(
             PaymentsFragmentDirections.paymentsToContacts(
                 ShowNavBar = false,
-                mode = ContactsScreenMode.SELECT_CONTACT
+                mode = ContactsScreenMode.SELECT_CONTACT,
+                source = arguments?.getString(ARG_SOURCE) ?: ""
             )
         )
     }
@@ -156,6 +158,7 @@ class PaymentsPayFragment : Fragment(R.layout.fragment_payments_pay), OnContactI
         lifecycleScope.launch {
             try {
                 val paymentIntent = PaymentIntentParser.parse(input, true)
+                paymentIntent.source = arguments?.getString(ARG_SOURCE) ?: ""
                 SendCoinsActivity.start(requireContext(), paymentIntent)
             } catch (ex: PaymentIntentParserException) {
                 AdaptiveDialog.create(
@@ -170,6 +173,7 @@ class PaymentsPayFragment : Fragment(R.layout.fragment_payments_pay), OnContactI
 
     private fun handleContactId(id: String) {
         val paymentIntent = PaymentIntent.fromUserId(id)
+        paymentIntent.source = arguments?.getString(ARG_SOURCE) ?: ""
         SendCoinsActivity.start(requireContext(), paymentIntent)
     }
 
