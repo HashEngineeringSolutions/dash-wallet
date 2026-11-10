@@ -74,9 +74,10 @@ component to our component:
 - feature.list - FeatureList
 - feature.single.item - FeatureSingleItem
 - Sheet/Buttons group - SheetButtonGroup
-- ListX - ListItem (X is number 1 to 20)
+- ListX - ListItemX (numbered design-system variant, e.g. List1 → `ListItem1`); the general-purpose `ListItem` still covers ad-hoc combinations
 - ListEmptyState - ListEmptyState
 - tablelist-masternodekeys - TableListMasternodeKeyRow
+- EnterAmount (input bar) - EnterAmount
 
 ## NavBar / TopNavBase (Figma: NavBar)
 
@@ -208,13 +209,48 @@ DashButton(
 )
 ```
 
-## ListItem / ListEmptyState (Figma: List1–List23, ListEmptyState)
+## ListItem variants (Figma: List1–List11, ListEmptyState)
 
-The `ListItem` composable covers all numbered Figma list variants (`List1` … `List23`) in a **single component**. `ListEmptyState` handles the empty-list placeholder. Both live in:
+There are two layers:
 
+1. **Numbered variants `ListItem1` … `ListItem11`** — strongly-typed wrappers, one per Figma `ListX` symbol in the updated **List** playground (Figma node `7968:2076`). Prefer these when a row matches a design symbol exactly. They live in:
+   ```
+   common/src/main/java/org/dash/wallet/common/ui/components/ListItemVariants.kt
+   ```
+2. **General-purpose `ListItem`** — a single flexible composable for ad-hoc combinations not covered by a numbered symbol. `ListEmptyState` handles the empty-list placeholder. Both live in:
+   ```
+   common/src/main/java/org/dash/wallet/common/ui/components/ListItem.kt
+   ```
+
+All variants share the same row scaffold (14 dp horizontal / 12 dp vertical padding, 20 dp gap, vertically centred) and are transparent — wrap one or more in `Menu` for the standard rounded white card.
+
+### Numbered variant quick-reference (node `7968:2076`)
+
+| Variant | Shape | Signature |
+|---|---|---|
+| `ListItem1` | label \| value | `(label, value, trailing = null)` — optional `trailing` slot after the value |
+| `ListItem2` | label \| multi-line value | `(label, valueLines)` |
+| `ListItem3` | label \| icon + value | `(label, value, leadingIcon = ic_dash_blue_filled)` |
+| `ListItem4` | title \| gray value › | `(label, value)` |
+| `ListItem5` | action › | `(action)` |
+| `ListItem6` | title / help \| value › | `(title, helpText, value)` |
+| `ListItem7` | help / value \| copy icon | `(helpText, value, trailingIcon = ic_copy, onTrailingIconClick)` |
+| `ListItem8` | label \| amount + Dash symbol | `(label, amount, amountIcon = ic_dash_d_black)` |
+| `ListItem9` | version block \| status block | `(title, subtitle1, subtitle2, trailingTitle, trailingHelpText, trailingHelpIcon = ic_left_right_arrows)` |
+| `ListItem10` | secondary text / primary text | `(secondaryText, primaryText, primaryColor = null)` — colour the value, e.g. a blue link |
+| `ListItem11` | label / primary text | `(label, primaryText, primaryMaxLines = ∞)` — cap + ellipsise the value |
+
+Every variant also takes `modifier` and an optional `onClick`. Example:
+
+```kotlin
+Menu {
+    ListItem1(label = "Network", value = "Mainnet")
+    ListItem4(label = "Backup wallet", value = "Recommended", onClick = { /* navigate */ })
+    ListItem5(action = "Recover from seed", onClick = { /* navigate */ })
+}
 ```
-common/src/main/java/org/dash/wallet/common/ui/components/ListItem.kt
-```
+
+### General-purpose `ListItem`
 
 **Figma section node ID:** `2760:14713`
 
@@ -236,7 +272,8 @@ Row { [leadingContent]  [left]  [trailing]   }
 | `label` | `String?` | Tertiary gray "key" text — left side of **key-value** rows |
 | `showInfoIcon` | `Boolean` | ℹ icon after `label` or `title` (List10) |
 | `helpTextAbove` | `String?` | Small gray text above `title` (List13/14/22) |
-| `title` | `String?` | Primary bold text — **content-block** mode |
+| `title` | `String?` | Primary value text (LabelLarge) — **content-block** mode |
+| `titleColor` | `Color?` | Override colour for `title` (default text/primary; e.g. blue for a link — List10) |
 | `subtitle` | `String?` | Small gray text below `title` |
 | `bottomHelpText` | `String?` | Small gray text at the bottom of the left column (List13) |
 | `trailingText` | `String?` | Primary value text on the right |
@@ -258,7 +295,8 @@ Row { [leadingContent]  [left]  [trailing]   }
 
 **Content-block mode** — set `title` (and optionally surrounding texts):
 - The column expands to fill available width (`weight=1f`)
-- Stack order: `helpTextAbove` (BodySmall/gray) → `title` (Body2Medium/primary) → `subtitle` (BodySmall/gray) → `bottomHelpText` (BodySmall/gray)
+- Stack order: `helpTextAbove` (BodySmall/text-secondary) → `title` (Typography.LabelLarge, `titleColor` ?: text-primary) → `subtitle` (BodySmall/gray) → `bottomHelpText` (BodySmall/gray)
+- The `helpTextAbove` + `title` pair is the Figma **List10** stacked block (secondary label over primary value); set `titleColor` for a coloured value such as a blue link.
 
 ### Variant quick-reference
 
@@ -272,7 +310,7 @@ Row { [leadingContent]  [left]  [trailing]   }
 | List6 | `label`, `trailingTextLines` |
 | List7 | `label`, `trailingLabel` |
 | List8, List9 | `title` only |
-| List10 | `label`, `showInfoIcon = true`, `trailingText` |
+| List10 | `helpTextAbove` (secondary label), `title` (primary value), optional `titleColor` for a blue link |
 | List12 | `topLabel`, `bottomLabel`, `leadingContent { }`, `title`, `subtitle`, `trailingText` |
 | List13 | `helpTextAbove`, `title`, `subtitle`, `bottomHelpText`, `trailingTrailingIcon { }` |
 | List14, List22 | `helpTextAbove`, `title` |
@@ -316,8 +354,14 @@ ListItem(label = "Status", trailingLabel = "Active")
 // List8 — standalone title
 ListItem(title = "Section header")
 
-// List10 — label with ℹ info icon
-ListItem(label = "Public key", showInfoIcon = true, trailingText = "XpubABCD…")
+// List10 — stacked secondary label / primary value (optionally a blue link)
+ListItem(helpTextAbove = "Firebase installation ID", title = "fxUBdkvxQhO-ICxXXXN5mAI")
+ListItem(
+    helpTextAbove = "This is an open sourced app forked from Bitcoin Wallet",
+    title = "https://github.com/dashevo/dash-wallet",
+    titleColor = MyTheme.Colors.dashBlue,
+    onClick = { /* open link */ }
+)
 
 // List13 — full multi-line left block with trailing icon
 ListItem(
@@ -762,6 +806,113 @@ fun createConfirmationDialog(
 }
 ```
 
+## EnterAmount (Figma: EnterAmount)
+
+A horizontal **amount-input bar** from the design system. Renders, left to right: an optional circular `Max` button, a centered amount column (primary amount with currency symbol + Dash logo + currency-picker chevron, optional secondary amount, optional top/bottom help text), an optional circular `show balance` (eye) button, and an optional vertical currency picker.
+
+**Figma file:** Design system - Android — node `4414:23352`
+
+The component lives in:
+```
+common/src/main/java/org/dash/wallet/common/ui/components/EnterAmount.kt
+```
+
+### Public API
+
+```kotlin
+enum class EnterAmountMode { Dash, Fiat }
+const val DASH_CURRENCY_CODE: String = "DASH"
+
+@Composable
+fun EnterAmount(
+    primaryAmount: String = "0",
+    secondaryAmount: String = "0",
+    currencyCodes: List<String> = listOf("USD", DASH_CURRENCY_CODE),
+    selectedCurrencyIndex: Int = 0,
+    locale: Locale = Locale.getDefault(),
+    helpTextTop: String? = null,
+    helpTextBottom: String? = null,
+    showMaxButton: Boolean = true,
+    showBalanceButton: Boolean = true,
+    showPrimaryChevron: Boolean = true,
+    showSecondary: Boolean = true,
+    showCurrencyPicker: Boolean = false,
+    onMaxClick: () -> Unit = {},
+    onBalanceClick: () -> Unit = {},
+    onPrimaryAmountClick: () -> Unit = {},
+    onSecondaryAmountClick: () -> Unit = {},
+    onCurrencyPickerSelect: (SegmentedOption, Int) -> Unit = { _, _ -> },
+    modifier: Modifier = Modifier
+)
+```
+
+### Modes & locale
+
+- **Two display modes**: `Dash` and `Fiat`. Only ONE symbol/icon shows per row at a time:
+  - `Dash` mode renders the Dash D logo (no fiat character).
+  - `Fiat` mode renders the fiat currency symbol derived from the ISO code via `Currency.getInstance(code).getSymbol(locale)`.
+- **Currency codes drive both rows.** `currencyCodes` is a list (commonly 2 entries, e.g. `["USD", "DASH"]`). The entry at `selectedCurrencyIndex` is the **primary** amount; the entry at `(selectedCurrencyIndex + 1) % size` is the **secondary** amount. The sentinel code `"DASH"` (`DASH_CURRENCY_CODE`) maps to `EnterAmountMode.Dash`; any other code is treated as a fiat ISO 4217 code.
+- **Locale-aware symbol position.** The component reads the locale's `NumberFormat` pattern (`DecimalFormat.toPattern()`) and places the symbol/logo before or after the amount accordingly — `$1,234.56` (en-US) vs `1 234,56 €` (fr-FR). The Dash logo follows the same rule (it occupies the "currency symbol" slot).
+- The optional inline currency picker (`showCurrencyPicker = true`) is rendered using the existing `SegmentedPicker` — pass codes via `currencyCodes` and they appear as picker options.
+
+### Layout & tokens
+
+- Container: `Row`, `fillMaxWidth()`, `defaultMinSize(minHeight = 110.dp)`, 20 dp gap, items vertically centred.
+- **Max button**: 40 dp circle, background `Color(0x1A008DE4)` (dashBlue 10% alpha), text `MyTheme.Typography.LabelSmallSemibold` (closest preset to the spec's 10 sp SemiBold), color `MyTheme.Colors.dashBlue`.
+- **Show-balance button**: 40 dp circle, background `MyTheme.Colors.primary8`, eye icon `R.drawable.ic_show` sized 17.5 × 14.6 dp.
+- **Primary amount row**: 4 dp gap. Amount + symbol/logo in `MyTheme.Typography.HeadlineLargeMedium` (32 sp / 40 sp Medium) on `textPrimary`. Dash logo: `R.drawable.ic_dash_d_black` (20 dp). Optional small chevron `R.drawable.ic_chevron_down_small` (10 × 6 dp).
+- **Secondary amount row**: 6 dp outer gap, 2 dp inner gap. `MyTheme.Typography.BodyMedium` on `textTertiary`. Smaller Dash logo: `R.drawable.ic_dash_d_gray` (9 dp). Tiny chevron (5 × 2.5 dp) tinted `textTertiary`.
+- **Help text** (top + bottom): `MyTheme.Typography.BodySmall`, `textTertiary`, centered.
+
+### Usage
+
+```kotlin
+// USD primary, Dash secondary (en-US locale → "$1,234.00")
+EnterAmount(
+    primaryAmount = uiState.primaryAmount,
+    secondaryAmount = uiState.secondaryAmount,
+    currencyCodes = listOf("USD", DASH_CURRENCY_CODE),
+    selectedCurrencyIndex = 0,
+    onMaxClick = viewModel::onMaxClicked,
+    onBalanceClick = viewModel::onToggleBalance,
+    onPrimaryAmountClick = viewModel::openCurrencyPicker
+)
+
+// Tap-to-flip primary/secondary — toggle the index
+EnterAmount(
+    primaryAmount = uiState.primary,
+    secondaryAmount = uiState.secondary,
+    currencyCodes = listOf("EUR", DASH_CURRENCY_CODE),
+    selectedCurrencyIndex = uiState.selectedIndex,
+    onPrimaryAmountClick = { viewModel.flipCurrency() }
+)
+
+// With picker exposed (3 options including DASH)
+EnterAmount(
+    primaryAmount = uiState.amount,
+    currencyCodes = listOf("USD", "EUR", DASH_CURRENCY_CODE),
+    selectedCurrencyIndex = uiState.selectedIndex,
+    showCurrencyPicker = true,
+    onCurrencyPickerSelect = { _, index -> viewModel.selectCurrency(index) }
+)
+
+// French locale — symbol renders AFTER the amount automatically
+EnterAmount(
+    primaryAmount = "1 234,00",
+    secondaryAmount = "12,3456",
+    currencyCodes = listOf("EUR", DASH_CURRENCY_CODE),
+    locale = Locale.FRANCE
+)
+```
+
+### Notes
+
+- The component is "dumb" — it owns no state. Wire it to a ViewModel via the `on*` callbacks and pass already-formatted strings via `primaryAmount` / `secondaryAmount`. The component only handles symbol selection and positioning; numeric formatting (grouping, decimals) is the caller's responsibility.
+- Detection rule: a currency code equal (case-insensitive) to `"DASH"` switches that row to `EnterAmountMode.Dash`. Anything else is treated as a fiat ISO code; an unrecognized code falls back to displaying the code itself.
+- This is the **input bar widget**, not the older numeric-keypad screen. The legacy numeric keypad still lives at `common/ui/enter_amount/EnterAmountFragment.kt` and is unrelated.
+- Typography substitutions vs. the Figma spec: `LabelSmallSemibold` (11 sp) is used in place of the spec's 10 sp SemiBold for the Max label — closest available preset, ~1 sp visual diff.
+- The chevron icon `ic_chevron_down_small.xml` is a small (10 × 6 dp) stroke vector created specifically for this component.
+
 ## Typography Mapping (Figma Design System → MyTheme.Typography)
 
 When implementing designs from Figma, use the following typography mappings. All styles are available in `MyTheme.Typography.*`:
@@ -1101,135 +1252,441 @@ fun MoreScreenPreviewWithCoinJoin() {
 
 When creating bottom sheet dialogs with Compose content, use the `ComposeBottomSheet` class as the base. This provides consistent bottom sheet behavior with drag indicators, close buttons, and proper theming.
 
-## Creating a Compose Dialog
+## Background Color
 
-1. **Factory Function Pattern**: Create a factory function that returns a `ComposeBottomSheet` instance
-2. **String Resources**: Use string resources with descriptive prefixes (e.g., `create_instant_username_`)
-3. **DashButton Components**: Use `DashButton` with appropriate styles instead of Material3 buttons
-4. **Preview Function**: Always include a `@Preview` for the Compose content
+The bottom sheet's background color is set via the `backgroundStyle` property on `OffsetDialogFragment` (the parent of `ComposeBottomSheet`). It uses one of the predefined styles:
 
-### Example Implementation
+- `R.style.PrimaryBackground` — primary surface color
+- `R.style.SecondaryBackground` — secondary surface color (default)
+
+`ComposeBottomSheet` itself has a **no-arg constructor**. Subclasses override the `backgroundStyle` and `forceExpand` properties from `OffsetDialogFragment`:
 
 ```kotlin
-// Factory function that returns ComposeBottomSheet
-fun createInstantUsernameDialog(
-    onCreateInstantUsername: () -> Unit = {},
-    onCancel: () -> Unit = {}
+@AndroidEntryPoint
+class MyDialog : ComposeBottomSheet() {
+    override val backgroundStyle: Int = R.style.PrimaryBackground
+    override val forceExpand: Boolean = false  // optional — false is the default
+
+    @Composable
+    override fun Content() {
+        // your screen content here
+    }
+}
+```
+
+(The factory-function variant — `ComposeBottomSheet(backgroundStyle = …, forceExpand = …) { dialog -> … }` with a trailing content lambda — is a separate class in the wallet module, documented below under "Factory Function Pattern". Don't confuse it with the common `ComposeBottomSheet`.)
+
+**Do not set the background on the first/outermost composable in `Content()`** (e.g., `Modifier.background(...)` or wrapping in a `Surface`/`Box` with a color). The sheet's drawable provides the rounded top corners. If you paint a solid background on the root composable, it covers those corners and the sheet appears with square edges.
+
+If you need a different background color than the two existing styles offer, define a new style in `themes.xml` that points to a drawable with rounded top corners, and pass it via `backgroundStyle` — do not work around it in Compose.
+
+## Drag Indicator (Grabber)
+
+`ComposeBottomSheet` automatically renders the drag indicator (the small horizontal pill at the top of the sheet) via the `Grabber` composable in `org.dash.wallet.common.ui.components`. The base class inserts it above your `Content()` for you.
+
+**Do not add `Grabber()` inside your `Content()` composable** — you'll end up with two pills stacked on top of each other. Just start your `Content()` with the actual screen content (title, body, etc.); the parent class has already laid out the grabber and 17dp of vertical space above your composition.
+
+If you need the grabber in a non-`ComposeBottomSheet` context (e.g., a custom dialog or a draggable Compose-only sheet), import `Grabber` and call it directly — it lives in the common components package alongside `DashButton`, `TopNavBase`, etc.
+
+## Factory Function Pattern
+
+**Never** create a separate `*DialogFragment` subclass. Instead, create a factory function that returns a `ComposeBottomSheet` instance. The ViewModel owns all async work; the factory function receives the ViewModel and an `onDismiss` callback only.
+
+### ViewModel: sealed result state
+
+Define a sealed class in the ViewModel to represent the async operation's state:
+
+```kotlin
+sealed class ExportCsvResult {
+    object Idle : ExportCsvResult()
+    object Loading : ExportCsvResult()
+    data class Success(val file: File) : ExportCsvResult()
+    object Error : ExportCsvResult()
+}
+
+private val _exportCsvResult = MutableStateFlow<ExportCsvResult>(ExportCsvResult.Idle)
+val exportCsvResult: StateFlow<ExportCsvResult> = _exportCsvResult.asStateFlow()
+
+fun exportCsv(cacheDir: File) {
+    if (_exportCsvResult.value is ExportCsvResult.Loading) return
+    viewModelScope.launch {
+        _exportCsvResult.value = ExportCsvResult.Loading
+        try {
+            val file = withContext(Dispatchers.IO) { /* ... produce file ... */ }
+            _exportCsvResult.value = ExportCsvResult.Success(file)
+        } catch (e: Exception) {
+            _exportCsvResult.value = ExportCsvResult.Error
+        }
+    }
+}
+
+fun resetExportCsvResult() {
+    _exportCsvResult.value = ExportCsvResult.Idle
+}
+```
+
+### Factory function
+
+```kotlin
+fun createExportCSVDialog(
+    viewModel: ToolsViewModel,
+    onDismiss: () -> Unit = {}
 ): ComposeBottomSheet {
     return ComposeBottomSheet(
         backgroundStyle = R.style.SecondaryBackground,
-        forceExpand = false,
-        content = { dialog ->
-            CreateInstantUsernameContent(
-                onCreateClick = {
-                    onCreateInstantUsername()
-                    dialog.dismiss()
-                },
-                onCancelClick = {
-                    onCancel()
-                    dialog.dismiss()
-                }
-            )
-        }
-    )
-}
+        forceExpand = false
+    ) { dialog ->
+        val context = LocalContext.current
+        val activity = remember(context) { context.findFragmentActivity() }
+        val exportResult by viewModel.exportCsvResult.collectAsState()
+        val isLoading = exportResult is ToolsViewModel.ExportCsvResult.Loading
 
+        DisposableEffect(Unit) {
+            onDispose { onDismiss() }
+        }
+
+        LaunchedEffect(exportResult) {
+            when (val result = exportResult) {
+                is ToolsViewModel.ExportCsvResult.Loading -> {
+                    dialog.dialog?.setCancelable(false)
+                    dialog.dialog?.setCanceledOnTouchOutside(false)
+                }
+                is ToolsViewModel.ExportCsvResult.Success -> {
+                    if (!activity.isDestroyed) {
+                        startSendIntent(activity, result.file)
+                        dialog.dismiss()
+                    }
+                    viewModel.resetExportCsvResult()
+                }
+                is ToolsViewModel.ExportCsvResult.Error -> {
+                    dialog.dialog?.setCancelable(true)
+                    dialog.dialog?.setCanceledOnTouchOutside(true)
+                    if (!activity.isDestroyed) {
+                        AdaptiveDialog.create(
+                            null,
+                            activity.getString(R.string.error_title),
+                            activity.getString(R.string.error_message),
+                            activity.getString(R.string.button_close)
+                        ).showAsync(activity)
+                        dialog.dismiss()
+                    }
+                    viewModel.resetExportCsvResult()
+                }
+                is ToolsViewModel.ExportCsvResult.Idle -> Unit
+            }
+        }
+
+        ExportCSVContent(
+            isLoading = isLoading,
+            onExportClick = {
+                if (isLoading) return@ExportCSVContent
+                viewModel.exportCsv(activity.cacheDir)
+            }
+        )
+    }
+}
+```
+
+### Content composable
+
+Keep the `@Composable` content function separate and `internal`. Use `SheetButtonGroup` for all button layouts. Include two `@Preview` functions — one for idle, one for loading state:
+
+```kotlin
 @Composable
-private fun CreateInstantUsernameContent(
-    onCreateClick: () -> Unit,
-    onCancelClick: () -> Unit
+internal fun ExportCSVContent(
+    isLoading: Boolean = false,
+    onExportClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
-            .padding(top = 60.dp) // Space for drag indicator and close button
+            .padding(top = 60.dp), // space for drag indicator and close button
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Content wrapper
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 40.dp, vertical = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Title
-            Text(
-                text = stringResource(R.string.create_instant_username_title),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF191C1F),
-                textAlign = TextAlign.Center
-            )
-            
-            Spacer(modifier = Modifier.height(6.dp))
-            
-            // Description
-            Text(
-                text = stringResource(R.string.create_instant_username_description),
-                fontSize = 14.sp,
-                color = Color(0xFF525C66),
-                textAlign = TextAlign.Center,
-                lineHeight = 20.sp
-            )
-        }
-        
-        // Buttons section
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 40.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            // Primary action button
-            DashButton(
-                text = stringResource(R.string.create_instant_username_button),
+        // icon, title, body text ...
+
+        SheetButtonGroup(
+            primaryButton = SheetButton(
+                text = stringResource(R.string.export_transactions),
                 style = Style.FilledBlue,
-                size = Size.Large,
-                onClick = onCreateClick
+                isEnabled = !isLoading,
+                isLoading = isLoading,
+                onClick = onExportClick
             )
-            
-            // Secondary action button
-            DashButton(
-                text = stringResource(R.string.create_instant_username_cancel),
-                style = Style.TintedGray,
-                size = Size.Large,
-                onClick = onCancelClick
-            )
-        }
+        )
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun CreateInstantUsernameContentPreview() {
-    CreateInstantUsernameContent(
-        onCreateClick = { },
-        onCancelClick = { }
-    )
+private fun ExportCSVContentPreview() {
+    ExportCSVContent(isLoading = false, onExportClick = {})
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ExportCSVContentLoadingPreview() {
+    ExportCSVContent(isLoading = true, onExportClick = {})
 }
 ```
 
-### Usage
+### Usage at call site
 
 ```kotlin
-// Show the dialog
-val dialog = createInstantUsernameDialog(
-    onCreateInstantUsername = { 
-        // Handle primary action
-    },
-    onCancel = { 
-        // Handle cancel action
-    }
-)
-dialog.show(supportFragmentManager, "create_instant_username")
+val secureActivity = requireActivity() as? SecureActivity
+secureActivity?.turnOffAutoLogout()
+createExportCSVDialog(
+    viewModel = viewModel,
+    onDismiss = { secureActivity?.turnOnAutoLogout() }
+).show(parentFragmentManager, "export_csv_dialog")
 ```
 
-### Key Points
+### Key rules
 
-- **Top Padding**: Always add 60dp top padding for the drag indicator and close button
-- **Button Spacing**: Use 10dp spacing between buttons in a Column with `Arrangement.spacedBy(10.dp)`
-- **Content Padding**: Use 40dp horizontal padding for content to match design system
-- **Auto-dismiss**: Call `dialog.dismiss()` in button click handlers
-- **String Resources**: Prefix all strings with a descriptive name (e.g., `create_instant_username_`)
-- **DashButton Styles**: Use `Style.FilledBlue` for primary actions, `Style.TintedGray` for secondary actions
-- **Preview**: Always include a preview for development and design review
+- **ViewModel owns async work**: The ViewModel exposes a `StateFlow<SealedResult>` and a trigger function (e.g. `exportCsv()`). The factory function never launches coroutines itself.
+- **`isLoading` from state**: Derive `isLoading` from the StateFlow inside the composable: `val isLoading = result is MyViewModel.Result.Loading`.
+- **`LaunchedEffect(result)`**: React to state changes — lock/unlock dismissal, trigger navigation, show error dialogs, and call `viewModel.resetResult()`.
+- **`DisposableEffect(Unit)`**: Use `onDispose { onDismiss() }` to call the dismiss callback regardless of how the dialog is dismissed.
+- **`context.findFragmentActivity()`**: Obtain the activity inside the composable via `LocalContext.current`, not as a factory parameter.
+- **Blocking dismissal**: Set `setCancelable(false)` / `setCanceledOnTouchOutside(false)` in the `Loading` branch; reset in the `Error` branch.
+- **Top padding**: Always add `padding(top = 60.dp)` for the drag indicator and close button.
+- **SheetButtonGroup**: Use for all button layouts (pass `isLoading` and `isEnabled` to the primary `SheetButton`).
+- **File placement**: `wallet/src/de/schildbach/wallet/ui/compose_views/{Feature}Dialog.kt` — factory function and content composable in one file.
+- **String resources**: Prefix all strings with a descriptive name.
+- **Preview**: Always include both an idle and a loading `@Preview`.
+
+# Compose Bottom Sheet Dialogs with an Owned ViewModel (Subclass Pattern)
+
+The factory function pattern above is the default. Use this **subclass pattern** only when the factory function pattern is insufficient — specifically, when the dialog needs to **own** its own Hilt-injected ViewModel with a lifecycle scoped to the dialog itself (not the host fragment/activity), and/or needs Fragment-only APIs that cannot be obtained reliably from inside a `@Composable`.
+
+## When to use this pattern
+
+Use the subclass pattern when **any** of the following apply:
+
+1. **Dialog-scoped Hilt ViewModel.** The dialog has its own `@HiltViewModel` injected via `by viewModels<MyViewModel>()` and that ViewModel must be scoped to the dialog instance (e.g. it holds per-instance state like `transactionId`, polling jobs, retry counters, or temporary caches that should die with the dialog).
+2. **Bundle arguments via `newInstance(...)`.** The dialog is opened with non-trivial parameters that need to survive configuration changes — pass them via `arguments = bundleOf(...)` and read them in `onViewCreated`.
+3. **Fragment-only APIs.** The dialog needs `registerForActivityResult` (must be called before `STARTED`), `BottomSheetBehavior` callbacks, dialog window manipulation (e.g. `screenBrightness`), or `onDestroyView` cleanup.
+4. **Multiple Hilt-injected ViewModels** that need to coexist (e.g. one dialog-scoped, one shared with the parent activity).
+
+If none of these apply, prefer the factory function pattern — it has fewer moving parts.
+
+## Structure
+
+The dialog file contains three logical layers, each with a clear responsibility:
+
+```
+@AndroidEntryPoint
+class FeatureDetailsDialog : ComposeBottomSheet() {   // Layer 1: lifecycle + plumbing
+    override fun Content() { FeatureDetailsContent(...) } // bridges to layer 2
+}
+
+@Composable
+private fun FeatureDetailsContent(viewModel, callbacks)   // Layer 2: state collection
+                                                          // collectAsState, LaunchedEffect, side effects
+
+@Composable
+internal fun FeatureDetailsView(uiState, callbacks)       // Layer 3: pure UI (preview-friendly)
+```
+
+**Layer 1 — `ComposeBottomSheet` subclass:** owns the ViewModel, reads arguments, manages window/sheet behaviour, exposes Fragment-only callbacks. Overrides `Content()` to bridge into the composable layer.
+
+**Layer 2 — `*Content` composable (private):** receives the ViewModel, calls `collectAsState`, runs `LaunchedEffect` side effects, then delegates UI to layer 3. Holds **no** UI of its own.
+
+**Layer 3 — `*View` composable (internal):** pure UI. Takes a `UIState` data class plus stateless lambda callbacks. Drives all `@Preview` functions.
+
+## Example
+
+```kotlin
+@AndroidEntryPoint
+class GiftCardDetailsDialog : ComposeBottomSheet() {
+    override val backgroundStyle = R.style.PrimaryBackground
+    override val forceExpand = true
+    companion object {
+        private const val ARG_TRANSACTION_ID = "transactionId"
+        private const val ARG_CARD_INDEX = "cardIndex"
+        private const val WAIT_LIMIT_FOR_ERROR = 60
+
+        fun newInstance(transactionId: Sha256Hash, cardIndex: Int = 0) =
+            GiftCardDetailsDialog().apply {
+                arguments = bundleOf(
+                    ARG_TRANSACTION_ID to transactionId,
+                    ARG_CARD_INDEX to cardIndex
+                )
+            }
+    }
+
+    // Dialog-scoped Hilt ViewModel (lives and dies with this dialog instance)
+    private val viewModel by viewModels<GiftCardDetailsViewModel>()
+    // Activity-scoped ViewModel for cross-screen state (use `by activityViewModels()` if needed)
+    private val ctxSpendViewModel by activityViewModels<DashSpendViewModel>()
+
+    private var originalBrightness: Float = -1f
+
+    private val bottomSheetCallback = object : BottomSheetBehavior.BottomSheetCallback() {
+        override fun onStateChanged(bottomSheet: View, newState: Int) {}
+        override fun onSlide(bottomSheet: View, slideOffset: Float) {
+            if (slideOffset < -0.5) setMaxBrightness(false)
+        }
+    }
+
+    // registerForActivityResult MUST be a property of the Fragment — cannot live in a composable
+    private val launcher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { /* handle result */ }
+
+    @Composable
+    override fun Content() {
+        GiftCardDetailsContent(
+            viewModel = viewModel,
+            waitLimitForError = WAIT_LIMIT_FOR_ERROR,
+            onMaxBrightness = { enable -> setMaxBrightness(enable) },
+            onViewTransaction = {
+                deepLinkNavigate(DeepLinkDestination.Transaction(viewModel.transactionId.toString()))
+            },
+            onContactSupport = { contactSupport() },
+            onErrorLogged = { error, msg -> ctxSpendViewModel.logError(error, msg) }
+        )
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Read Bundle args and forward to the ViewModel exactly once
+        (requireArguments().getSerializable(ARG_TRANSACTION_ID) as? Sha256Hash)?.let { txId ->
+            val cardIndex = requireArguments().getInt(ARG_CARD_INDEX, 0)
+            viewModel.init(txId, cardIndex)
+        }
+        subscribeToBottomSheetCallback()
+    }
+
+    private fun setMaxBrightness(enable: Boolean) {
+        val window = dialog?.window ?: return
+        val params = window.attributes
+        if (enable) {
+            if (originalBrightness < 0) originalBrightness = params.screenBrightness
+            params.screenBrightness = 1.0f
+        } else {
+            params.screenBrightness = originalBrightness
+        }
+        window.attributes = params
+    }
+
+    private fun subscribeToBottomSheetCallback() {
+        val sheet = (dialog as BottomSheetDialog)
+            .findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        sheet?.let { BottomSheetBehavior.from(it).addBottomSheetCallback(bottomSheetCallback) }
+    }
+
+    override fun dismiss() {
+        setMaxBrightness(false)
+        super.dismiss()
+    }
+
+    override fun onDestroyView() {
+        val sheet = dialog?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        sheet?.let { BottomSheetBehavior.from(it).removeBottomSheetCallback(bottomSheetCallback) }
+        setMaxBrightness(false)
+        super.onDestroyView()
+    }
+}
+
+// ─── Layer 2: state-collection bridge ────────────────────────────────────────
+@Composable
+private fun GiftCardDetailsContent(
+    viewModel: GiftCardDetailsViewModel,
+    waitLimitForError: Int,
+    onMaxBrightness: (Boolean) -> Unit,
+    onViewTransaction: () -> Unit,
+    onContactSupport: () -> Unit,
+    onErrorLogged: (Exception, String) -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val activity = remember(context) { context.findFragmentActivity() }
+
+    LaunchedEffect(uiState.error, uiState.queries) {
+        if (uiState.error != null && uiState.queries == waitLimitForError) {
+            onErrorLogged(uiState.error!!, "delivery failed after retries")
+        }
+    }
+
+    GiftCardDetailsView(
+        uiState = uiState,
+        waitLimitForError = waitLimitForError,
+        onMaxBrightness = onMaxBrightness,
+        onViewTransaction = onViewTransaction,
+        onContactSupport = onContactSupport,
+        onHowToUse = { viewModel.logEvent(AnalyticsConstants.DashSpend.HOW_TO_USE) },
+        onBalanceCheck = { url -> context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) },
+        onCopyNumber = { number -> number.copy(activity, "card number") },
+        onCopyPin = { pin -> pin.copy(activity, "card pin") }
+    )
+}
+
+// ─── Layer 3: pure UI (used by previews) ─────────────────────────────────────
+@Composable
+internal fun GiftCardDetailsView(
+    uiState: GiftCardUIState,
+    waitLimitForError: Int = 60,
+    onMaxBrightness: (Boolean) -> Unit = {},
+    onViewTransaction: () -> Unit = {},
+    onContactSupport: () -> Unit = {},
+    onHowToUse: () -> Unit = {},
+    onBalanceCheck: (String) -> Unit = {},
+    onCopyNumber: (String) -> Unit = {},
+    onCopyPin: (String) -> Unit = {}
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 60.dp)) {
+        // … pure UI driven by uiState …
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LoadingPreview() {
+    GiftCardDetailsView(uiState = GiftCardUIState(/* loading state */))
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ErrorPreview() {
+    GiftCardDetailsView(uiState = GiftCardUIState(/* error state */))
+}
+```
+
+## Usage at call site
+
+```kotlin
+GiftCardDetailsDialog
+    .newInstance(transactionId, cardIndex)
+    .show(parentFragmentManager, "gift_card_details")
+```
+
+## Key rules
+
+- **`@AndroidEntryPoint` is required** on the subclass for Hilt to inject the ViewModel obtained via `by viewModels<...>()`.
+- **`newInstance(...) + bundleOf(...)`** for arguments — never pass parameters through constructors. Read in `onViewCreated` and forward to the ViewModel via an `init(...)` function exactly once.
+- **ViewModel scope:**
+  - `by viewModels<X>()` → scoped to the dialog (recreated per instance) — use this when state must die with the dialog.
+  - `by activityViewModels<X>()` / `by exploreViewModels<X>()` (project helper) → shared with the host — use this only for cross-screen state already owned by the host.
+- **Three-layer separation is mandatory.** Keep the `*Content` bridge composable **private** and **stateless apart from `collectAsState`/`LaunchedEffect`**. Keep the `*View` composable **internal** and **pure** so previews can drive it directly with `UIState` instances.
+- **Side effects in layer 2, not layer 3.** All `LaunchedEffect`, `DisposableEffect`, `findFragmentActivity()`, `LocalContext` access happens in the `*Content` layer. Layer 3 receives only `uiState` and lambdas.
+- **Fragment APIs stay in the subclass.** `registerForActivityResult`, `BottomSheetBehavior` callbacks, `dialog?.window` manipulation, `onDestroyView` cleanup — all live in layer 1 and are exposed to the composable via lambda parameters (e.g. `onMaxBrightness`).
+- **Lifecycle cleanup is mandatory.** Anything subscribed in `onViewCreated` (sheet callbacks, brightness overrides) must be reverted in `onDestroyView` and `dismiss()`. Don't leak `BottomSheetBehavior` callbacks across recreations.
+- **`forceExpand`:** set `true` for full-height detail dialogs (e.g. gift card details), `false` for short confirmation/info sheets.
+- **Top padding:** the `*View` composable still needs `padding(top = 60.dp)` to clear the drag indicator and close button.
+- **Previews:** drive every meaningful state (loading, success, error, empty) through layer 3 with hand-built `UIState` instances. Never preview layer 2 — it depends on a real ViewModel.
+- **File placement:** `features/{module}/.../dialogs/{Feature}Dialog.kt` — all three layers in one file.
+
+## Choosing between the two patterns
+
+| Need | Factory function | Subclass |
+|---|---|---|
+| ViewModel already lives in the host (activity/parent fragment) | ✅ | — |
+| One-shot async action (export, submit, retry) | ✅ | — |
+| Dialog has no parameters, or only simple lambdas | ✅ | — |
+| Dialog-scoped ViewModel with per-instance state | — | ✅ |
+| Bundle arguments needed (survives config changes) | — | ✅ |
+| `registerForActivityResult` from inside the dialog | — | ✅ |
+| `BottomSheetBehavior` callbacks / window brightness control | — | ✅ |
+| Long-lived polling, ticker jobs, or retry loops scoped to the dialog | — | ✅ |

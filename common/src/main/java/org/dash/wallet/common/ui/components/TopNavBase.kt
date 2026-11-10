@@ -29,18 +29,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.dash.wallet.common.R
 
 /**
  * Base navigation bar component (NavBar in Figma design system).
@@ -173,7 +170,7 @@ fun TopNavBase(
                         Icon(
                             imageVector = trailingIcon,
                             contentDescription = trailingContentDescription,
-                            tint = MyTheme.Colors.dashBlue,
+                            tint = Color.Unspecified,
                             modifier = Modifier
                                 .size(22.dp)
                                 .then(if (onTrailingClick != null) Modifier.clickable { onTrailingClick() } else Modifier)
@@ -221,10 +218,28 @@ fun NavBarBack(
 ) {
     TopNavBase(
         modifier = modifier,
-        leadingIcon = ImageVector.vectorResource(R.drawable.ic_menu_chevron),
+        leadingIcon = MyImages.MenuChevron,
         onLeadingClick = onBackClick,
         centralPart = false,
         trailingPart = false
+    )
+}
+
+/** NavBarBack — back chevron only, no title. */
+@Composable
+fun NavBarBackClose(
+    onBackClick: () -> Unit,
+    onCloseClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    TopNavBase(
+        modifier = modifier,
+        leadingIcon = MyImages.MenuChevron,
+        onLeadingClick = onBackClick,
+        centralPart = false,
+        trailingPart = true,
+        trailingIcon = MyImages.NavBarClose,
+        onTrailingClick = onCloseClick
     )
 }
 
@@ -237,7 +252,7 @@ fun NavBarBackTitle(
 ) {
     TopNavBase(
         modifier = modifier,
-        leadingIcon = ImageVector.vectorResource(R.drawable.ic_menu_chevron),
+        leadingIcon = MyImages.MenuChevron,
         onLeadingClick = onBackClick,
         trailingPart = false,
         title = title
@@ -254,9 +269,9 @@ fun NavBarBackTitleInfo(
 ) {
     TopNavBase(
         modifier = modifier,
-        leadingIcon = ImageVector.vectorResource(R.drawable.ic_menu_chevron),
+        leadingIcon = MyImages.MenuChevron,
         onLeadingClick = onBackClick,
-        trailingIcon = Icons.Default.Info,
+        trailingIcon = MyImages.NavBarInfo,
         trailingIconCircle = false,
         onTrailingClick = onInfoClick,
         title = title
@@ -273,7 +288,7 @@ fun NavBarTitleClose(
     TopNavBase(
         modifier = modifier,
         leadingPart = false,
-        trailingIcon = Icons.Default.Close,
+        trailingIcon = MyImages.NavBarClose,
         onTrailingClick = onCloseClick,
         title = title
     )
@@ -289,7 +304,7 @@ fun NavBarBackTitlePlus(
 ) {
     TopNavBase(
         modifier = modifier,
-        leadingIcon = ImageVector.vectorResource(R.drawable.ic_menu_chevron),
+        leadingIcon = MyImages.MenuChevron,
         onLeadingClick = onBackClick,
         trailingIcon = Icons.Default.Add,
         onTrailingClick = onPlusClick,
@@ -306,7 +321,7 @@ fun NavBarBackPlus(
 ) {
     TopNavBase(
         modifier = modifier,
-        leadingIcon = ImageVector.vectorResource(R.drawable.ic_menu_chevron),
+        leadingIcon = MyImages.MenuChevron,
         onLeadingClick = onBackClick,
         centralPart = false,
         trailingIcon = Icons.Default.Add,
@@ -338,7 +353,7 @@ fun NavBarClose(
         modifier = modifier,
         leadingPart = false,
         centralPart = false,
-        trailingIcon = Icons.Default.Close,
+        trailingIcon = MyImages.NavBarClose,
         onTrailingClick = onCloseClick
     )
 }
@@ -374,7 +389,7 @@ fun NavBarBackTitleAction(
 ) {
     TopNavBase(
         modifier = modifier,
-        leadingIcon = ImageVector.vectorResource(R.drawable.ic_menu_chevron),
+        leadingIcon = MyImages.MenuChevron,
         onLeadingClick = onBackClick,
         trailingText = actionText,
         onTrailingClick = onActionClick,
@@ -392,7 +407,7 @@ fun NavBarBackAction(
 ) {
     TopNavBase(
         modifier = modifier,
-        leadingIcon = ImageVector.vectorResource(R.drawable.ic_menu_chevron),
+        leadingIcon = MyImages.MenuChevron,
         onLeadingClick = onBackClick,
         centralPart = false,
         trailingText = actionText,
@@ -417,7 +432,7 @@ private fun NavBarPreview() {
         NavBarTitleClose(title = "Label", onCloseClick = {})
         NavBarBackTitlePlus(title = "Label", onBackClick = {}, onPlusClick = {})
         NavBarBackPlus(onBackClick = {}, onPlusClick = {})
-        NavBarTitle(title = "Label")
+        NavBarTitle(title = "Title Only")
         NavBarClose(onCloseClick = {})
         NavBarActionTitleAction(
             title = "Label",

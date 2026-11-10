@@ -17,12 +17,18 @@
 
 package de.schildbach.wallet.ui.more
 
-import androidx.lifecycle.*
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import de.schildbach.wallet.Constants
 import de.schildbach.wallet.WalletApplication
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.dash.wallet.common.data.Status
 import org.dash.wallet.common.services.SystemActionsService
@@ -31,7 +37,22 @@ import org.dash.wallet.features.exploredash.repository.DataSyncStatusService
 import org.dash.wallet.features.exploredash.repository.ExploreRepository
 import org.dash.wallet.features.exploredash.utils.ExploreConfig
 import org.dash.wallet.features.exploredash.utils.ExploreDatabasePrefs
+import org.dash.wallet.common.util.isMainNet
 import javax.inject.Inject
+
+/**
+ * Raw ViewModel state for the About screen. Consolidated into a single immutable
+ * snapshot so the UI never observes a mix of stale/fresh individual fields. The
+ * fragment maps this (plus context-formatted strings) into the screen's [AboutUIState].
+ */
+data class AboutViewState(
+    val exploreRemoteTimestamp: Long? = null,
+    val exploreIsSyncing: Boolean = false,
+    val firebaseInstallationId: String = "",
+    val firebaseCloudMessagingToken: String = "",
+    val isMainNet: Boolean = true,
+    val databasePrefs: ExploreDatabasePrefs = ExploreDatabasePrefs()
+)
 
 @HiltViewModel
 class AboutViewModel @Inject constructor(
@@ -43,37 +64,26 @@ class AboutViewModel @Inject constructor(
     private val systemActionsService: SystemActionsService
 ): ViewModel() {
 
-    private val _exploreRemoteTimestamp = MutableLiveData<Long>()
-    val exploreRemoteTimestamp: LiveData<Long>
-        get() = _exploreRemoteTimestamp
-
-    private val _exploreIsSyncing = MutableLiveData<Boolean>()
-    val exploreIsSyncing: LiveData<Boolean>
-        get() = _exploreIsSyncing
-
-    private val _firebaseInstallationId = MutableLiveData<String>()
-    val firebaseInstallationId: LiveData<String>
-        get() = _firebaseInstallationId
-
-    private val _firebaseCloudMessagingToken = MutableLiveData<String>()
-    val firebaseCloudMessagingToken: LiveData<String>
-        get() = _firebaseCloudMessagingToken
-
-    var databasePrefs: ExploreDatabasePrefs = ExploreDatabasePrefs()
-        private set
+    private val _uiState = MutableStateFlow(
+        AboutViewState(isMainNet = Constants.NETWORK_PARAMETERS.isMainNet())
+    )
+    val uiState: StateFlow<AboutViewState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            _exploreRemoteTimestamp.value = exploreRepository.getRemoteTimestamp()
+            val timestamp = exploreRepository.getRemoteTimestamp()
+            _uiState.update { it.copy(exploreRemoteTimestamp = timestamp) }
         }
 
         dataSyncStatus.getSyncProgressFlow()
-            .onEach { _exploreIsSyncing.value = it.status == Status.LOADING }
+            .onEach { progress ->
+                _uiState.update { it.copy(exploreIsSyncing = progress.status == Status.LOADING) }
+            }
             .launchIn(viewModelScope)
 
         exploreConfig.exploreDatabasePrefs
             .distinctUntilChanged()
-            .onEach { databasePrefs = it }
+            .onEach { prefs -> _uiState.update { it.copy(databasePrefs = prefs) } }
             .launchIn(viewModelScope)
     }
 
@@ -82,17 +92,17 @@ class AboutViewModel @Inject constructor(
     }
 
     fun copyFCMToken() {
-        val fcmToken = _firebaseCloudMessagingToken.value
+        val fcmToken = _uiState.value.firebaseCloudMessagingToken
 
-        if (!fcmToken.isNullOrEmpty()) {
+        if (fcmToken.isNotEmpty()) {
             systemActionsService.copyText(fcmToken, "FCM token")
         }
     }
 
     fun copyFirebaseInstallationId() {
-        val firebaseId = _firebaseInstallationId.value
+        val firebaseId = _uiState.value.firebaseInstallationId
 
-        if (!firebaseId.isNullOrEmpty()) {
+        if (firebaseId.isNotEmpty()) {
             systemActionsService.copyText(firebaseId, "Firebase Installation Id")
         }
     }

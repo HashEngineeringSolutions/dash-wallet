@@ -179,7 +179,7 @@
             android:label="@string/block_info"
             android:theme="@style/LockScreenActivity.Child.Theme" />
         <activity
-            android:name="de.schildbach.wallet.ui.scan.ScanActivity"
+            android:name="org.dash.wallet.common.ui.scan.ScanActivity"
             android:configChanges="keyboard|keyboardHidden"
             android:stateNotNeeded="true"
             android:theme="@style/My.Theme.Fullscreen"
@@ -272,11 +272,6 @@
             android:parentActivityName="de.schildbach.wallet.ui.main.MainActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/LockScreenActivity.Child.Theme" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.more.AboutActivity"
-            android:screenOrientation="portrait"
             android:theme="@style/LockScreenActivity.Child.Theme" />
 
         <activity

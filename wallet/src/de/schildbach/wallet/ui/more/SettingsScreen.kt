@@ -119,7 +119,7 @@ private fun SettingsScreenContent(
     var balanceIcon: Int? = null
     val decimalFormat = DecimalFormat("0.000")
     
-    if (uiState.coinJoinMixingMode == CoinJoinMode.NONE) {
+    if (uiState.coinJoinMixingMode == CoinJoinMode.NONE && uiState.coinJoinMixingStatus != MixingStatus.FINISHING) {
         statusId = R.string.turned_off
    } else {
         if (uiState.coinJoinMixingStatus == MixingStatus.FINISHED) {
@@ -166,7 +166,6 @@ private fun SettingsScreenContent(
         // Settings Header
         TopIntro(
             heading = stringResource(R.string.settings_title),
-            modifier = Modifier.padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 20.dp)
         )
 
         // Scrollable Content

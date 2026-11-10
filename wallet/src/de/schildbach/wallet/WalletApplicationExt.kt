@@ -23,6 +23,7 @@ import androidx.work.WorkManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 object WalletApplicationExt {
     /**
@@ -39,7 +40,12 @@ object WalletApplicationExt {
                 transactionMetadataProvider.clear()
             }
             identityRepository.clearDatabase(isWalletWipe)
+            txDisplayCacheService.clearDatabase()
             WorkManager.getInstance(context).cancelAllWork()
         }
+    }
+
+    fun WalletApplication.clearCachedAddresses(): Unit = runBlocking {
+        exchangeIntegrationProvider.clearCachedAddresses()
     }
 }

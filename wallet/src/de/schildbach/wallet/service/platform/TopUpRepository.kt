@@ -33,6 +33,7 @@ import de.schildbach.wallet.service.CoinJoinMode
 import de.schildbach.wallet.service.DashSystemService
 import de.schildbach.wallet.service.platform.work.TopupIdentityWorker
 import de.schildbach.wallet.ui.dashpay.PlatformRepo
+import de.schildbach.wallet_test.BuildConfig
 import org.bitcoinj.core.Coin
 import org.bitcoinj.core.Context
 import org.bitcoinj.core.DumpedPrivateKey
@@ -78,6 +79,7 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import kotlin.coroutines.resume
+import androidx.core.net.toUri
 
 /**
  * contains topup related functions that are used by:
@@ -441,6 +443,7 @@ class TopUpRepositoryImpl @Inject constructor(
             if (confidence.confidenceType == TransactionConfidence.ConfidenceType.UNKNOWN) {
                 platform.client.getTransactionKotlin(confidence.transactionHash.toString())?.let { txInfo ->
                     if (txInfo.height > 0) {
+                        confidence.confidenceType = TransactionConfidence.ConfidenceType.BUILDING
                         confidence.appearedAtChainHeight = txInfo.height
                     }
                     if (txInfo.isChainLocked) {

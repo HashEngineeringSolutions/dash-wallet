@@ -493,7 +493,7 @@ class PlatformSynchronizationService @Inject constructor(
                             }
                         )
                     } catch (e: Exception) {
-                        log.error("error obtaining encryption key", e)
+                        log.error("error syncing secondary items: ", e)
                         return@coroutineScope
                     }
                 }
@@ -1089,6 +1089,42 @@ class PlatformSynchronizationService @Inject constructor(
                                 giftCard.merchantUrl = url
                             }
                         }
+                        metadata.order?.let { order ->
+                            metadataDocumentRecord.order = order
+                            log.info("processing TxMetadata: order change")
+                            if (cachedItems.find {
+                                    it.txId == txIdAsHash && it.cacheTimestamp > doc.updatedAt!! &&
+                                        it.order != null && it.order != order
+                                } == null
+                            ) {
+                                log.info("processing TxMetadata: order change: changing order")
+                                giftCard.note = order
+                            }
+                        }
+                        metadata.giftCardChallenge?.let { challenge ->
+                            metadataDocumentRecord.giftCardChallenge = challenge
+                            log.info("processing TxMetadata: gift card challenge change")
+                            if (cachedItems.find {
+                                    it.txId == txIdAsHash && it.cacheTimestamp > doc.updatedAt!! &&
+                                        it.giftCardChallenge != null && it.giftCardChallenge != challenge
+                                } == null
+                            ) {
+                                log.info("processing TxMetadata: gift card challenge change: changing challenge")
+                                giftCard.redeemUrlChallenge = challenge
+                            }
+                        }
+                        metadata.index?.let { index ->
+                            metadataDocumentRecord.index = index
+                            log.info("processing TxMetadata: gift card index change")
+                            if (cachedItems.find {
+                                    it.txId == txIdAsHash && it.cacheTimestamp > doc.updatedAt!! &&
+                                        it.index != null && it.index != index
+                                } == null
+                            ) {
+                                log.info("processing TxMetadata: gift card index change: changing index")
+                                giftCard.index = index
+                            }
+                        }
 
                         log.info("syncing metadata with platform updates: $updatedMetadata")
                         transactionMetadataProvider.syncPlatformMetadata(txIdAsHash, updatedMetadata, giftCard, iconUrl)
@@ -1134,7 +1170,11 @@ class PlatformSynchronizationService @Inject constructor(
                 it.originalPrice,
                 it.barcodeValue,
                 it.barcodeFormat,
-                it.merchantUrl
+                it.merchantUrl,
+                null,
+                it.order,
+                it.giftCardChallenge,
+                it.index
             )
         }
         progressListener?.invoke(10)
@@ -1171,6 +1211,9 @@ class PlatformSynchronizationService @Inject constructor(
             barcodeValue = docs.lastOrNull { it.barcodeValue != null }?.barcodeValue,
             barcodeFormat = docs.lastOrNull { it.barcodeFormat != null }?.barcodeFormat,
             merchantUrl = docs.lastOrNull { it.merchantUrl != null }?.merchantUrl,
+            order = docs.lastOrNull { it.order != null }?.order,
+            giftCardChallenge = docs.lastOrNull { it.giftCardChallenge != null}?.giftCardChallenge,
+            index = docs.lastOrNull { it.index != null }?.index
         )
     }
 
@@ -1207,7 +1250,7 @@ class PlatformSynchronizationService @Inject constructor(
                     val currentItem = transactionMetadataProvider.getTransactionMetadata(tx.txId)!!
                     val giftCard = giftCardDao.getCardForTransaction(tx.txId)
 
-                    if (!previouslySaved.compare(currentItem, giftCard)) {
+                    if (!previouslySaved.compare(currentItem, giftCard.firstOrNull())) {
                         listOfUnsaved.add(tx)
                         firstUnsavedTxDate = if (firstUnsavedTxDate != 0L) {
                             min(firstUnsavedTxDate, tx.updateTime.time)
@@ -1243,7 +1286,7 @@ class PlatformSynchronizationService @Inject constructor(
 
                     val metadataItem = TransactionMetadataCacheItem(
                         metadata,
-                        giftCard
+                        giftCard.firstOrNull()
                     )
                     log.info("publish: item: {}", metadataItem)
                     val diff = metadataItem - saved
@@ -1331,6 +1374,12 @@ class PlatformSynchronizationService @Inject constructor(
                     }
                     changedItem.merchantUrl?.let { merchantUrl ->
                         item.merchantUrl = merchantUrl
+                    }
+                    changedItem.order?.let { order ->
+                        item.order = order
+                    }
+                    changedItem.giftCardChallenge?.let { giftCardChallenge ->
+                        item.giftCardChallenge = giftCardChallenge
                     }
                 }
             } else {

@@ -41,7 +41,6 @@ import com.google.common.collect.ImmutableList
 import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet.Constants
 import de.schildbach.wallet.data.InvitationLinkData
-import de.schildbach.wallet.data.PaymentIntent
 import de.schildbach.wallet.livedata.SeriousError
 import de.schildbach.wallet.livedata.Status
 import de.schildbach.wallet.ui.*
@@ -49,6 +48,8 @@ import de.schildbach.wallet.ui.coinjoin.CoinJoinLevelViewModel
 import de.schildbach.wallet.ui.dashpay.*
 import de.schildbach.wallet.ui.invite.InviteHandler
 import de.schildbach.wallet.ui.invite.InviteSendContactRequestDialog
+import de.schildbach.wallet.ui.staking.StakingActivity
+import de.schildbach.wallet.ui.staking.createCrowdNodeWithdrawalReminderDialog
 import de.schildbach.wallet.ui.main.MainActivityExt.checkLowStorageAlert
 import de.schildbach.wallet.ui.main.MainActivityExt.checkTimeSkew
 import de.schildbach.wallet.ui.main.MainActivityExt.handleFirebaseAction
@@ -71,6 +72,7 @@ import org.bitcoinj.crypto.ChildNumber
 import org.bitcoinj.wallet.DerivationPathFactory
 import org.bitcoinj.wallet.WalletEx
 import org.dash.wallet.common.Configuration
+import org.dash.wallet.common.data.PaymentIntent
 import org.dash.wallet.common.ui.BaseAlertDialogBuilder
 import org.dash.wallet.common.ui.components.ComposeHostFrameLayout
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
@@ -125,6 +127,7 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
     private var isRestoringBackup = false
     private var showBackupWalletDialog = false
     private var retryCreationIfInProgress = true
+    private var pendingCrowdNodeWithdrawalReminder = false
     var composeHostFrameLayout: ComposeHostFrameLayout? = null
 
     val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
@@ -195,7 +198,7 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
     }
 
     fun initViewModel() {
-        viewModel.isAbleToCreateIdentityLiveData.observe(this) {
+        viewModel.isAbleToCreateIdentity.observe(this) {
             // empty observer just to trigger data loading
             // viewModel is shared with some fragments keeping the observer active
             // inside the parent Activity will avoid recreation of relatively complex
@@ -228,6 +231,15 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
                 }
             }
         }
+        viewModel.showCrowdNodeWithdrawalReminder.observe(this) {
+            if (lockScreenDisplayed) {
+                // Don't surface the reminder over the lock screen; defer until it's dismissed.
+                pendingCrowdNodeWithdrawalReminder = true
+            } else {
+                presentCrowdNodeWithdrawalReminder()
+            }
+        }
+
         viewModel.sendContactRequestState.observe(this) { workInfoMap ->
             config.inviter?.also { initInvitationUserId ->
                 if (!config.inviterContactRequestSentInfoShown) {
@@ -533,6 +545,17 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
             explainPushNotifications()
         }
         showStaleRatesToast()
+
+        if (pendingCrowdNodeWithdrawalReminder) {
+            pendingCrowdNodeWithdrawalReminder = false
+            presentCrowdNodeWithdrawalReminder()
+        }
+    }
+
+    private fun presentCrowdNodeWithdrawalReminder() {
+        createCrowdNodeWithdrawalReminderDialog {
+            startActivity(StakingActivity.createIntent(this, goToWithdraw = true))
+        }.show(this)
     }
 
     override fun onLockScreenActivated() {

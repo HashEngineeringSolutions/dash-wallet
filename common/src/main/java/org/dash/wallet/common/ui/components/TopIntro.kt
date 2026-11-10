@@ -26,36 +26,101 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+
+//@Composable
+//fun TopIntro(
+//    heading: String,
+//    text: String? = null,
+//    modifier: Modifier = Modifier.padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 20.dp)
+//) {
+//    Column(
+//        modifier = modifier.fillMaxWidth(),
+//        verticalArrangement = Arrangement.spacedBy(2.dp),
+//        horizontalAlignment = Alignment.Start
+//    ) {
+//        // Heading
+//        Text(
+//            text = heading,
+//            style = MyTheme.Typography.HeadlineMediumBold,
+//            color = MyTheme.Colors.textPrimary,
+//            modifier = Modifier.fillMaxWidth()
+//        )
+//
+//        // Optional text
+//        text?.let {
+//            Text(
+//                text = it,
+//                style = MyTheme.Typography.BodyMedium,
+//                color = MyTheme.Colors.textPrimary,
+//                modifier = Modifier.fillMaxWidth()
+//            )
+//        }
+//    }
+//}
 
 @Composable
 fun TopIntro(
     heading: String,
     text: String? = null,
-    modifier: Modifier = Modifier.padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 20.dp)
+    textTwo: String? = null,
+    textThree: String? = null,
+//    modifier: Modifier = Modifier.padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 20.dp),
+    icon: @Composable () -> Unit = {}
 ) {
     Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = Modifier
+            .padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 20.dp)
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        // Heading
-        Text(
-            text = heading,
-            style = MyTheme.H5Bold,
-            color = MyTheme.Colors.textPrimary,
-            modifier = Modifier.fillMaxWidth()
-        )
-        
-        // Optional text
-        text?.let {
+        icon()
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
             Text(
-                text = it,
-                style = MyTheme.Body2Regular,
+                text = heading,
+                style = MyTheme.Typography.HeadlineMediumBold,
                 color = MyTheme.Colors.textPrimary,
+                textAlign = TextAlign.Start,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            text?.let {
+                Text(
+                    text = it,
+                    style = MyTheme.Typography.BodyMedium,
+                    color = MyTheme.Colors.textSecondary,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            textTwo?.let {
+                Text(
+                    text = it,
+                    style = MyTheme.Typography.BodyMedium,
+                    color = MyTheme.Colors.textSecondary,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            textThree?.let {
+                Text(
+                    text = it,
+                    style = MyTheme.Typography.BodyMedium,
+                    color = MyTheme.Colors.textSecondary,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
@@ -64,7 +129,8 @@ fun TopIntro(
 @Preview
 fun TopIntroPreview() {
     Column(
-        modifier = Modifier.padding(16.dp)
+        modifier = Modifier
+            .padding(16.dp)
             .background(MyTheme.Colors.backgroundPrimary),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {

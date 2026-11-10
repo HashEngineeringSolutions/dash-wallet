@@ -124,6 +124,119 @@ class AppDatabaseMigrations {
             }
         }
 
+        val migration16to17 = object : Migration(16, 17) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `tx_display_cache` (
+                        `rowId` TEXT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `valueSatoshis` INTEGER NOT NULL,
+                        `iconType` INTEGER NOT NULL,
+                        `iconBgType` INTEGER NOT NULL,
+                        `statusText` TEXT NOT NULL,
+                        `comment` TEXT NOT NULL,
+                        `transactionAmount` INTEGER NOT NULL,
+                        `time` INTEGER NOT NULL,
+                        `hasErrors` INTEGER NOT NULL,
+                        `service` TEXT,
+                        `exchangeRateFiatCode` TEXT,
+                        `exchangeRateFiatValue` INTEGER,
+                        `contactUsername` TEXT,
+                        `contactDisplayName` TEXT,
+                        `contactAvatarUrl` TEXT,
+                        `contactUserId` TEXT,
+                        `filterFlags` INTEGER NOT NULL,
+                        PRIMARY KEY(`rowId`)
+                    )
+                    """
+                )
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `tx_group_cache` (
+                        `groupId` TEXT NOT NULL,
+                        `txId` TEXT NOT NULL,
+                        `wrapperType` TEXT NOT NULL,
+                        `groupDate` TEXT NOT NULL,
+                        `sortOrder` INTEGER NOT NULL,
+                        PRIMARY KEY(`groupId`, `txId`)
+                    )
+                    """
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_tx_group_cache_txId` ON `tx_group_cache`(`txId`)"
+                )
+            }
+        }
+
+        val migration17to18 = object : Migration(17, 18) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // gift_cards changed its primary key from txId alone to (txId, index),
+                // and gained an `index` column. SQLite can't alter primary keys in-place,
+                // so recreate the table and copy existing rows with index defaulting to 0.
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `gift_cards_new` (`txId` BLOB NOT NULL, " +
+                        "`merchantName` TEXT NOT NULL, `price` REAL NOT NULL, `number` TEXT, `pin` TEXT, " +
+                        "`barcodeValue` TEXT, `barcodeFormat` TEXT, `merchantUrl` TEXT, `note` TEXT, " +
+                        "`index` INTEGER NOT NULL, PRIMARY KEY(`txId`, `index`))"
+                )
+                database.execSQL(
+                    "INSERT INTO `gift_cards_new` SELECT `txId`, `merchantName`, `price`, `number`, `pin`, " +
+                        "`barcodeValue`, `barcodeFormat`, `merchantUrl`, `note`, 0 FROM `gift_cards`"
+                )
+                database.execSQL("DROP TABLE `gift_cards`")
+                database.execSQL("ALTER TABLE `gift_cards_new` RENAME TO `gift_cards`")
+            }
+        }
+
+        val migration18to19 = object : Migration(18, 19) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Collapsed CTX redeem-URL / gift card backup migration. None of the
+                // intermediate versions (19, 20, 21) ever shipped past master (v18), so
+                // the column additions are merged into a single 18 -> 19 step:
+                //  - gift_cards gains `redeemUrlChallenge` (CTX redeem-URL challenge).
+                //  - the transaction metadata backup tables gain `order` (PiggyCards
+                //    order ID), `giftCardChallenge` (CTX redeem-URL challenge), and
+                //    `index` (which gift card the metadata refers to when a single
+                //    transaction has multiple gift cards).
+                // `order` and `index` are SQL keywords, so they must be quoted.
+                database.execSQL(
+                    "ALTER TABLE `gift_cards` ADD COLUMN `redeemUrlChallenge` TEXT"
+                )
+                database.execSQL(
+                    "ALTER TABLE `transaction_metadata_cache` ADD COLUMN `order` TEXT"
+                )
+                database.execSQL(
+                    "ALTER TABLE `transaction_metadata_cache` ADD COLUMN `giftCardChallenge` TEXT"
+                )
+                database.execSQL(
+                    "ALTER TABLE `transaction_metadata_cache` ADD COLUMN `index` INTEGER"
+                )
+                database.execSQL(
+                    "ALTER TABLE `transaction_metadata_platform` ADD COLUMN `order` TEXT"
+                )
+                database.execSQL(
+                    "ALTER TABLE `transaction_metadata_platform` ADD COLUMN `giftCardChallenge` TEXT"
+                )
+                database.execSQL(
+                    "ALTER TABLE `transaction_metadata_platform` ADD COLUMN `index` INTEGER"
+                )
+            }
+        }
+
+        val migration19to20 = object : Migration(19, 20) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // tx_display_cache gains `customIconId` — the hex id of the merchant/service
+                // icon bitmap in `icon_bitmaps`. Used to re-load the gift card merchant logo
+                // at display time (the bitmap itself is not cached in this table). Existing
+                // rows default to NULL and show the static icon until the cache is rebuilt or
+                // the transaction's metadata is next observed.
+                database.execSQL(
+                    "ALTER TABLE `tx_display_cache` ADD COLUMN `customIconId` TEXT"
+                )
+            }
+        }
+
         val migration15to16 = object : Migration(15, 16) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // previous versions have no data in invitations table, so do this

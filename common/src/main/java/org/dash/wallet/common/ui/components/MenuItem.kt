@@ -33,10 +33,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight.Companion.W600
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.dash.wallet.common.R
@@ -50,6 +50,7 @@ fun MenuItem(
     icon: Int? = null,
     showDirectionIndicator: Boolean = false,
     showInfo: Boolean = false,
+    onInfoClick: (() -> Unit)? = null,
     showChevron: Boolean = false,
     // New controlled props
     checked: Boolean? = null,
@@ -64,6 +65,7 @@ fun MenuItem(
     fiatAmount: String? = null,
     // Trailing button
     trailingButtonText: String? = null,
+    trailingButtonStyle: Style? = null,
     onTrailingButtonClick: (() -> Unit)? = null,
     action: (() -> Unit)? = null
 ) {
@@ -73,10 +75,10 @@ fun MenuItem(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .background(Color.Transparent, RoundedCornerShape(8.dp))
+            .background(Color.Transparent, RoundedCornerShape(10.dp))
             .then(if (action != null) Modifier.clickable { action() } else Modifier)
             .semantics { if (action != null) role = Role.Button }
-            .padding(horizontal = 10.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -86,10 +88,10 @@ fun MenuItem(
                     Image(
                         painter = painterResource(id = it),
                         contentDescription = null,
-                        modifier = Modifier.size(26.dp)
+                        modifier = Modifier.size(30.dp)
                     )
                 }
-                
+
                 // Direction indicator overlay
                 if (showDirectionIndicator) {
                     Box(
@@ -118,18 +120,18 @@ fun MenuItem(
             // Main content
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
+                verticalArrangement = Arrangement.spacedBy(1.dp)
             ) {
                 // Help text above (if provided) - aligned with title
                 helpTextAbove?.let {
                     Text(
                         text = it,
-                        style = MyTheme.OverlineMedium,
-                        color = MyTheme.Colors.textTertiary,
+                        style = MyTheme.Typography.BodyMedium,
+                        color = MyTheme.Colors.textSecondary,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-                
+
                 // Title row with info icon
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -137,16 +139,21 @@ fun MenuItem(
                 ) {
                     Text(
                         text = title,
-                        style = MyTheme.Body2Medium,//.copy(fontWeight = W600),
+                        style = MyTheme.Typography.LabelLargeMedium,
                         color = MyTheme.Colors.textPrimary
                     )
 
                     if (showInfo) {
                         Icon(
-                            painter = painterResource(id = android.R.drawable.ic_dialog_info),
-                            contentDescription = "Info",
-                            tint = MyTheme.Colors.textTertiary,
-                            modifier = Modifier.size(15.dp)
+                            painter = painterResource(id = R.drawable.ic_menu_info),
+                            contentDescription = stringResource(id = R.string.info),
+                            tint = Color.Unspecified,
+                            modifier = Modifier
+                                .size(15.dp)
+                                .then(
+                                    if (onInfoClick != null) Modifier.clickable { onInfoClick() }
+                                    else Modifier
+                                )
                         )
                     }
                 }
@@ -155,8 +162,8 @@ fun MenuItem(
                 subtitle?.let {
                     Text(
                         text = it,
-                        style = MyTheme.OverlineCaptionRegular,
-                        color = MyTheme.Colors.textTertiary,
+                        style = MyTheme.Typography.BodyMedium,
+                        color = MyTheme.Colors.textSecondary,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -165,8 +172,8 @@ fun MenuItem(
                 subtitle2?.let {
                     Text(
                         text = it,
-                        style = MyTheme.OverlineCaptionRegular,
-                        color = MyTheme.Colors.textTertiary,
+                        style = MyTheme.Typography.BodyMedium,
+                        color = MyTheme.Colors.textSecondary,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -174,20 +181,12 @@ fun MenuItem(
 
             // Toggle switch
             if (isToggled != null || checked != null) {
-                Switch(
+                DashSwitch(
                     checked = effectiveChecked,
                     onCheckedChange = { newState ->
                         if (checked == null) internalChecked = newState
                         (onCheckedChange ?: onToggleChanged)?.invoke(newState)
-                    },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor   = MyTheme.Colors.backgroundSecondary,
-                        checkedTrackColor   = MyTheme.Colors.dashBlue,
-                        uncheckedThumbColor = MyTheme.Colors.backgroundSecondary,
-                        uncheckedTrackColor = MyTheme.Colors.gray300
-                    ),
-                    modifier = Modifier
-                        .minimumInteractiveComponentSize() // ensures at least 48 dp touch target
+                    }
                 )
             }
 
@@ -217,7 +216,7 @@ fun MenuItem(
                             )
                         }
                     }
-                    
+
                     // Fiat amount
                     fiatAmount?.let {
                         Text(
@@ -235,7 +234,7 @@ fun MenuItem(
                     modifier = Modifier,
                     onClick = onTrailingButtonClick,
                     text = trailingButtonText,
-                    style = Style.Plain,
+                    style = trailingButtonStyle ?: Style.Plain,
                     size = Size.Small,
                     stretch = false
                 )
@@ -282,12 +281,21 @@ fun PreviewMenuItem() {
             showDirectionIndicator = true
         )
 
-        // With toggle
+        // With toggle ON
         MenuItem(
-            title = "Toggle Setting",
+            title = "Toggle Setting ON",
             subtitle = "Enable this feature",
             icon = R.drawable.ic_dash_blue_filled,
             isToggled = { true },
+            onToggleChanged = { }
+        )
+
+        // With toggle OFF
+        MenuItem(
+            title = "Toggle Setting OFF",
+            subtitle = "Enable this feature",
+            icon = R.drawable.ic_dash_blue_filled,
+            isToggled = { false },
             onToggleChanged = { }
         )
 
@@ -321,7 +329,7 @@ fun PreviewMenuItem() {
         MenuItem(
             helpTextAbove = "help text 1",
             title = "title",
-            subtitle = "help text 2", 
+            subtitle = "help text 2",
             subtitle2 = "help text 3",
             icon = R.drawable.ic_dash_blue_filled,
             showDirectionIndicator = true,

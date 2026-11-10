@@ -54,6 +54,7 @@ import com.google.common.collect.Lists;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.params.RegTestParams;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionBag;
@@ -77,6 +78,7 @@ import org.dash.wallet.common.Configuration;
 import org.dash.wallet.common.InteractionAwareActivity;
 import org.dash.wallet.common.WalletDataProvider;
 import org.dash.wallet.common.data.WalletUIConfig;
+import org.dash.wallet.common.integrations.ExchangeIntegrationProvider;
 import org.dash.wallet.common.services.LeftoverBalanceException;
 import org.dash.wallet.common.services.TransactionMetadataProvider;
 import org.dash.wallet.common.services.analytics.AnalyticsService;
@@ -91,6 +93,7 @@ import ch.qos.logback.core.util.FileSize;
 import de.schildbach.wallet.security.SecurityInitializer;
 import de.schildbach.wallet.service.BlockchainStateDataProvider;
 import de.schildbach.wallet.service.CoinJoinService;
+import de.schildbach.wallet.service.TxDisplayCacheService;
 import de.schildbach.wallet.service.DashSystemService;
 import de.schildbach.wallet.service.PackageInfoProvider;
 import de.schildbach.wallet.service.WalletFactory;
@@ -103,6 +106,7 @@ import org.dash.wallet.integrations.uphold.api.UpholdClient;
 import org.dash.wallet.integrations.uphold.data.UpholdConstants;
 import org.dash.wallet.integrations.crowdnode.utils.CrowdNodeConfig;
 import org.dash.wallet.integrations.crowdnode.utils.CrowdNodeBalanceCondition;
+import org.dash.wallet.integrations.uphold.utils.UpholdConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,6 +164,8 @@ import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
 import kotlinx.coroutines.flow.Flow;
 import kotlinx.coroutines.flow.FlowKt;
+import kotlinx.coroutines.flow.MutableStateFlow;
+import kotlinx.coroutines.flow.StateFlowKt;
 
 /**
  * @author Andreas Schildbach
@@ -219,6 +225,8 @@ public class WalletApplication extends MultiDexApplication
     @Inject
     PackageInfoProvider packageInfoProvider;
     @Inject
+    UpholdConfig upholdConfig;
+    @Inject
     WalletFactory walletFactory;
     @Inject
     DashSystemService dashSystemService;
@@ -226,8 +234,12 @@ public class WalletApplication extends MultiDexApplication
     WalletUIConfig walletUIConfig;
     @Inject
     SecurityInitializer securityInitializer;
+    @Inject
+    TxDisplayCacheService txDisplayCacheService;
     private WalletBalanceObserver walletBalanceObserver;
     private CoinJoinService coinJoinService;
+    @Inject
+    public ExchangeIntegrationProvider exchangeIntegrationProvider;
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -244,7 +256,7 @@ public class WalletApplication extends MultiDexApplication
         super.onCreate();
         initLogging();
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
-        log.info("WalletApplication.onCreate()");
+        log.info("STARTUP WalletApplication.onCreate()");
         config = new Configuration(PreferenceManager.getDefaultSharedPreferences(this));
         autoLogout = new AutoLogout(config);
         autoLogout.registerDeviceInteractiveReceiver(this);
@@ -298,8 +310,13 @@ public class WalletApplication extends MultiDexApplication
     }
 
     public void fullInitialization() {
+        long t0 = System.currentTimeMillis();
         initEnvironment();
+        log.info("STARTUP fullInit: initEnvironment done in {}ms", System.currentTimeMillis() - t0);
+        long t1 = System.currentTimeMillis();
         loadWalletFromProtobuf();
+        log.info("STARTUP fullInit: loadWalletFromProtobuf done in {}ms", System.currentTimeMillis() - t1);
+        log.info("STARTUP fullInit: total {}ms", System.currentTimeMillis() - t0);
     }
 
     public void initEnvironmentIfNeeded() {
@@ -322,6 +339,25 @@ public class WalletApplication extends MultiDexApplication
         // TODO: do we need this commented out for saving
         // org.bitcoinj.core.Context.enableStrictMode();
         org.bitcoinj.core.Context.propagate(Constants.CONTEXT);
+
+        // Pre-warm RegTestParams on this single-threaded startup path.
+        //
+        // dashj's ZeroConfCoinSelector.isTransactionSelectable() compares a pending tx's params
+        // against RegTestParams.get() for *every* pending output it considers. This selector is
+        // used by getAnonymizableBalance(), send flows and ByAddressCoinSelector. RegTestParams.get()
+        // lazily runs the RegTestParams constructor, which recomputes the regtest genesis X11 hash
+        // and checkState()s it against a hardcoded value. When that lazy construction first happens
+        // on a contended background thread (notably CoinJoin's IO coroutines, which do heavy
+        // concurrent X11 hashing) a transient bad X11 result makes the checkState throw and crashes
+        // balance calculation - even though this wallet never runs on regtest.
+        //
+        // Forcing the (synchronized, cached) construction here, before any concurrent hashing
+        // begins, makes the instance compute correctly once and be reused forever, closing the race.
+        try {
+            RegTestParams.get();
+        } catch (Throwable t) {
+            log.warn("failed to pre-warm RegTestParams", t);
+        }
 
         log.info("=== starting app using configuration: {}, {}", BuildConfig.FLAVOR,
                 Constants.NETWORK_PARAMETERS.getId());
@@ -346,6 +382,7 @@ public class WalletApplication extends MultiDexApplication
                 AuthenticationKeyChain.KeyChainType.INVITATION_FUNDING
         );
         this.wallet = newWallet;
+        walletStateFlow.setValue(newWallet);
         // TODO: move to a wallet creation class
         if (!wallet.hasKeyChain(Constants.BIP44_PATH)) {
             wallet.addKeyChain(Constants.BIP44_PATH);
@@ -392,6 +429,7 @@ public class WalletApplication extends MultiDexApplication
     }
 
     public void finalizeInitialization() {
+        long _t = System.currentTimeMillis();
         // TODO, put this in a different place. maybe SecurityInitilizer
         // TODO, can we remove this?
         try {
@@ -409,8 +447,10 @@ public class WalletApplication extends MultiDexApplication
             log.error("Failed to ensure mnemonic-based fallbacks", e);
             // Don't crash - app can continue with primary+PIN fallback only
         }
+        log.info("STARTUP finalizeInit: securityGuard done in {}ms", System.currentTimeMillis() - _t); _t = System.currentTimeMillis();
 
         dashSystemService.getSystem().initDash(true, true, Constants.SYNC_FLAGS, Constants.VERIFY_FLAGS);
+        log.info("STARTUP finalizeInit: initDash done in {}ms", System.currentTimeMillis() - _t); _t = System.currentTimeMillis();
 
         if (config.versionCodeCrossed((int)packageInfoProvider.getVersionCode(), VERSION_CODE_SHOW_BACKUP_REMINDER)
                 && !wallet.getImportedKeys().isEmpty()) {
@@ -425,6 +465,7 @@ public class WalletApplication extends MultiDexApplication
         }
 
         afterLoadWallet();
+        log.info("STARTUP finalizeInit: afterLoadWallet done in {}ms", System.currentTimeMillis() - _t); _t = System.currentTimeMillis();
 
         cleanupFiles();
 
@@ -435,9 +476,12 @@ public class WalletApplication extends MultiDexApplication
         if (Constants.SUPPORTS_PLATFORM) {
             initPlatform();
         }
+        log.info("STARTUP finalizeInit: initPlatform+channels done in {}ms", System.currentTimeMillis() - _t); _t = System.currentTimeMillis();
         initUphold();
         initCoinbase();
         initDashSpend();
+        WalletApplicationExt.INSTANCE.clearCachedAddresses(this);
+        log.info("STARTUP finalizeInit: integrations done in {}ms", System.currentTimeMillis() - _t);
     }
 
     private void initUphold() {
@@ -449,7 +493,7 @@ public class WalletApplication extends MultiDexApplication
         UpholdConstants.CLIENT_ID = BuildConfig.UPHOLD_CLIENT_ID;
         UpholdConstants.CLIENT_SECRET = BuildConfig.UPHOLD_CLIENT_SECRET;
         UpholdConstants.INSTANCE.initialize(Constants.NETWORK_PARAMETERS.getId().contains("test"));
-        UpholdClient.init(getApplicationContext(), authenticationHash);
+        UpholdClient.init(getApplicationContext(), authenticationHash, upholdConfig);
         LiquidClient.Companion.init(getApplicationContext(), authenticationHash);
     }
 
@@ -645,6 +689,14 @@ public class WalletApplication extends MultiDexApplication
         return wallet;
     }
 
+    private final MutableStateFlow<Wallet> walletStateFlow = StateFlowKt.MutableStateFlow(null);
+    @NonNull
+    @Override
+    public
+    Flow<Wallet> observeWallet() {
+        return walletStateFlow;
+    }
+
     @Nullable
     @Override
     public AuthenticationGroupExtension getAuthenticationGroupExtension() {
@@ -710,7 +762,7 @@ public class WalletApplication extends MultiDexApplication
         wallet.setRiskAnalyzer(new AllowLockTimeRiskAnalysis.OfflineAnalyzer(config.getBestHeightEver(), System.currentTimeMillis()/1000));
 
         if (!wallet.isConsistent()) {
-            Toast.makeText(this, "inconsistent wallet: " + walletFile, Toast.LENGTH_LONG).show();
+            Toast.makeText(WalletApplication.this, "inconsistent wallet: " + walletFile, Toast.LENGTH_LONG).show();
 
             wallet = restoreWalletFromBackup();
             WalletExtension authenticationGroupExtension = wallet.getKeyChainExtension(AuthenticationGroupExtension.EXTENSION_ID);
@@ -721,7 +773,7 @@ public class WalletApplication extends MultiDexApplication
 
         if (!wallet.getParams().equals(Constants.NETWORK_PARAMETERS))
             throw new Error("bad wallet network parameters: " + wallet.getParams().getId());
-
+        walletStateFlow.setValue(wallet);
         finalizeInitialization();
     }
 
@@ -869,6 +921,9 @@ public class WalletApplication extends MultiDexApplication
         if (wallet != null && authenticationGroupExtension != null) {
             authenticationGroupExtension.reset();
         }
+        // Clear the in-memory pre-built rows immediately so that the new Activity
+        // launched by the caller does not display stale cached transaction data.
+        txDisplayCacheService.clearInMemoryCache();
         // implicitly stops blockchain service
         resetBlockchainState();
         Intent blockchainServiceResetBlockchainIntent = new Intent(BlockchainService.ACTION_RESET_BLOCKCHAIN, null, this,
@@ -1037,6 +1092,7 @@ public class WalletApplication extends MultiDexApplication
         // wallet must be null for the OnboardingActivity flow
         log.info("removing wallet from memory during wipe");
         wallet = null;
+        walletStateFlow.setValue(null);
         authenticationGroupExtension = null;
         walletBalanceObserver.close();
         walletBalanceObserver = null;

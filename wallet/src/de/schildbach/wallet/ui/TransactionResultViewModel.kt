@@ -54,7 +54,6 @@ class TransactionResultViewModel @Inject constructor(
     private val dashPayProfileDao: DashPayProfileDao,
     private val topUpsDao: TopUpsDao,
     private val identityRepository: IdentityRepository,
-    private val platformRepo: PlatformRepo,
     val analytics: AnalyticsService,
     val walletApplication: WalletApplication
 ) : ViewModel() {
@@ -82,7 +81,7 @@ class TransactionResultViewModel @Inject constructor(
     val merchantName = _transactionMetadata
         .filterNotNull()
         .filter { ServiceName.isDashSpend(it.service) }
-        .map { giftCardDao.getCardForTransaction(it.txId)?.merchantName }
+        .map { giftCardDao.getCardForTransaction(it.txId).firstOrNull()?.merchantName }
         .filterNotNull()
         .asLiveData()
 

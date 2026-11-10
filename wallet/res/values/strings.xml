@@ -239,17 +239,6 @@
     <string name="encrypt_keys_dialog_state_encrypting">Encrypting…</string>
     <string name="encrypt_keys_dialog_state_decrypting">Decrypting…</string>
     <string name="encrypt_keys_dialog_state_done">Done</string>
-    <string name="scan_camera_problem_dialog_title">Sorry</string>
-    <string name="scan_camera_problem_dialog_message">The camera has a problem. You probably need to restart the device.</string>
-    <string name="scan_camera_permission_dialog_title">Camera permission</string>
-    <string name="scan_camera_permission_dialog_message">In order to scan QR codes, you need to grant permission to use the camera.</string>
-    <string name="input_parser_io_error">Cannot read data:\n%s</string>
-    <string name="input_parser_cannot_classify">Cannot recognize input:\n%s</string>
-    <string name="input_parser_invalid_bitcoin_uri">Invalid Dash URI:\n%s</string>
-    <string name="input_parser_invalid_address">Got invalid Dash address!\n(Mixing up mainnet/testnet?)</string>
-    <string name="input_parser_unverifyable_paymentrequest">Cannot verify payment request:\n%s</string>
-    <string name="input_parser_invalid_paymentrequest">Invalid payment request:\n%s</string>
-    <string name="input_parser_invalid_transaction">Invalid transaction:\n%s</string>
     <string name="preferences_activity_title">Settings</string>
     <string name="preferences_category_diagnostics">Diagnostics</string>
     <string name="preferences_category_labs">Labs</string>
@@ -294,7 +283,7 @@
     <string name="preferences_extended_public_key_title">Show xpub</string>
     <string name="preferences_extended_public_key_summary">View the extended public key of your wallet, so it can be imported into other apps and services. Be careful: doing so will disclose your monetary privacy to that app.</string>
     <string name="bitmap_fragment_share">Share…</string>
-    <string name="extended_public_key_fragment_title">Extended Public Key</string>
+    <string name="extended_public_key_fragment_title">Extended public key (BIP44)</string>
     <string name="extended_public_key_fragment_share">Share xpub…</string>
     <string name="extended_public_key_share_key">Share key</string>
     <string name="report_issue_dialog_title_issue">Report issue</string>
@@ -319,13 +308,17 @@
     <string name="report_issue_dialog_status_background_traces">background traces</string>
     <string name="report_issue_dialog_status_stack_trace">stack traces</string>
     <string name="report_issue_dialog_status_finishing">finishing</string>
-    <string name="report_transaction_history_export">Export</string>
-    <string name="report_transaction_history_title">CSV Export</string>
-    <string name="report_transaction_history_not_synced_title">CSV Export</string>
+    <string name="report_transaction_history_export">Export transactions</string>
+    <string name="report_transaction_history_title">CSV export</string>
+    <string name="report_transaction_history_dialog_title">The full transaction history will be exported as a CSV file</string>
+    <string name="report_transaction_history_not_synced_title">CSV export</string>
     <string name="report_transaction_history_not_synced_message">Please wait until the wallet is fully synced before exporting your transaction history.</string>
     <string name="report_transaction_history_message">The full transaction history will be exported.\n\nAll payments will be considered as an expense and all incoming transactions will be income.  The owner of this wallet is responsible for making any cost basis adjustments in their chosen tax reporting system.</string>
+    <string name="report_transaction_history_body_1">All payments will be considered as an expense and all incoming transactions will be income.</string>
+    <string name="report_transaction_history_body_2">The owner of this wallet is responsible for making any cost basis adjustments in their chosen tax reporting system.</string>
     <string name="report_transaction_history_mail_intent_chooser">Send transaction history using…</string>
     <string name="report_transaction_history_dialog_mail_intent_failed">Sending transaction history failed.</string>
+    <string name="report_transaction_history_dialog_export_csv_failed">Exporting transaction history failed.</string>
 
     <!-- ZenLedger -->
     <string name="zenledger_export_title">ZenLedger</string>
@@ -425,10 +418,9 @@
     <string name="reason">Reason</string>
     <string name="link_account">Link your account</string>
     <string name="buy_no_account_needed">Buy Dash · No account needed</string>
+    <string name="convert_no_account_needed">Swap Dash · No account needed</string>
 
     <string name="recipient_address">Recipient Address</string>
-    <string name="show_clipboard">Show content in the clipboard</string>
-    <string name="tap_to_paste">Tap the address from the clipboard to paste it</string>
     <string name="not_dash_address">Not a valid Dash Address or URL request</string>
     <string name="send_to_address">Send to Address</string>
 
@@ -455,4 +447,9 @@
     <string name="upgrade_pin_title">You need to upgrade your PIN</string>
     <string name="upgrade_pin_description">Set up a new PIN</string>
     <string name="upgrade_pin_continue">Continue</string>
+
+    <!-- CrowdNode withdrawal reminder -->
+    <string name="crowdnode_withdrawal_reminder_title">You have a balance on CrowdNode</string>
+    <string name="crowdnode_withdrawal_reminder_message">These funds should be withdrawn from CrowdNode. You can transfer these funds to this wallet or via your online account on some other device.</string>
+    <string name="crowdnode_withdraw_funds">Withdraw funds</string>
 </resources>
