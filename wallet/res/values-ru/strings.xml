@@ -165,6 +165,10 @@
     <string name="transaction_row_status_error_obsolete">Устаревший</string>
     <string name="transaction_row_status_error_invalid">Некорректный</string>
     <string name="transaction_row_status_error_other">Неизвестный</string>
+    <string name="transaction_row_status_refunded">Возвращено</string>
+    <string name="transaction_row_status_failed">Не удалось</string>
+    <string name="transaction_row_conversion">Конвертация · %1$s/%2$s</string>
+    <string name="transaction_row_converted">Конвертировано · %1$s/%2$s</string>
     <!-- The first %s is the date and the second %s is the time.  e.g. On 29 December 2019 at 15:59 -->
     <string name="transaction_row_time_text">На %s в %s</string>
     <string name="transaction_row_status_masternode_registration">Регистрация мастерноды</string>
@@ -449,4 +453,5 @@
     <string name="crowdnode_withdrawal_reminder_title">У вас есть баланс на CrowdNode</string>
     <string name="crowdnode_withdrawal_reminder_message">Эти средства необходимо вывести с CrowdNode. Вы можете перевести их на этот кошелёк или через свой онлайн-аккаунт на другом устройстве.</string>
     <string name="crowdnode_withdraw_funds">Вывести средства</string>
+    <string name="dash_connect_revoke_access">Отозвать доступ</string>
 </resources>

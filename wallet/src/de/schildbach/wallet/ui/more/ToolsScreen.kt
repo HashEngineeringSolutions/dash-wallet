@@ -28,18 +28,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
+import android.content.res.Configuration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import de.schildbach.wallet_test.R
+import org.dash.wallet.common.ui.components.DashWalletTheme
+import org.dash.wallet.common.ui.components.LocalDashColors
 import org.dash.wallet.common.ui.components.Menu
 import org.dash.wallet.common.ui.components.MenuItem
 import org.dash.wallet.common.ui.components.MyTheme
 import org.dash.wallet.common.ui.components.NavBarBack
 import org.dash.wallet.common.ui.components.Style
 import org.dash.wallet.common.ui.components.TopIntro
+import org.dash.wallet.common.ui.components.TopNavBase
 
 @Composable
 fun ToolsScreen(
@@ -50,6 +56,7 @@ fun ToolsScreen(
     onExtendPublicKeyClick: () -> Unit = {},
     onMasternodeKeysClick: () -> Unit = {},
     onCsvExportClick: () -> Unit = {},
+    onConnectionsClick: () -> Unit = {},
     onZenLedgerExport: () -> Unit = {},
     // ZenLedger is disabled in this build
     showZenLedger: Boolean = false,
@@ -67,6 +74,7 @@ fun ToolsScreen(
         onExtendPublicKeyClick = onExtendPublicKeyClick,
         onMasternodeKeysClick = onMasternodeKeysClick,
         onCsvExportClick = onCsvExportClick,
+        onConnectionsClick = onConnectionsClick,
         onZenLedgerExport = onZenLedgerExport,
         showZenLedger = showZenLedger,
         onCreditsInfoClick = onCreditsInfoClick,
@@ -84,6 +92,7 @@ fun ToolsScreen(
     onExtendPublicKeyClick: () -> Unit = {},
     onMasternodeKeysClick: () -> Unit = {},
     onCsvExportClick: () -> Unit = {},
+    onConnectionsClick: () -> Unit = {},
     onZenLedgerExport: () -> Unit = {},
     // ZenLedger is disabled in this build
     showZenLedger: Boolean = false,
@@ -101,6 +110,7 @@ fun ToolsScreen(
         onExtendPublicKeyClick = onExtendPublicKeyClick,
         onMasternodeKeysClick = onMasternodeKeysClick,
         onCsvExportClick = onCsvExportClick,
+        onConnectionsClick = onConnectionsClick,
         onZenLedgerExport = onZenLedgerExport,
         showZenLedger = showZenLedger,
         onCreditsInfoClick = onCreditsInfoClick,
@@ -118,16 +128,18 @@ private fun ToolsScreenContent(
     onExtendPublicKeyClick: () -> Unit = {},
     onMasternodeKeysClick: () -> Unit = {},
     onCsvExportClick: () -> Unit = {},
+    onConnectionsClick: () -> Unit = {},
     onZenLedgerExport: () -> Unit = {},
     // ZenLedger is disabled in this build
     showZenLedger: Boolean = false,
     onCreditsInfoClick: () -> Unit = {},
     onBuyCredits: () -> Unit = {}
 ) {
+    val colors = LocalDashColors.current
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(MyTheme.Colors.backgroundPrimary)
+            .background(colors.backgroundPrimary)
     ) {
         // Top Navigation
         NavBarBack(onBackClick = onBackClick)
@@ -186,7 +198,19 @@ private fun ToolsScreenContent(
                     icon = R.drawable.ic_menu_csv_export,
                     action = onCsvExportClick
                 )
-                if (uiState.hasUsername) {
+
+                if (uiState.connectionsAvailable) {
+                    // Connections (DashConnect), also without a username: it offers to create one
+                    MenuItem(
+                        title = stringResource(R.string.dash_connect_connections_title),
+                        icon = R.drawable.ic_menu_connections,
+                        action = onConnectionsClick
+                    )
+                }
+            }
+
+            if (uiState.hasUsername) {
+                Menu {
                     // Credits (only shown when user has a username)
                     MenuItem(
                         title = stringResource(R.string.tools_credits_title),
@@ -217,7 +241,10 @@ private fun ToolsScreenContent(
 }
 
 @Composable
-@Preview
+@Preview(name = "Light", uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
 fun ToolsScreenPreview() {
-    ToolsScreenContent(uiState = ToolsUIState(false, false, true))
+    DashWalletTheme {
+        ToolsScreenContent(uiState = ToolsUIState(false, false, true, connectionsAvailable = true))
+    }
 }

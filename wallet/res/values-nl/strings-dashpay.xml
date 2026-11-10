@@ -105,8 +105,10 @@ gebruikersnaam</b></string>
     <string name="search_user_no_results">Er zijn geen gebruikers die overeenkomen</string>
     <string name="search_user_loading">Zoeken naar gebruikersnaam <b>"%"</b> op het Dash Network</string>
     <string name="contact_request_pending">Contactaanvraag in behandeling</string>
+    <string name="send_button_label">Verzenden</string>
     <string name="pay">Betaal</string>
     <string name="contact_request_received_title">%s heeft gevraagd om je vriend te worden</string>
+    <string name="contact_request_received_card_title">%s heeft je een contactverzoek gestuurd</string>
     <string name="contact_request_accept">Accepteren</string>
     <string name="contact_request_ignore">Negeer</string>
 
@@ -415,6 +417,7 @@ gebruikersnaam</b></string>
     <string name="coinjoin_mixing_level_subtitle">Je kunt het niveau van mixen op elk moment wijzigen of stoppen.</string>
     <string name="coinjoin_mixing_transactions">Transacties mixen</string>
     <string name="coinjoin_transaction_group">Dit zijn mix gerelateerde transacties.</string>
+    <string name="coinjoin_transaction_group_title">Waarom zie ik al deze transacties?</string>
     <string name="intermediate">Gemiddeld</string>
     <string name="advanced">Gevanceerd</string>
     <string name="intermediate_level_card_decs">Gevorderde gebruikers met een zeer hoog niveau van technische expertise kunnen je transactiegeschiedenis achterhalen</string>
@@ -447,7 +450,7 @@ gebruikersnaam</b></string>
     <string name="request_username_username_voting_message">+ wat is stemmen met gebruikersnaam\?</string>
     <string name="request_username_character_requirement">Alleen letters, cijfers en koppeltekens</string>
     <string name="request_username_character_requirement_invite_noncontested">Cijfers 2-9</string>
-    <string name="request_username_balance_requirement">Je hebt 0,25 DASH nodig om deze gebruikersnaam aan te maken</string>
+    <string name="request_username_balance_requirement">Je hebt %s DASH nodig om deze gebruikersnaam aan te maken</string>
     <string name="request_username_requirements_message_invite_noncontested">De gebruikersnaam moet aan een van deze criteria voldoen</string>
     <string name="request_username_requirements_message">De gebruikersnaam moet aan deze criteria voldoen</string>
     <string name="request_username_length_requirement">Tussen 3 en 23 tekens</string>
@@ -545,4 +548,12 @@ gebruikersnaam</b></string>
     <string name="create_instant_username_button">Directe gebruikersnaam aanmaken</string>
     <string name="create_instant_username_cancel">Annuleer</string>
 
-</resources>
+    <string name="dash_connect_scan_qr">Scan QR</string>
+    <string name="dash_connect_status_disconnected">Verbinding verbroken</string>
+    <string name="dash_connect_approve_verify_identity">Verifieer je identiteit</string>
+    <string name="dash_connect_username">Gebruikersnaam</string>
+    <string name="dash_connect_identity">Identiteit</string>
+    <string name="dash_connect_approve_no_withdraw_funds">Neem saldo op</string>
+    <string name="dash_connect_deny">Weiger</string>
+    <string name="dash_connect_confirm">Bevestig</string>
+    </resources>

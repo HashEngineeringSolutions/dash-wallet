@@ -24,6 +24,7 @@ import de.schildbach.wallet.database.dao.IconBitmapDao
 import de.schildbach.wallet.database.dao.TransactionMetadataDao
 import de.schildbach.wallet.database.dao.TransactionMetadataChangeCacheDao
 import de.schildbach.wallet.database.dao.TransactionMetadataDocumentDao
+import de.schildbach.wallet.database.dao.TransactionRecordsDao
 import de.schildbach.wallet.database.entity.TransactionMetadataCacheItem
 import de.schildbach.wallet.ui.dashpay.utils.DashPayConfig
 import kotlinx.coroutines.*
@@ -46,8 +47,8 @@ import org.dash.wallet.common.services.TransactionMetadataProvider
 import org.dash.wallet.common.transactions.TransactionCategory
 import org.dash.wallet.common.transactions.TransactionUtils.isEntirelySelf
 import org.dash.wallet.common.util.Constants
-import org.dash.wallet.common.util.decodeBitmap
 import org.dash.wallet.features.exploredash.data.explore.GiftCardDao
+import org.dash.wallet.integrations.maya.data.SwapOrderDao
 import org.slf4j.LoggerFactory
 import java.util.*
 import java.io.ByteArrayOutputStream
@@ -62,6 +63,8 @@ class WalletTransactionMetadataProvider @Inject constructor(
     private val iconBitmapDao: IconBitmapDao,
     private val walletData: WalletDataProvider,
     private val giftCardDao: GiftCardDao,
+    private val transactionRecordsDao: TransactionRecordsDao,
+    private val swapOrderDao: SwapOrderDao,
     private val transactionMetadataChangeCacheDao: TransactionMetadataChangeCacheDao,
     private val transactionMetadataDocumentDao: TransactionMetadataDocumentDao,
     private val dashPayConfig: DashPayConfig
@@ -344,6 +347,30 @@ class WalletTransactionMetadataProvider @Inject constructor(
         }
     }
 
+    override suspend fun forgetTransaction(txId: Sha256Hash): Boolean {
+        // Fail closed: only proceed when a wallet is available AND says it does not hold the
+        // transaction. Without a wallet we cannot tell "never broadcast" from "cannot check
+        // right now", and deleting on a guess would discard the memo, tax category and cards of
+        // a real payment.
+        val wallet = walletData.wallet
+        if (wallet == null) {
+            // Deferred, not settled: the caller must keep the payment and try again later.
+            log.warn("not forgetting {}: no wallet available to confirm the transaction is absent", txId)
+            return false
+        }
+        if (wallet.getTransaction(txId) != null) {
+            // Settled: the records describe a real transaction, so there is nothing to discard
+            // now or later.
+            log.warn("refusing to forget {}: the wallet holds this transaction", txId)
+            return true
+        }
+
+        // one Room transaction: a partial cleanup would strand rows with nothing left to retry it
+        val cards = transactionRecordsDao.forgetTransaction(txId)
+        log.info("forgot transaction {} that was never broadcast ({} gift card(s) removed)", txId, cards)
+        return true
+    }
+
     override suspend fun updateGiftCardMetadata(giftCard: GiftCard) {
         // Room's @Update rewrites every column, so a caller passing a partially-populated
         // GiftCard would otherwise null out fields it didn't set (number/pin/note/...).
@@ -360,7 +387,8 @@ class WalletTransactionMetadataProvider @Inject constructor(
                 barcodeValue = giftCard.barcodeValue ?: existing.barcodeValue,
                 barcodeFormat = giftCard.barcodeFormat ?: existing.barcodeFormat,
                 merchantUrl = giftCard.merchantUrl ?: existing.merchantUrl,
-                note = giftCard.note ?: existing.note
+                note = giftCard.note ?: existing.note,
+                redeemUrlChallenge = giftCard.redeemUrlChallenge ?: existing.redeemUrlChallenge
             )
         }
 
@@ -373,15 +401,15 @@ class WalletTransactionMetadataProvider @Inject constructor(
         // for now, only save the first card
         if (merged.index == 0) {
             transactionMetadataChangeCacheDao.insertGiftCardData(
-                giftCard.txId,
-                giftCard.number,
-                giftCard.pin,
-                giftCard.merchantName,
-                giftCard.price,
-                giftCard.merchantUrl,
-                giftCard.note,
-                giftCard.redeemUrlChallenge,
-                giftCard.index
+                merged.txId,
+                merged.number,
+                merged.pin,
+                merged.merchantName,
+                merged.price,
+                merged.merchantUrl,
+                merged.note,
+                merged.redeemUrlChallenge,
+                merged.index
             )
         }
     }
@@ -552,21 +580,28 @@ class WalletTransactionMetadataProvider @Inject constructor(
                 }
             }
             .flatMapLatest { bitmaps ->
-                giftCardDao.observeGiftCards().distinctUntilChanged().flatMapLatest { giftCards ->
-                    transactionMetadataDao.observePresentableMetadata()
-                        .distinctUntilChanged()
-                        .map { metadataList ->
-                            metadataList.values.forEach { metadata ->
-                                metadata.customIconId?.let { iconId ->
-                                    metadata.icon = bitmaps[iconId]
-                                }
-
-                                if (ServiceName.isDashSpend(metadata.service)) {
-                                    metadata.title = giftCards[metadata.txId]?.firstOrNull()?.merchantName
-                                }
+                combine(
+                    giftCardDao.observeGiftCards().distinctUntilChanged(),
+                    swapOrderDao.observeOrders().distinctUntilChanged(),
+                    transactionMetadataDao.observePresentableMetadata().distinctUntilChanged()
+                ) { giftCards, swapOrders, metadataList ->
+                    // combine() re-runs with the same cached metadata instances when only
+                    // gift cards or swap orders emit, so decorate copies — mutating in place
+                    // would also mutate previously emitted maps and hide the change from
+                    // downstream diffing (TxDisplayCacheService).
+                    metadataList.mapValues { (txId, metadata) ->
+                        metadata.copy().also { presentable ->
+                            presentable.customIconId?.let { iconId ->
+                                presentable.icon = bitmaps[iconId]
                             }
-                            metadataList
+
+                            if (ServiceName.isDashSpend(presentable.service)) {
+                                presentable.title = giftCards[txId]?.firstOrNull()?.merchantName
+                            }
+
+                            presentable.swapOrder = swapOrders[txId]
                         }
+                    }
                 }
             }
     }

@@ -239,8 +239,7 @@ class SendCoinsViewModel @Inject constructor(
 
     suspend fun signAndSendPayment(
         editedAmount: Coin,
-        exchangeRate: ExchangeRate?,
-        checkBalance: Boolean
+        exchangeRate: ExchangeRate?
     ): Transaction = withContext(Dispatchers.IO) {
         Context.propagate(wallet.context)
         _state.postValue(State.SENDING)
@@ -248,6 +247,10 @@ class SendCoinsViewModel @Inject constructor(
             error("isAssetLock must be false, but is true")
         }
         val finalPaymentIntent = basePaymentIntent.mergeWithEditedValues(editedAmount, null)
+
+        // Before coin selection: after a restart the locks of an unresolved payment are gone
+        // until restoration runs, and a transaction built now could spend its outpoints.
+        sendCoinsTaskRunner.awaitPaymentReadiness()
 
         val transaction = try {
             val finalSendRequest = sendCoinsTaskRunner.createSendRequest(
@@ -260,7 +263,7 @@ class SendCoinsViewModel @Inject constructor(
             finalSendRequest.memo = basePaymentIntent.memo
             finalSendRequest.exchangeRate = exchangeRate
             Context.propagate(wallet.context)
-            sendCoinsTaskRunner.sendCoins(finalSendRequest, checkBalanceConditions = checkBalance)
+            sendCoinsTaskRunner.sendCoins(finalSendRequest)
         } catch (ex: Exception) {
             _state.postValue(State.FAILED)
             throw ex
@@ -273,7 +276,6 @@ class SendCoinsViewModel @Inject constructor(
     suspend fun signAndSendAssetLock(
         editedAmount: Coin,
         exchangeRate: ExchangeRate?,
-        checkBalance: Boolean,
         key: ECKey,
         emptyWallet: Boolean
     ): Transaction = withContext(Dispatchers.IO) {
@@ -282,6 +284,12 @@ class SendCoinsViewModel @Inject constructor(
             error("isAssetLock must be true, but is false")
         }
         val finalPaymentIntent = basePaymentIntent.mergeWithEditedValues(editedAmount, null)
+
+        // Same reason as the ordinary send: the empty-wallet branch below completes and signs the
+        // request itself, so it selects coins before sendCoins() gets its own chance to wait. After
+        // a restart the locks of an unresolved payment are gone until restoration runs, and an
+        // outpoint locked afterwards is not taken back out of a transaction that already chose it.
+        sendCoinsTaskRunner.awaitPaymentReadiness()
 
         val transaction = try {
             var finalSendRequest = sendCoinsTaskRunner.createAssetLockSendRequest(
@@ -315,7 +323,7 @@ class SendCoinsViewModel @Inject constructor(
                 }
             }
 
-            sendCoinsTaskRunner.sendCoins(finalSendRequest, checkBalanceConditions = checkBalance)
+            sendCoinsTaskRunner.sendCoins(finalSendRequest)
         } catch (ex: Exception) {
             _state.postValue(State.FAILED)
             throw ex

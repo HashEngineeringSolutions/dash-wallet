@@ -41,6 +41,7 @@ import de.schildbach.wallet.database.dao.DashPayContactRequestDao
 import de.schildbach.wallet.database.dao.UserAlertDao
 import de.schildbach.wallet.database.entity.BlockchainIdentityBaseData
 import de.schildbach.wallet.database.entity.BlockchainIdentityConfig
+import de.schildbach.wallet.database.entity.BlockchainIdentityData
 import de.schildbach.wallet.database.entity.IdentityCreationState
 import de.schildbach.wallet.database.entity.DashPayContactRequest
 import de.schildbach.wallet.database.entity.DashPayProfile
@@ -52,6 +53,7 @@ import de.schildbach.wallet.service.platform.PlatformService
 import de.schildbach.wallet.service.platform.PlatformSyncService
 import de.schildbach.wallet.ui.main.MainViewModel
 import io.mockk.*
+import org.dash.wallet.integrations.maya.api.DispatchingSwapProvider
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -67,6 +69,7 @@ import org.bitcoinj.params.TestNet3Params
 import org.bitcoinj.utils.MonetaryFormat
 import org.dash.wallet.common.Configuration
 import org.dash.wallet.common.WalletDataProvider
+import org.dash.wallet.common.data.Resource
 import org.dash.wallet.common.data.WalletUIConfig
 import org.dash.wallet.common.data.entity.BlockchainState
 import org.dash.wallet.common.data.entity.ExchangeRate
@@ -122,12 +125,18 @@ class MainViewModelTest {
         every { applicationContext } returns mockk()
         every { mainLooper } returns Looper.getMainLooper()
     }
-    private val platformService = mockk<PlatformService>()
+    private val platformService = mockk<PlatformService> {
+        coEvery { isPlatformAvailable() } returns false
+    }
     private val platformSyncService = mockk<PlatformSyncService>()
     private val mockIdentityData = BlockchainIdentityBaseData(IdentityCreationState.NONE, null, null, null, null, false,null, false)
     private val blockchainIdentityConfigMock = mockk<BlockchainIdentityConfig> {
         coEvery { loadBase() } returns mockIdentityData
+        every { observe() } returns flow { }
         every { observeBase() } returns MutableStateFlow(mockIdentityData)
+        every { observe() } returns MutableStateFlow(
+            BlockchainIdentityData(IdentityCreationState.NONE, null, null, null, null, false)
+        )
         every { observe(BlockchainIdentityConfig.IDENTITY_ID) } returns MutableStateFlow(identityId)
     }
     private val dashPayProfileDaoMock = mockk<DashPayProfileDao> {
@@ -150,6 +159,7 @@ class MainViewModelTest {
     }
     private val workManagerMock = mockk<WorkManager> {
         every { getWorkInfosByTagLiveData(any()) } returns MutableLiveData(listOf())
+        every { getWorkInfosByTagFlow(any()) } returns MutableStateFlow(listOf())
     }
     private val savedStateMock = mockk<SavedStateHandle>()
 
@@ -164,7 +174,6 @@ class MainViewModelTest {
     }
 
     private val blockchainStateMock = mockk<BlockchainStateProvider> {
-        //every { getMasternodeAPY() } returns 5.9
     }
 
     private val transactionMetadataMock = mockk<TransactionMetadataProvider> {
@@ -203,7 +212,7 @@ class MainViewModelTest {
 
     }
 
-    private val txDisplayCacheService = mockk<TxDisplayCacheService>()
+    private val txDisplayCacheService = mockk<TxDisplayCacheService>(relaxUnitFun = true)
     private val biometricHelper = mockk<BiometricHelper>()
     private val deviceInfoProvider = mockk<DeviceInfoProvider>()
     private val coinJoinConfig = mockk<CoinJoinConfig>()
@@ -219,6 +228,7 @@ class MainViewModelTest {
     fun setup() {
         every { configMock.format } returns MonetaryFormat()
         every { configMock.registerOnSharedPreferenceChangeListener(any()) } just runs
+        every { configMock.isRestoringBackup } returns false
 
         every { blockchainStateMock.observeState() } returns flow { BlockchainState() }
         every { blockchainStateMock.observeSyncStage() } returns MutableStateFlow(PeerGroup.SyncStage.BLOCKS)
@@ -293,7 +303,8 @@ class MainViewModelTest {
                 dashPayContactRequestDao,
                 coinJoinConfig,
                 coinJoinService,
-                txDisplayCacheService
+                txDisplayCacheService,
+                mockk<DispatchingSwapProvider>(relaxed = true)
             )
         )
 
@@ -332,7 +343,8 @@ class MainViewModelTest {
                 dashPayContactRequestDao,
                 coinJoinConfig,
                 coinJoinService,
-                txDisplayCacheService
+                txDisplayCacheService,
+                mockk<DispatchingSwapProvider>(relaxed = true)
             )
         )
 

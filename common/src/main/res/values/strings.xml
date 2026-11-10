@@ -12,7 +12,6 @@
     <string name="zero_fiat_balance_with_currency" translatable="false">%s 0.00</string>
     <string name="buy_dash">Buy Dash</string>
     <string name="copied">Copied</string>
-    <string name="staking_title">Staking</string>
     <string name="spend_title">Spend</string>
     <string name="email">Email</string>
     <string name="email_placeholder">e.g. johndoe@mail.com</string>
@@ -27,6 +26,8 @@
     <string name="dash_address">Dash Address</string>
     <string name="username">Username</string>
     <string name="balance">Balance:</string>
+    <string name="hide_balance">Hide balance</string>
+    <string name="show_balance">Show balance</string>
     <string name="nothing_here">Nothing here</string>
 
     <!-- Local Currency List: GGP -->
@@ -50,11 +51,15 @@
 
     <!-- Generic buttons -->
     <string name="button_dismiss">Dismiss</string>
+    <string name="button_not_now">Not now</string>
+    <string name="button_settings">Settings</string>
     <string name="network_unavailable_return">Return to Wallet</string>
     <string name="button_continue">Continue</string>
     <string name="get_quote">Get Quote</string>
     <string name="button_close">Close</string>
     <string name="button_cancel">Cancel</string>
+    <string name="button_clear">Clear</string>
+    <string name="button_paste">Paste</string>
     <string name="button_confirm">Confirm</string>
     <string name="button_retry">Retry</string>
     <string name="button_send_report">Send Report</string>
@@ -95,14 +100,12 @@
     <string name="no_connection">No internet connection</string>
     <string name="rate_not_available">Not available</string>
 
-    <!-- CrowdNode warning -->
-    <string name="empty_wallet_warning_title">Looks like you are emptying your Dash Wallet</string>
-    <string name="empty_wallet_crowdnode_warning">Please note, you will not be able to withdraw your funds from CrowdNode to this wallet until you increase your balance to 0.0003 Dash.</string>
-
     <!-- Send coins -->
     <string name="payment_request_problem_title">Payment was not acknowledged</string>
     <string name="payment_protocol_default_error_title">Payment error</string>
     <string name="payment_request_problem_message">Your payment could not be processed by the server, please inquire with the merchant</string>
+    <string name="payment_submission_pending_title">Payment status unknown</string>
+    <string name="payment_submission_pending_message">The payment was sent, but we did not receive a confirmation from the merchant. Your wallet will keep checking the network and will show the transaction as sent once it is found. Please wait before sending this payment again.</string>
     <string name="exchange_rate_not_found">Could not find exchange rate.</string>
     <string name="send_coins_fragment_hint_replaying">Currently payments are not possible because the wallet is not fully synced with the network</string>
 
@@ -127,6 +130,8 @@
     <string name="scan_camera_problem_dialog_message">The camera has a problem. You probably need to restart the device.</string>
     <string name="scan_camera_permission_dialog_title">Camera permission</string>
     <string name="scan_camera_permission_dialog_message">In order to scan QR codes, you need to grant permission to use the camera.</string>
+    <!-- Shown instead of the message above once the system will no longer prompt for the camera, so the only way back is system settings -->
+    <string name="scan_camera_permission_denied_dialog_message">In order to scan QR codes, camera access has to be turned on for this app in Settings.</string>
 
     <!-- address input -->
     <string name="address_input_title">Send Dash</string>
@@ -144,7 +149,8 @@
     <string name="input_parser_invalid_paymentrequest">Invalid payment request:\n%s</string>
     <string name="input_parser_invalid_transaction">Invalid transaction:\n%s</string>
     <string name="address_input_paste_from">Paste from %s</string>
-    <string name="input_connect">Connect</string>
+    <!-- Trailing action on an address-source row for an exchange the user is not signed in to -->
+    <string name="input_log_in">Log in</string>
 
     <!-- others -->
     <string name="confirm_sec">Confirm (%ss)</string>
@@ -157,4 +163,5 @@
     <string name="from_dash_wallet_on_this_device">From Dash wallet on this device</string>
     <string name="preposition_at">at</string>
     <string name="info">Info</string>
+    <string name="scan_qr">Scan QR</string>
 </resources>

@@ -23,6 +23,7 @@ import android.content.Context
 import android.location.Geocoder
 import android.location.LocationManager
 import androidx.annotation.RequiresPermission
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import org.dash.wallet.common.util.GenericUtils
@@ -102,9 +103,6 @@ constructor(private val context: Context, private val client: FusedLocationProvi
         return GeoBounds(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0f)
     }
 
-    // Runs entirely on Dispatchers.IO. Using suspendCancellableCoroutine with a Play Services
-    // OnSuccessListener would post the callback (and the blocking Geocoder.getFromLocation call)
-    // back to the main thread, causing an ANR. await() keeps the whole flow off the main thread.
     @RequiresPermission(anyOf = [Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION])
     override suspend fun getCountryCodeFromLocation(): String {
         // No Play Services in this build, so there is no fused location provider to ask.
@@ -122,6 +120,8 @@ constructor(private val context: Context, private val client: FusedLocationProvi
                 ?.firstOrNull()
                 ?.countryCode
                 .orEmpty()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             log.info("getCountryCodeFromLocation failed: ${e.message}")
             ""

@@ -165,6 +165,10 @@
     <string name="transaction_row_status_error_obsolete">Obsoleta</string>
     <string name="transaction_row_status_error_invalid">Inválida</string>
     <string name="transaction_row_status_error_other">Desconhecido</string>
+    <string name="transaction_row_status_refunded">Reembolsado</string>
+    <string name="transaction_row_status_failed">Falhou</string>
+    <string name="transaction_row_conversion">Conversão · %1$s/%2$s</string>
+    <string name="transaction_row_converted">Convertido · %1$s/%2$s</string>
     <!-- The first %s is the date and the second %s is the time.  e.g. On 29 December 2019 at 15:59 -->
     <string name="transaction_row_time_text">Em %s às %s</string>
     <string name="transaction_row_status_masternode_registration">Registro de Masternode</string>
@@ -449,4 +453,5 @@
     <string name="crowdnode_withdrawal_reminder_title">Você tem um saldo no CrowdNode</string>
     <string name="crowdnode_withdrawal_reminder_message">Esses fundos devem ser retirados do CrowdNode. Você pode transferi-los para esta carteira ou realizar a transferência pela sua conta online em outro dispositivo.</string>
     <string name="crowdnode_withdraw_funds">Retirar fundos</string>
+    <string name="dash_connect_revoke_access">Revogar acesso</string>
 </resources>

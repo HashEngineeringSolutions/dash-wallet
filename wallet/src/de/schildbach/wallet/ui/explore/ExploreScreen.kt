@@ -17,43 +17,30 @@
 
 package de.schildbach.wallet.ui.explore
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.schildbach.wallet.ui.compose_views.Shadows.softShadow
 import de.schildbach.wallet_test.R
-import org.dash.wallet.common.ui.components.DashButton
+import org.dash.wallet.common.ui.components.LocalDashColors
 import org.dash.wallet.common.ui.components.MenuItem
 import org.dash.wallet.common.ui.components.MyTheme
 import org.dash.wallet.common.ui.components.NavBarBack
-import org.dash.wallet.common.ui.components.Size
-import org.dash.wallet.common.ui.components.Style
-import java.util.Locale
 
 data class ExploreScreenState(
     val showFaucet: Boolean, // testnet only
-    val showStaking: Boolean, // has CrowdNode account
-    val apy: Double, // 0.0 means hide the APY badge
-    val showWithdrawalBanner: Boolean,
     // ATM data ships inside the encrypted explore.db, which this build does not
     // have, so the ATM list would always be empty here.
     val showAtms: Boolean = false
@@ -65,15 +52,14 @@ fun ExploreScreen(
     onBackClick: () -> Unit,
     onWhereToSpendClick: () -> Unit,
     onAtmsClick: () -> Unit,
-    onStakingClick: () -> Unit,
     onFaucetClick: () -> Unit,
-    onWithdrawClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val colors = LocalDashColors.current
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(MyTheme.Colors.backgroundPrimary)
+            .background(colors.backgroundPrimary)
     ) {
         // Fixed back chevron pinned to the top, above the scrolling content
         NavBarBack(onBackClick = onBackClick)
@@ -97,13 +83,13 @@ fun ExploreScreen(
                 Text(
                     text = stringResource(R.string.explore_dash),
                     style = MyTheme.Typography.HeadlineMediumBold,
-                    color = MyTheme.Colors.textPrimary,
+                    color = colors.textPrimary,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Text(
                     text = stringResource(R.string.explore_subtitle),
                     style = MyTheme.Body2Regular,
-                    color = MyTheme.Colors.textSecondary,
+                    color = colors.textSecondary,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -113,7 +99,7 @@ fun ExploreScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .softShadow(16.dp)
-                    .background(MyTheme.Colors.backgroundSecondary, RoundedCornerShape(16.dp))
+                    .background(colors.backgroundSecondary, RoundedCornerShape(16.dp))
                     .padding(6.dp)
             ) {
                 Column(
@@ -144,135 +130,6 @@ fun ExploreScreen(
                             action = onAtmsClick
                         )
                     }
-
-                    if (state.showStaking) {
-                        StakingMenuItem(
-                            apy = state.apy,
-                            onClick = onStakingClick
-                        )
-                    }
-                }
-            }
-
-            // CrowdNode withdrawal banner (below the card)
-            if (state.showWithdrawalBanner) {
-                CrowdNodeWithdrawalBanner(onWithdrawClick = onWithdrawClick)
-            }
-        }
-    }
-}
-
-@Composable
-private fun StakingMenuItem(
-    apy: Double,
-    onClick: () -> Unit
-) {
-    if (apy == 0.0) {
-        MenuItem(
-            title = stringResource(R.string.staking_title),
-            subtitle = stringResource(R.string.explore_staking_subtitle),
-            icon = R.drawable.ic_deposit,
-            action = onClick
-        )
-    } else {
-        // MenuItem does not support an inline APY pill, so render the row layout
-        // explicitly while reusing the same spacing/typography tokens.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.Transparent, RoundedCornerShape(20.dp))
-                .clickable(onClick = onClick)
-                .padding(horizontal = 10.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
-            Box(modifier = Modifier.size(26.dp)) {
-                Image(
-                    painter = painterResource(id = R.drawable.ic_deposit),
-                    contentDescription = null,
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.staking_title),
-                    style = MyTheme.Body2Medium,
-                    color = MyTheme.Colors.textPrimary
-                )
-                Text(
-                    text = stringResource(R.string.explore_staking_subtitle),
-                    style = MyTheme.Typography.BodyMedium,
-                    color = MyTheme.Colors.textSecondary,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                // APY shown as plain blue inline text (per design)
-                Text(
-                    text = stringResource(
-                        R.string.explore_staking_current_apy,
-                        String.format(Locale.getDefault(), "%.1f", apy)
-                    ),
-                    style = MyTheme.Body2Regular,
-                    color = MyTheme.Colors.dashBlue,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CrowdNodeWithdrawalBanner(
-    onWithdrawClick: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MyTheme.Colors.gray.copy(alpha = 0.1f), RoundedCornerShape(20.dp))
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_warning_triangle),
-                contentDescription = null,
-                modifier = Modifier.size(30.dp)
-            )
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(top = 2.dp, end = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    Text(
-                        text = stringResource(R.string.crowdnode_withdrawal_reminder_title),
-                        style = MyTheme.Typography.TitleMediumMedium,
-                        color = MyTheme.Colors.textPrimary,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        text = stringResource(R.string.crowdnode_withdrawal_reminder_message),
-                        style = MyTheme.Body2Regular,
-                        color = MyTheme.Colors.textSecondary,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                Box(modifier = Modifier.padding(bottom = 14.dp)) {
-                    DashButton(
-                        text = stringResource(R.string.crowdnode_withdraw_funds),
-                        style = Style.FilledBlue,
-                        size = Size.Small,
-                        stretch = false,
-                        onClick = onWithdrawClick
-                    )
                 }
             }
         }
@@ -283,18 +140,11 @@ private fun CrowdNodeWithdrawalBanner(
 @Composable
 private fun ExploreScreenFullPreview() {
     ExploreScreen(
-        state = ExploreScreenState(
-            showFaucet = true,
-            showStaking = true,
-            apy = 5.7,
-            showWithdrawalBanner = true
-        ),
+        state = ExploreScreenState(showFaucet = true),
         onBackClick = {},
         onWhereToSpendClick = {},
         onAtmsClick = {},
-        onStakingClick = {},
-        onFaucetClick = {},
-        onWithdrawClick = {}
+        onFaucetClick = {}
     )
 }
 
@@ -302,17 +152,10 @@ private fun ExploreScreenFullPreview() {
 @Composable
 private fun ExploreScreenMinimalPreview() {
     ExploreScreen(
-        state = ExploreScreenState(
-            showFaucet = false,
-            showStaking = false,
-            apy = 0.0,
-            showWithdrawalBanner = false
-        ),
+        state = ExploreScreenState(showFaucet = false),
         onBackClick = {},
         onWhereToSpendClick = {},
         onAtmsClick = {},
-        onStakingClick = {},
-        onFaucetClick = {},
-        onWithdrawClick = {}
+        onFaucetClick = {}
     )
 }

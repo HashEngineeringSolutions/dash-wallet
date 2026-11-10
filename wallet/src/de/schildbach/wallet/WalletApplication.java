@@ -79,7 +79,6 @@ import org.dash.wallet.common.InteractionAwareActivity;
 import org.dash.wallet.common.WalletDataProvider;
 import org.dash.wallet.common.data.WalletUIConfig;
 import org.dash.wallet.common.integrations.ExchangeIntegrationProvider;
-import org.dash.wallet.common.services.LeftoverBalanceException;
 import org.dash.wallet.common.services.TransactionMetadataProvider;
 import org.dash.wallet.common.services.analytics.AnalyticsService;
 import org.dash.wallet.common.transactions.TransactionWrapperFactory;
@@ -104,8 +103,7 @@ import de.schildbach.wallet.transactions.WalletBalanceObserver;
 import de.schildbach.wallet.ui.buy_sell.LiquidClient;
 import org.dash.wallet.integrations.uphold.api.UpholdClient;
 import org.dash.wallet.integrations.uphold.data.UpholdConstants;
-import org.dash.wallet.integrations.crowdnode.utils.CrowdNodeConfig;
-import org.dash.wallet.integrations.crowdnode.utils.CrowdNodeBalanceCondition;
+import org.dash.wallet.integrations.maya.api.SwapTrackingService;
 import org.dash.wallet.integrations.uphold.utils.UpholdConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
@@ -211,8 +209,6 @@ public class WalletApplication extends MultiDexApplication
     @Inject
     BlockchainStateDataProvider blockchainStateDataProvider;
     @Inject
-    CrowdNodeConfig crowdNodeConfig;
-    @Inject
     TransactionMetadataProvider transactionMetadataProvider;
     @Inject
     PlatformRepo platformRepo;
@@ -236,6 +232,10 @@ public class WalletApplication extends MultiDexApplication
     SecurityInitializer securityInitializer;
     @Inject
     TxDisplayCacheService txDisplayCacheService;
+    @Inject
+    SwapTrackingService swapTrackingService;
+    @Inject
+    de.schildbach.wallet.ui.more.connections.DashConnectConfig dashConnectConfig;
     private WalletBalanceObserver walletBalanceObserver;
     private CoinJoinService coinJoinService;
     @Inject
@@ -286,6 +286,9 @@ public class WalletApplication extends MultiDexApplication
         resetBlockchainSyncProgress();
         anrSupervisor = new AnrSupervisor();
         anrSupervisor.start();
+
+        // resume status polling for any DEX swaps still in flight
+        swapTrackingService.start();
 
         // enable TLS 1.3 support on Android 9 and lower
         // Android 10 and above support TLS 1.3 by default
@@ -468,6 +471,7 @@ public class WalletApplication extends MultiDexApplication
         log.info("STARTUP finalizeInit: afterLoadWallet done in {}ms", System.currentTimeMillis() - _t); _t = System.currentTimeMillis();
 
         cleanupFiles();
+        removeCrowdNodeData();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannels();
@@ -689,6 +693,15 @@ public class WalletApplication extends MultiDexApplication
         return wallet;
     }
 
+    /**
+     * Whether a wallet is loaded, safe to ask from any thread. The wallet field is not volatile,
+     * so a background thread reading it can go on seeing a wallet a wipe has already removed;
+     * the state flow is updated alongside it and publishes the change to every thread.
+     */
+    public boolean hasWallet() {
+        return walletStateFlow.getValue() != null;
+    }
+
     private final MutableStateFlow<Wallet> walletStateFlow = StateFlowKt.MutableStateFlow(null);
     @NonNull
     @Override
@@ -866,6 +879,19 @@ public class WalletApplication extends MultiDexApplication
         }
     }
 
+    // CrowdNode was removed: drop its preferences, DataStore file and any pending sign-up work
+    private void removeCrowdNodeData() {
+        final boolean hadPrefs = config.removeObsoleteCrowdNodePrefs();
+        final File dataStore = new File(new File(getFilesDir(), Constants.Files.DATASTORE_PREFS_DIRECTORY),
+                "crowdnode.preferences_pb");
+        final boolean hadDataStore = dataStore.delete();
+
+        if (hadPrefs || hadDataStore) {
+            log.info("removing obsolete CrowdNode data");
+            WorkManager.getInstance(this).cancelUniqueWork("CrowdNode.WORK");
+        }
+    }
+
     private void clearDatastorePrefs() {
         final File folder = new File(getFilesDir(), Constants.Files.DATASTORE_PREFS_DIRECTORY);
 
@@ -875,6 +901,10 @@ public class WalletApplication extends MultiDexApplication
 
             if (files != null) {
                 for (File file: files) {
+                    // This scoped authorization/replay audit must survive same-seed recovery.
+                    if (de.schildbach.wallet.ui.more.connections.DashConnectConfig.AUDIT_FILE_NAME.equals(file.getName())) {
+                        continue;
+                    }
                     file.delete();
                 }
             }
@@ -894,14 +924,18 @@ public class WalletApplication extends MultiDexApplication
             int importance = runningAppProcesses.get(0).importance;
             if (importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
                 if (wallet == null) {
-                    log.warn("wallet does not exist, but starting blockchain service");
+                    // The environment was never initialized in this process (no wallet file at
+                    // startup), so blockchainServiceIntent may still be null and the service has
+                    // no wallet to work with anyway.
+                    log.warn("wallet does not exist, not starting blockchain service");
+                    return;
                 }
                 if (cancelCoinsReceived) {
                     Intent blockchainServiceCancelCoinsReceivedIntent = new Intent(BlockchainService.ACTION_CANCEL_COINS_RECEIVED, null,
                             this, BlockchainServiceImpl.class);
                     startService(blockchainServiceCancelCoinsReceivedIntent);
                 } else {
-                    startService(blockchainServiceIntent);
+                    startService(getBlockchainServiceIntent());
                 }
             }
         }
@@ -909,7 +943,19 @@ public class WalletApplication extends MultiDexApplication
 
     @Deprecated(message = "not used")
     public void stopBlockchainService() {
-        stopService(blockchainServiceIntent);
+        stopService(getBlockchainServiceIntent());
+    }
+
+    /**
+     * {@link #blockchainServiceIntent} is only assigned by {@link #initEnvironment()}, which does
+     * not run when the app starts without a wallet file. Build it on demand so that callers can
+     * never pass null to startService()/stopService().
+     */
+    private Intent getBlockchainServiceIntent() {
+        if (blockchainServiceIntent == null) {
+            blockchainServiceIntent = new Intent(this, BlockchainServiceImpl.class);
+        }
+        return blockchainServiceIntent;
     }
 
     public void resetBlockchainState() {
@@ -1093,6 +1139,12 @@ public class WalletApplication extends MultiDexApplication
         log.info("removing wallet from memory during wipe");
         wallet = null;
         walletStateFlow.setValue(null);
+        // Here, after the wallet is gone, and not with the other alarms at the top: the service's
+        // cleanup can still be scheduling its one-minute recovery restart until this point, and
+        // from here on it refuses to. A restart that fires with no wallet leaves the service
+        // half-created, and every later start - including the one for a replacement wallet -
+        // waits on it for good.
+        BlockchainServiceImpl.cancelRecoveryRestart(this);
         authenticationGroupExtension = null;
         walletBalanceObserver.close();
         walletBalanceObserver = null;
@@ -1345,19 +1397,6 @@ public class WalletApplication extends MultiDexApplication
     @Override
     public void detachOnWalletWipedListener(@NonNull Function1<? super Continuation<? super Unit>,?> listener) {
         wipeListeners.remove(listener);
-    }
-
-    @Override
-    public void checkSendingConditions(
-            @Nullable Address address,
-            @NonNull Coin amount
-    ) throws LeftoverBalanceException {
-        new CrowdNodeBalanceCondition().check(
-                getWalletBalance(),
-                address,
-                amount,
-                crowdNodeConfig
-        );
     }
 
     @Override

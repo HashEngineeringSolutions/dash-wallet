@@ -104,8 +104,18 @@
     <string name="search_user_no_results">There are no users that match</string>
     <string name="search_user_loading">Searching for username <b>\"%\"</b> on the Dash Network</string>
     <string name="contact_request_pending">Contact Request Pending</string>
+    <string name="send_contact_request_short">Send request</string>
+    <string name="contact_request_sent_short">Request sent</string>
+    <string name="send_button_label">Send</string>
+    <string name="contact_history_disclaimer_pending_plain">Once %1$s accepts your request you can pay directly to the username</string>
     <string name="pay">Pay</string>
     <string name="contact_request_received_title">%s has requested to be a friend</string>
+    <string name="contact_request_received_card_title">%s has sent you a contact request</string>
+    <string name="contact_request_received_card_message">If you don\'t want %s to be in your contact list you can tap the \"Ignore\" button. They will not be notified about your decision.</string>
+    <string name="contact_request_row_received">%s sent you a contact request</string>
+    <string name="contact_request_row_sent">Contact request sent</string>
+    <string name="contact_request_row_established_incoming">You accepted the request from %s</string>
+    <string name="contact_request_row_established_outgoing">%s has accepted your contact request</string>
     <string name="contact_request_accept">Accept</string>
     <string name="contact_request_ignore">Ignore</string>
 
@@ -414,6 +424,7 @@
     <string name="coinjoin_mixing_level_subtitle">You can change or stop the mixing level at any time</string>
     <string name="coinjoin_mixing_transactions">Mixing Transactions</string>
     <string name="coinjoin_transaction_group">These are mixing related transactions.</string>
+    <string name="coinjoin_transaction_group_title">Why do I see all these transactions?</string>
     <string name="intermediate">Intermediate</string>
     <string name="advanced">Advanced</string>
     <string name="intermediate_level_card_decs">Advanced users who have a very high level of technical expertise can determine your transaction history</string>
@@ -449,7 +460,7 @@
     <string name="request_username_username_voting_message">+ what is username voting?</string>
     <string name="request_username_character_requirement">Letters, numbers and hyphens only</string>
     <string name="request_username_character_requirement_invite_noncontested">Numbers 2-9</string>
-    <string name="request_username_balance_requirement">You need to have 0.25 DASH to create this username</string>
+    <string name="request_username_balance_requirement">You need to have %s DASH to create this username</string>
     <string name="request_username_requirements_message_invite_noncontested">The username must meet one of these criteria</string>
     <string name="request_username_requirements_message">The username must meet these criteria</string>
     <string name="request_username_length_requirement">Between 3 and 23 characters</string>
@@ -484,7 +495,7 @@
     <string name="group_by">Group by</string>
     <string name="transaction_metadata_title">Transaction metadata</string>
     <string name="transaction_metadata_data_being_saved">Scheduled</string>
-    <string name="transaction_metadata_payment_category_description">Indicates if a transaction is associated with Coinbase, Uphold, Topper or CrowdNode</string>
+    <string name="transaction_metadata_payment_category_description">Indicates if a transaction is associated with Coinbase, Uphold, Topper or DashSpend</string>
     <string name="transaction_metadata_fiat_price_description">The historical price at the time of the transaction</string>
     <string name="transaction_metadata_description">Your data is stored on your device but will be lost if you reset or restore your wallet. Below are examples of the information that will be saved when saved on the network.</string>
     <string name="transaction_metadata_cost">How much does it cost?</string>
@@ -549,4 +560,42 @@
     <string name="create_instant_username_button">Create instant username</string>
     <string name="create_instant_username_cancel">Cancel</string>
 
+    <!-- DashConnect (Connections) -->
+    <string name="dash_connect_connections_title">Connections</string>
+    <string name="dash_connect_empty_heading">No apps connected yet</string>
+    <string name="dash_connect_empty_message">Connect your DashPay username to apps on the Dash network to sign in without passwords or accounts</string>
+    <string name="dash_connect_scan_qr">Scan QR</string>
+    <string name="dash_connect_status_approved">Approved</string>
+    <string name="dash_connect_status_active">Active</string>
+    <string name="dash_connect_status_disconnected">Disconnected</string>
+    <string name="dash_connect_hint_complete_login">Scan the %1$s QR code to complete your login</string>
+    <string name="dash_connect_scan_to_complete_banner">Scan the QR code to complete the login process</string>
+    <string name="dash_connect_hint_active">Touch to disconnect at any time</string>
+    <string name="dash_connect_hint_log_back_in">Scan the %1$s QR code to log back in</string>
+    <string name="dash_connect_approve_title">Approve connection to %1$s?</string>
+    <string name="dash_connect_approve_will_be_able">This app will be able to:</string>
+    <string name="dash_connect_approve_see_username">See your username</string>
+    <string name="dash_connect_approve_verify_identity">Verify your identity</string>
+    <string name="dash_connect_username">Username</string>
+    <string name="dash_connect_identity">Identity</string>
+    <string name="dash_connect_approve_no_access">This app will NOT have access to:</string>
+    <string name="dash_connect_approve_no_private_keys">Your private keys</string>
+    <string name="dash_connect_approve_no_withdraw_funds">Withdraw funds</string>
+    <string name="dash_connect_approve">Approve</string>
+    <string name="dash_connect_deny">Deny</string>
+    <string name="dash_connect_unknown_app">Unknown app</string>
+    <string name="dash_connect_login_completed">Login completed</string>
+    <string name="dash_connect_error">Could not complete the DashConnect request: %1$s</string>
+    <string name="dash_connect_cancel_login_title">Cancel login to %1$s?</string>
+    <string name="dash_connect_cancel_login_message">The pending login will be discarded. You can start over at any time by scanning a new QR code.</string>
+    <string name="dash_connect_disconnect_title">Disconnect from %1$s?</string>
+    <string name="dash_connect_disconnect_message">The app will no longer be able to use your login. You can log back in by scanning a new QR code.</string>
+    <string name="dash_connect_remove_title">Remove %1$s?</string>
+    <string name="dash_connect_remove_message">The connection will be removed from this list. You can connect again at any time by scanning a new QR code.</string>
+    <string name="dash_connect_confirm">Confirm</string>
+    <string name="dash_connect_testnet_only_heading">Unavailable on mainnet</string>
+    <string name="dash_connect_testnet_only_message">DashConnect login is not yet available on mainnet</string>
+
+    <string name="dash_connect_group_scope_changed">This group\'s scope has changed since your previous approval, or its previous scope was not recorded. Review the current members and administrators below before continuing. Previously registered keys may still be active; Revoke access remains available.</string>
+    <string name="dash_connect_group_scope_approve">I approve the updated group scope shown above.</string>
 </resources>

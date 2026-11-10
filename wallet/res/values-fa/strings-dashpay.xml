@@ -104,8 +104,10 @@
     <string name="search_user_no_results">هیچ کاربری با این مشخصات یافت نشد</string>
     <string name="search_user_loading">جستجو برای نام کاربری<b> "%"</b> در شبکه دش</string>
     <string name="contact_request_pending">درخواست تماس پاسخی دریافت نکرده است</string>
+    <string name="send_button_label">ارسال</string>
     <string name="pay">پرداخت</string>
     <string name="contact_request_received_title">%sدرخواست ارتباط با شما داده است</string>
+    <string name="contact_request_received_card_title">%sیک درخواست ارتباط برایتان فرستاد</string>
     <string name="contact_request_accept">قبول</string>
     <string name="contact_request_ignore">رد</string>
 
@@ -413,6 +415,7 @@
     <string name="coinjoin_mixing_level_subtitle">می‌توانید سطح ترکیب را هر زمانی تغییر داده یا متوقف کنید</string>
     <string name="coinjoin_mixing_transactions">ترکیب تراکنش‌ها</string>
     <string name="coinjoin_transaction_group">اینها تراکنش‌های ترکیب‌شده هستند</string>
+    <string name="coinjoin_transaction_group_title">چرا همه این تراکنش‌ها را می‌بینم؟ </string>
     <string name="intermediate">متوسط</string>
     <string name="advanced">پیشرفته</string>
     <string name="intermediate_level_card_decs">کاربران پیشرفته که سطح بالایی از تخصص فنی را دارند می‌توانند سابقه تراکنش شما را تعیین کنند.</string>
@@ -445,7 +448,7 @@
     <string name="request_username_username_voting_message">+ رای‌گیری نام کاربری چیست</string>
     <string name="request_username_character_requirement">حرف، عدد و خط‌تیره</string>
     <string name="request_username_character_requirement_invite_noncontested">اعداد ۲ تا ۹</string>
-    <string name="request_username_balance_requirement">برا ایجاد نام کاربری باید ۰.۲۵ دش داشته باشید</string>
+    <string name="request_username_balance_requirement">برا ایجاد نام کاربری باید %s دش داشته باشید</string>
     <string name="request_username_requirements_message_invite_noncontested">نام کاربری باید یکی از معیارهای زیر را شامل شود</string>
     <string name="request_username_requirements_message">نام کاربری باید معیارهای زیر را شامل شود</string>
     <string name="request_username_length_requirement">بین ۳ تا ۲۳ کاراکتر</string>
@@ -543,4 +546,11 @@
     <string name="create_instant_username_button">ایجاد نام کاربری فوری</string>
     <string name="create_instant_username_cancel">لغو</string>
 
-</resources>
+    <string name="dash_connect_scan_qr">اسکن کیوآر کد</string>
+    <string name="dash_connect_status_disconnected">عدم اتصال به شبکه</string>
+    <string name="dash_connect_approve_verify_identity">احراز هویت کنید</string>
+    <string name="dash_connect_username">نام کاربری</string>
+    <string name="dash_connect_identity">هویت</string>
+    <string name="dash_connect_deny">اجازه نمی‌دهم</string>
+    <string name="dash_connect_confirm">تائید</string>
+    </resources>

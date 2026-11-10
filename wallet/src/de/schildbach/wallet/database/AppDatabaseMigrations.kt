@@ -17,6 +17,7 @@
 
 package de.schildbach.wallet.database
 
+import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
@@ -234,6 +235,56 @@ class AppDatabaseMigrations {
                 database.execSQL(
                     "ALTER TABLE `tx_display_cache` ADD COLUMN `customIconId` TEXT"
                 )
+            }
+        }
+
+        val migration20to21 = object : Migration(20, 21) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Tracking of DEX sell swaps (Maya / SwapKit / NEAR Intents) by the DASH tx
+                // that funded them. `depositAddress` is the inbound address the DASH was sent
+                // to; NEAR Intents swaps are tracked by it when the hash lookup fails.
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `swap_orders` (
+                        `txId` BLOB NOT NULL,
+                        `service` TEXT NOT NULL,
+                        `provider` TEXT,
+                        `fromAsset` TEXT NOT NULL,
+                        `toAsset` TEXT NOT NULL,
+                        `toAddress` TEXT NOT NULL,
+                        `depositAddress` TEXT,
+                        `expectedToAmount` TEXT,
+                        `actualToAmount` TEXT,
+                        `status` TEXT NOT NULL,
+                        `outboundTxHash` TEXT,
+                        `timestamp` INTEGER NOT NULL,
+                        `finalisedAt` INTEGER,
+                        `lastChecked` INTEGER NOT NULL,
+                        PRIMARY KEY(`txId`)
+                    )
+                    """
+                )
+                database.execSQL("ALTER TABLE `tx_display_cache` ADD COLUMN `swapStatus` TEXT")
+            }
+        }
+
+        /**
+         * CrowdNode was removed, so its transactions are no longer grouped. If the cache still
+         * holds a "crowdnode" group, clear both caches when the database opens, before any query
+         * runs. TxDisplayCacheService then rebuilds history from the wallet as soon as it loads,
+         * showing those transactions individually without waiting for sync to finish.
+         * This is a data-only cleanup, so it does not need a schema version bump.
+         */
+        val removeCrowdNodeCacheRows = object : RoomDatabase.Callback() {
+            override fun onOpen(db: SupportSQLiteDatabase) {
+                val hasCrowdNodeRows = db.query(
+                    "SELECT 1 FROM `tx_group_cache` WHERE `groupId` = 'crowdnode' " +
+                        "UNION ALL SELECT 1 FROM `tx_display_cache` WHERE `rowId` = 'crowdnode' LIMIT 1"
+                ).use { it.moveToFirst() }
+                if (hasCrowdNodeRows) {
+                    db.execSQL("DELETE FROM `tx_group_cache`")
+                    db.execSQL("DELETE FROM `tx_display_cache`")
+                }
             }
         }
 

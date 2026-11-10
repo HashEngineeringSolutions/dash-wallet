@@ -165,6 +165,10 @@
     <string name="transaction_row_status_error_obsolete">Obsolete</string>
     <string name="transaction_row_status_error_invalid">Invalid</string>
     <string name="transaction_row_status_error_other">Unknown</string>
+    <string name="transaction_row_status_refunded">Refunded</string>
+    <string name="transaction_row_status_failed">Failed</string>
+    <string name="transaction_row_conversion">Conversion · %1$s/%2$s</string>
+    <string name="transaction_row_converted">Converted · %1$s/%2$s</string>
     <!-- The first %s is the date and the second %s is the time.  e.g. On 29 December 2019 at 15:59 -->
     <string name="transaction_row_time_text">On %s at %s</string>
     <string name="transaction_row_status_masternode_registration">Masternode Registration</string>
@@ -447,9 +451,5 @@
     <string name="upgrade_pin_title">You need to upgrade your PIN</string>
     <string name="upgrade_pin_description">Set up a new PIN</string>
     <string name="upgrade_pin_continue">Continue</string>
-
-    <!-- CrowdNode withdrawal reminder -->
-    <string name="crowdnode_withdrawal_reminder_title">You have a balance on CrowdNode</string>
-    <string name="crowdnode_withdrawal_reminder_message">These funds should be withdrawn from CrowdNode. You can transfer these funds to this wallet or via your online account on some other device.</string>
-    <string name="crowdnode_withdraw_funds">Withdraw funds</string>
+    <string name="dash_connect_revoke_access">Revoke access</string>
 </resources>

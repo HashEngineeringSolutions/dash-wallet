@@ -47,6 +47,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import de.schildbach.wallet.Constants
 import de.schildbach.wallet.data.BuyAndSellDashServicesModel
 import de.schildbach.wallet.data.ServiceStatus
 import de.schildbach.wallet.data.ServiceType
@@ -54,6 +55,7 @@ import de.schildbach.wallet_test.R
 import kotlinx.coroutines.flow.StateFlow
 import org.bitcoinj.core.Coin
 import org.bitcoinj.utils.MonetaryFormat
+import org.dash.wallet.common.ui.components.LocalDashColors
 import org.dash.wallet.common.ui.components.Menu
 import org.dash.wallet.common.ui.components.MenuItem
 import org.dash.wallet.common.ui.components.MyTheme
@@ -68,7 +70,8 @@ fun BuyAndSellScreen(
     onTopperClick: () -> Unit = {},
     onUpholdClick: () -> Unit = {},
     onCoinbaseClick: () -> Unit = {},
-    onMayaClick: () -> Unit = {}
+    onMayaClick: () -> Unit = {},
+    onSwapKitClick: () -> Unit = {}
 ) {
     val viewModel: BuyAndSellViewModel = hiltViewModel()
 
@@ -78,7 +81,8 @@ fun BuyAndSellScreen(
         onTopperClick = onTopperClick,
         onUpholdClick = onUpholdClick,
         onCoinbaseClick = onCoinbaseClick,
-        onMayaClick = onMayaClick
+        onMayaClick = onMayaClick,
+        onSwapKitClick = onSwapKitClick
     )
 }
 
@@ -89,7 +93,8 @@ fun BuyAndSellScreen(
     onTopperClick: () -> Unit = {},
     onUpholdClick: () -> Unit = {},
     onCoinbaseClick: () -> Unit = {},
-    onMayaClick: () -> Unit = {}
+    onMayaClick: () -> Unit = {},
+    onSwapKitClick: () -> Unit = {}
 ) {
     val uiState by uiStateFlow.collectAsState()
 
@@ -102,7 +107,8 @@ fun BuyAndSellScreen(
         onTopperClick = onTopperClick,
         onUpholdClick = onUpholdClick,
         onCoinbaseClick = onCoinbaseClick,
-        onMayaClick = onMayaClick
+        onMayaClick = onMayaClick,
+        onSwapKitClick = onSwapKitClick
     )
 }
 
@@ -116,14 +122,16 @@ private fun BuyAndSellScreenContent(
     onTopperClick: () -> Unit = {},
     onUpholdClick: () -> Unit = {},
     onCoinbaseClick: () -> Unit = {},
-    onMayaClick: () -> Unit = {}
+    onMayaClick: () -> Unit = {},
+    onSwapKitClick: () -> Unit = {}
 ) {
     fun serviceOf(type: ServiceType) = services.find { it.serviceType == type }
+    val colors = LocalDashColors.current
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MyTheme.Colors.backgroundPrimary)
+            .background(colors.backgroundPrimary)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             TopNavBase(
@@ -176,21 +184,37 @@ private fun BuyAndSellScreenContent(
                 }
 
                 // Card 3: Maya
-                Menu {
-                    serviceOf(ServiceType.MAYA)?.let { service ->
-                        ServiceItem(
-                            service = service,
-                            balanceFormat = balanceFormat,
-                            onClick = if (service.isAvailable()) onMayaClick else null
-                        )
+                if (Constants.SUPPORTS_MAYA_NATIVE) {
+                    Menu {
+                        serviceOf(ServiceType.MAYA)?.let { service ->
+                            ServiceItem(
+                                service = service,
+                                balanceFormat = balanceFormat,
+                                onClick = if (service.isAvailable()) onMayaClick else null
+                            )
+                        }
+                    }
+                }
+
+                // Card 4: SwapKit — same destination as Maya, the backend is
+                // switched in the click handler.
+                if (Constants.SUPPORTS_SWAPKIT) {
+                    Menu {
+                        serviceOf(ServiceType.SWAPKIT)?.let { service ->
+                            ServiceItem(
+                                service = service,
+                                balanceFormat = balanceFormat,
+                                onClick = if (service.isAvailable()) onSwapKitClick else null
+                            )
+                        }
                     }
                 }
 
                 if (!hasValidCredentials) {
                     Text(
                         text = stringResource(R.string.services_portal_subtitle_error),
-                        style = MyTheme.OverlineCaptionRegular,
-                        color = MyTheme.Colors.red,
+                        style = MyTheme.Typography.LabelMediumMedium,
+                        color = colors.red,
                         modifier = Modifier.padding(horizontal = 20.dp)
                     )
                 }
@@ -214,7 +238,7 @@ private fun BuyAndSellScreenContent(
                 )
                 Text(
                     text = stringResource(R.string.no_connection),
-                    style = MyTheme.Caption,
+                    style = MyTheme.Typography.Footnote,
                     color = Color.White
                 )
             }
@@ -231,7 +255,7 @@ private fun ServiceItem(
     val subtitle = when (service.serviceStatus) {
         ServiceStatus.IDLE, ServiceStatus.IDLE_DISCONNECTED -> when (service.serviceType) {
             ServiceType.TOPPER -> stringResource(R.string.buy_no_account_needed)
-            ServiceType.MAYA -> stringResource(R.string.convert_no_account_needed)
+            ServiceType.MAYA, ServiceType.SWAPKIT -> stringResource(R.string.convert_no_account_needed)
             else -> stringResource(R.string.link_account)
         }
         ServiceStatus.CONNECTED -> stringResource(R.string.connected)
@@ -267,6 +291,7 @@ private fun ServiceItem(
 
 @Composable
 private fun PoweredByUpholdStrip() {
+    val colors = LocalDashColors.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -287,7 +312,7 @@ private fun PoweredByUpholdStrip() {
         Text(
             text = stringResource(R.string.topper_powered_by),
             style = MyTheme.OverlineCaptionRegular,
-            color = MyTheme.Colors.textPrimary,
+            color = colors.textPrimary,
             modifier = Modifier.padding(start = 6.dp)
         )
     }

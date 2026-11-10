@@ -34,8 +34,8 @@ import javax.inject.Inject
 @SuppressLint("Registered")
 @AndroidEntryPoint
 abstract class BaseMenuActivity : LockScreenActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onCreateWithWallet(savedInstanceState: Bundle?) {
+        super.onCreateWithWallet(savedInstanceState)
         setContentView(getLayoutId())
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
@@ -63,7 +63,7 @@ abstract class BaseMenuActivity : LockScreenActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             android.R.id.home -> {
-                onBackPressed()
+                onBackPressedDispatcher.onBackPressed()
                 return true
             }
         }

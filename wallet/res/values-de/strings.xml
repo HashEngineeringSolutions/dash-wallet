@@ -166,6 +166,10 @@
     <string name="transaction_row_status_error_obsolete">Obsolet</string>
     <string name="transaction_row_status_error_invalid">Ungültig</string>
     <string name="transaction_row_status_error_other">Unbekannt</string>
+    <string name="transaction_row_status_refunded">Erstattet</string>
+    <string name="transaction_row_status_failed">Fehlgeschlagen</string>
+    <string name="transaction_row_conversion">Konvertierung · %1$s/%2$s</string>
+    <string name="transaction_row_converted">Konvertiert · %1$s/%2$s</string>
     <!-- The first %s is the date and the second %s is the time.  e.g. On 29 December 2019 at 15:59 -->
     <string name="transaction_row_time_text">Auf %s bei %s</string>
     <string name="transaction_row_status_masternode_registration">Masternode-Registrierung</string>
@@ -450,4 +454,5 @@
     <string name="crowdnode_withdrawal_reminder_title">Du besitzt noch Guthaben auf CrowdNode</string>
     <string name="crowdnode_withdrawal_reminder_message">Du solltest dein Guthaben von CrowdNode abziehen. Das Guthaben kannst du in diese Wallet oder über dein Online-Konto auf ein anderes Gerät auszahlen lassen.</string>
     <string name="crowdnode_withdraw_funds">Guthaben auszahlen</string>
+    <string name="dash_connect_revoke_access">Zugriff widerrufen</string>
 </resources>

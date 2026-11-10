@@ -64,7 +64,7 @@ open class SendCoinsActivity : LockScreenActivity() {
 
         @JvmStatic
         fun start(context: Context, action: String?, paymentIntent: PaymentIntent?, keepUnlocked: Boolean, isQuickScan: Boolean = false) {
-            val intent = Intent(context, SendCoinsActivity::class.java)
+            val intent = Intent(context, InAppSendCoinsActivity::class.java)
 
             if (action != null) {
                 intent.action = action
@@ -77,7 +77,7 @@ open class SendCoinsActivity : LockScreenActivity() {
         }
 
         fun startBuyCredits(context: Context) {
-            val intent = Intent(context, SendCoinsActivity::class.java)
+            val intent = Intent(context, InAppSendCoinsActivity::class.java)
 
             val paymentIntent = PaymentIntent(
                 PaymentIntent.Standard.BIP21,
@@ -99,14 +99,8 @@ open class SendCoinsActivity : LockScreenActivity() {
     private var buyCredits: Boolean = false
     private var isQuickScan: Boolean = false
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // only set INTENT_EXTRA_KEEP_UNLOCKED if it is not yet set
-        // if this Activity is started by a dash: uri, then it will not be set
-        if (!intent.hasExtra(INTENT_EXTRA_KEEP_UNLOCKED)) {
-            intent.putExtra(INTENT_EXTRA_KEEP_UNLOCKED, true)
-        }
+    override fun onCreateWithWallet(savedInstanceState: Bundle?) {
+        super.onCreateWithWallet(savedInstanceState)
 
         binding = ActivitySendCoinsBinding.inflate(layoutInflater)
         setContentView(binding.root)

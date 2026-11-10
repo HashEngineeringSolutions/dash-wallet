@@ -30,7 +30,6 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -44,8 +43,6 @@ import com.google.android.material.appbar.AppBarLayout.Behavior.DragCallback
 import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet.data.ServiceType
-import de.schildbach.wallet.service.CoinJoinMode
-import de.schildbach.wallet.service.MixingStatus
 import de.schildbach.wallet.ui.EditProfileActivity
 import de.schildbach.wallet.ui.LockScreenActivity
 import de.schildbach.wallet.ui.coinjoin.CoinJoinActivity
@@ -62,9 +59,9 @@ import de.schildbach.wallet.ui.*
 import de.schildbach.wallet.ui.payments.PaymentsFragment
 import de.schildbach.wallet.ui.payments.SweepWalletActivity
 import de.schildbach.wallet.ui.send.SendCoinsActivity
-import de.schildbach.wallet.ui.staking.StakingActivity
 import de.schildbach.wallet.ui.transactions.TaxCategoryExplainerDialogFragment
 import de.schildbach.wallet.ui.transactions.TransactionDetailsDialogFragment
+import de.schildbach.wallet.ui.more.connections.protocol.DashConnectUri
 import de.schildbach.wallet.ui.util.InputParser.StringInputParser
 import de.schildbach.wallet.ui.verify.VerifySeedActivity
 import de.schildbach.wallet.util.WalletUtils
@@ -79,15 +76,16 @@ import org.dash.wallet.common.Configuration
 import org.dash.wallet.common.services.AuthenticationManager
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.ui.avatar.ProfilePictureDisplay
+import org.dash.wallet.common.ui.components.DashWalletTheme
 import org.dash.wallet.common.ui.components.InfoPanel
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
 import org.dash.wallet.common.ui.scan.ScanActivity
 import org.dash.wallet.common.ui.viewBinding
-import org.dash.wallet.common.util.Constants
 import org.dash.wallet.common.util.observe
 import org.dash.wallet.common.util.openCustomTab
 import org.dash.wallet.common.util.safeNavigate
 import org.dash.wallet.features.exploredash.ui.explore.ExploreTopic
+import org.dash.wallet.integrations.maya.utils.SwapBackend
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
 
@@ -112,14 +110,6 @@ class WalletFragment : Fragment(R.layout.home_content) {
         if (result.resultCode == Activity.RESULT_OK && intent != null) {
             val input = intent.getStringExtra(ScanActivity.INTENT_EXTRA_RESULT)
             input?.let { handleString(input, R.string.button_scan, R.string.input_parser_cannot_classify) }
-        }
-    }
-
-    private val stakingLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Constants.USER_BUY_SELL_DASH) {
-            safeNavigate(WalletFragmentDirections.homeToBuySell())
         }
     }
 
@@ -165,17 +155,19 @@ class WalletFragment : Fragment(R.layout.home_content) {
 
         binding.infoPanel.setContent {
             if (shortcutViewModel.showShortcutInfo) {
-                InfoPanel(
-                    stringResource(R.string.customize_shortcuts),
-                    stringResource(R.string.customize_shortcuts_description),
-                    modifier = Modifier
-                        .wrapContentHeight()
-                        .fillMaxWidth()
-                        .padding(horizontal = 2.dp),
-                    leftIconRes = R.drawable.ic_shortcuts,
-                    actionIconRes = R.drawable.ic_popup_close
-                ) {
-                    shortcutViewModel.hideShortcutInfo()
+                DashWalletTheme {
+                    InfoPanel(
+                        stringResource(R.string.customize_shortcuts),
+                        stringResource(R.string.customize_shortcuts_description),
+                        modifier = Modifier
+                            .wrapContentHeight()
+                            .fillMaxWidth()
+                            .padding(horizontal = 2.dp),
+                        leftIconRes = R.drawable.ic_shortcuts,
+                        actionIconRes = R.drawable.ic_popup_close
+                    ) {
+                        shortcutViewModel.hideShortcutInfo()
+                    }
                 }
             }
         }
@@ -276,15 +268,17 @@ class WalletFragment : Fragment(R.layout.home_content) {
         )
 
         binding.shortcutsPane.setContent {
-            ShortcutsPane(
-                shortcuts = shortcutViewModel.shortcuts,
-                onClick = { shortcut ->
-                    onShortcutTap(shortcut)
-                },
-                onLongClick = { shortcut, index ->
-                    onShortcutLongTap(shortcut, index)
-                }
-            )
+            DashWalletTheme {
+                ShortcutsPane(
+                    shortcuts = shortcutViewModel.shortcuts,
+                    onClick = { shortcut ->
+                        onShortcutTap(shortcut)
+                    },
+                    onLongClick = { shortcut, index ->
+                        onShortcutLongTap(shortcut, index)
+                    }
+                )
+            }
         }
 
         refreshShortcutBar()
@@ -344,6 +338,15 @@ class WalletFragment : Fragment(R.layout.home_content) {
     }
 
     private fun handleString(input: String, errorDialogTitleResId: Int, cannotClassifyCustomMessageResId: Int) {
+        // fully qualified: this file already imports org.dash.wallet.common.util.Constants
+        if (de.schildbach.wallet.Constants.SUPPORTS_CONNECT &&
+            DashConnectUri.isConnectUri(input)
+        ) {
+            // DashConnect QR, handled by the Connections screen, which also says when the network is
+            // too old for it. Where the feature is off these URIs fall through to the unrecognised-QR error.
+            safeNavigate(WalletFragmentDirections.homeToConnections(input))
+            return
+        }
         object : StringInputParser(input, true) {
             override fun handlePaymentIntent(paymentIntent: PaymentIntent) {
                 SendCoinsActivity.start(requireActivity(), paymentIntent)
@@ -406,6 +409,11 @@ class WalletFragment : Fragment(R.layout.home_content) {
                 viewModel.logEvent(AnalyticsConstants.Home.SHORTCUT_BUY_AND_SELL)
                 safeNavigate(WalletFragmentDirections.homeToBuySell())
             }
+            ShortcutOption.DASH_DEX -> {
+                viewModel.logEvent(AnalyticsConstants.Home.SHORTCUT_DASH_DEX)
+                viewModel.setSwapBackend(SwapBackend.SWAPKIT)
+                safeNavigate(WalletFragmentDirections.homeToMaya())
+            }
             ShortcutOption.SEND_TO_ADDRESS -> {
                 handlePayToAddress()
             }
@@ -454,9 +462,6 @@ class WalletFragment : Fragment(R.layout.home_content) {
             ShortcutOption.ATMS -> {
                 safeNavigate(WalletFragmentDirections.homeToSearch(type = ExploreTopic.ATMs))
             }
-            ShortcutOption.STAKING -> {
-                handleStakingNavigation()
-            }
             ShortcutOption.TOPPER -> {
                 lifecycleScope.launch {
                     val uri = shortcutViewModel.getTopperUrl(getString(R.string.dash_wallet_name))
@@ -489,26 +494,5 @@ class WalletFragment : Fragment(R.layout.home_content) {
         }.show(requireActivity())
 
         shortcutViewModel.hideShortcutInfo() // Assume user is aware of this feature already
-    }
-
-    private fun handleStakingNavigation() {
-        lifecycleScope.launch {
-            if (viewModel.isBlockchainSynced.value == true) {
-                stakingLauncher.launch(Intent(requireContext(), StakingActivity::class.java))
-            } else {
-                val openWebsite = AdaptiveDialog.create(
-                    null,
-                    getString(R.string.chain_syncing),
-                    getString(R.string.crowdnode_wait_for_sync),
-                    getString(R.string.button_close),
-                    getString(R.string.crowdnode_open_website)
-                ).showAsync(requireActivity())
-
-                if (openWebsite == true) {
-                    val browserIntent = Intent(Intent.ACTION_VIEW, getString(R.string.crowdnode_website).toUri())
-                    startActivity(browserIntent)
-                }
-            }
-        }
     }
 }

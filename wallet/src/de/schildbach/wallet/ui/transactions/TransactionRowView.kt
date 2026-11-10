@@ -29,10 +29,10 @@ import org.bitcoinj.core.*
 import org.bitcoinj.utils.ExchangeRate
 import org.dash.wallet.common.data.PresentableTxMetadata
 import org.dash.wallet.common.data.ServiceName
+import org.dash.wallet.common.data.entity.SwapOrderStatus
 import org.dash.wallet.common.transactions.TransactionUtils.isEntirelySelf
 import org.dash.wallet.common.transactions.TransactionWrapper
 import org.dash.wallet.common.util.ResourceString
-import org.dash.wallet.integrations.crowdnode.transactions.FullCrowdNodeSignUpTxSet
 import org.slf4j.LoggerFactory
 
 data class TransactionRowView(
@@ -53,7 +53,9 @@ data class TransactionRowView(
     val service: String?,
     val txWrapper: TransactionWrapper?,
     /** Pre-resolved status text from the display cache. Used when [statusRes] is -1. */
-    val statusText: String? = null
+    val statusText: String? = null,
+    /** Status of the DEX swap this tx funded, or null if it isn't a swap. Drives the row chip. */
+    val swapStatus: SwapOrderStatus? = null
 ): HistoryRowView() {
     companion object {
         fun fromTransactionWrapper(
@@ -67,25 +69,6 @@ data class TransactionRowView(
             val firstTx = txWrapper.transactions.values.first()
 
             return when (txWrapper) {
-                is FullCrowdNodeSignUpTxSet -> TransactionRowView(
-                        ResourceString(R.string.crowdnode_account),
-                        txWrapper.id,
-                        txWrapper.getValue(bag),
-                        firstTx.exchangeRate,
-                        null,
-                        R.drawable.ic_crowdnode_logo,
-                        null,
-                        R.style.TxNoBackground,
-                        -1,
-                        metadata?.memo ?: "",
-                        txWrapper.transactions.size,
-                        firstTx.updateTime.time,
-                        TxResourceMapper().dateTimeFormat,
-                        false,
-                        ServiceName.CrowdNode,
-                        txWrapper
-                    )
-
                 is CoinJoinMixingTxSet -> TransactionRowView(
                     ResourceString(R.string.coinjoin_mixing_transactions),
                     txWrapper.id,
@@ -141,6 +124,21 @@ data class TransactionRowView(
                     },
                     listOf(metadata.title ?: "")
                 )
+            } else if (metadata?.swapOrder != null) {
+                val swapOrder = metadata.swapOrder!!
+                // solid-circle icon (ic_convert alone is a white glyph and washes out on
+                // the pale background) inside the standard halo, like every other tx icon;
+                // the Figma design has no halo — revisit when the icon set is reworked
+                icon = R.drawable.ic_convert_circle
+                iconBackground = R.style.TxOrangeBackground
+                title = ResourceString(
+                    if (swapOrder.status == SwapOrderStatus.COMPLETED) {
+                        R.string.transaction_row_converted
+                    } else {
+                        R.string.transaction_row_conversion
+                    },
+                    listOf(swapOrder.fromAsset, swapOrder.toAsset)
+                )
             } else if (isInternal) {
                 icon = R.drawable.ic_internal
                 iconBackground = R.style.TxSentBackground
@@ -174,7 +172,8 @@ data class TransactionRowView(
                 resourceMapper.dateTimeFormat,
                 hasErrors,
                 metadata?.service,
-                null
+                null,
+                swapStatus = metadata?.swapOrder?.status
             )
         }
     }

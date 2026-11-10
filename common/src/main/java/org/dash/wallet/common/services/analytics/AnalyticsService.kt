@@ -87,11 +87,11 @@ class FireplaceAnalyticsServiceImpl @Inject constructor() : AnalyticsService {
     override fun logError(error: Throwable, details: String?) {
         if (BuildConfig.DEBUG) {
             Log.i("FIREPLACE", "Skip error logging in debug mode: $error")
-            details?.let { Log.i("FIREBASE", "Details: $details") }
+            details?.let { Log.i("FIREPLACE", "Details: $details") }
             return
         }
 
-        details?.let { crashlytics.log(details) }
+        details?.let { crashlytics.log(it) }
         crashlytics.recordException(error)
     }
 

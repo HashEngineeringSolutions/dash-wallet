@@ -105,8 +105,10 @@
     <string name="search_user_no_results">일치하는 사용자가 없습니다</string>
     <string name="search_user_loading">대시 네트워크상에서 사용자 이름 <b>"%"</b> 을 찾는 중</string>
     <string name="contact_request_pending">연락처 요청 대기 중</string>
+    <string name="send_button_label">보내기</string>
     <string name="pay">지불</string>
     <string name="contact_request_received_title">%s 님이 친구 요청을 보냈습니다</string>
+    <string name="contact_request_received_card_title">%s 님이 연락처 요청을 보냈습니다</string>
     <string name="contact_request_accept">수락</string>
     <string name="contact_request_ignore">무시</string>
 
@@ -414,6 +416,7 @@
     <string name="coinjoin_mixing_level_subtitle">믹싱 레벨은 언제든 변경 혹은 중지할 수 있습니다</string>
     <string name="coinjoin_mixing_transactions">거래 믹싱</string>
     <string name="coinjoin_transaction_group">이는 거래와 관련된 믹싱입니다.</string>
+    <string name="coinjoin_transaction_group_title">왜 모든 거래 내역을 보게 되나요?</string>
     <string name="intermediate">중급</string>
     <string name="advanced">고급</string>
     <string name="intermediate_level_card_decs">높은 수준의 기술적 전문 지식을 가진 고급 사용자의 경우 거래 기록을 결정할 수 있습니다</string>
@@ -446,7 +449,7 @@
     <string name="request_username_username_voting_message">+ 사용자 이름 투표란 무엇인가요\?</string>
     <string name="request_username_character_requirement">글자, 숫자 및 하이픈만 사용할 수 있습니다.</string>
     <string name="request_username_character_requirement_invite_noncontested">숫자 2-9</string>
-    <string name="request_username_balance_requirement">이 사용자 이름을 생성하기 위해서는 0.25 DASH가 필요합니다</string>
+    <string name="request_username_balance_requirement">이 사용자 이름을 생성하기 위해서는 %s DASH가 필요합니다</string>
     <string name="request_username_requirements_message_invite_noncontested">사용자 이름은 다음의 조건 중 하나를 충족해야 합니다</string>
     <string name="request_username_requirements_message">사용자 이름은 다음의 조건을 충족해야 합니다</string>
     <string name="request_username_length_requirement">3에서 23글자 사이</string>
@@ -544,4 +547,12 @@
     <string name="create_instant_username_button">인스턴트 사용자 이름 생성하기</string>
     <string name="create_instant_username_cancel">취소</string>
 
-</resources>
+    <string name="dash_connect_scan_qr">QR 코드 스캔</string>
+    <string name="dash_connect_status_disconnected">연결 해제</string>
+    <string name="dash_connect_approve_verify_identity">당신의 신원을 인증하세요</string>
+    <string name="dash_connect_username">사용자 이름</string>
+    <string name="dash_connect_identity">아이덴티티</string>
+    <string name="dash_connect_approve_no_withdraw_funds">출금하기</string>
+    <string name="dash_connect_deny">거부</string>
+    <string name="dash_connect_confirm">승인</string>
+    </resources>

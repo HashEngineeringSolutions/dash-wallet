@@ -105,8 +105,10 @@
     <string name="search_user_no_results">沒有匹配的用戶</string>
     <string name="search_user_loading">在達世幣網路上搜尋用戶名<b>\"%\"</b> </string>
     <string name="contact_request_pending">有聯繫請求等待批准</string>
+    <string name="send_button_label">付款</string>
     <string name="pay">付款</string>
     <string name="contact_request_received_title">%s 已向您請求加為好友</string>
+    <string name="contact_request_received_card_title">%s 已向您發送聯絡請求</string>
     <string name="contact_request_accept">接受</string>
     <string name="contact_request_ignore">忽略</string>
 
@@ -414,6 +416,7 @@
     <string name="coinjoin_mixing_level_subtitle">您可以隨時變更或停止混合級別</string>
     <string name="coinjoin_mixing_transactions">混合交易</string>
     <string name="coinjoin_transaction_group">這些都是混合關聯交易。</string>
+    <string name="coinjoin_transaction_group_title">為什麼我會看到所有這些交易？</string>
     <string name="intermediate">中間的</string>
     <string name="advanced">進階</string>
     <string name="intermediate_level_card_decs">擁有極高技術水平的高級用戶可以確定您的交易歷史記錄</string>
@@ -446,7 +449,7 @@
     <string name="request_username_username_voting_message">+ 什麼是用戶名投票\?</string>
     <string name="request_username_character_requirement">僅限字母、數字和連字符</string>
     <string name="request_username_character_requirement_invite_noncontested">數字 2-9</string>
-    <string name="request_username_balance_requirement">您需要 0.25 DASH 才能建立此使用這個用戶名</string>
+    <string name="request_username_balance_requirement">您需要 %s DASH 才能建立此用戶名</string>
     <string name="request_username_requirements_message_invite_noncontested">用戶名必須符合以下標準之一</string>
     <string name="request_username_requirements_message">用戶名必須符合這些標準</string>
     <string name="request_username_length_requirement">名稱介乎3 到 23 個字元之間</string>
@@ -544,4 +547,12 @@
     <string name="create_instant_username_button">創建即時用戶名</string>
     <string name="create_instant_username_cancel">取消</string>
 
-</resources>
+    <string name="dash_connect_scan_qr">掃描二維碼</string>
+    <string name="dash_connect_status_disconnected">斷開連接</string>
+    <string name="dash_connect_approve_verify_identity">驗證您的身份</string>
+    <string name="dash_connect_username">用戶名稱</string>
+    <string name="dash_connect_identity">身分</string>
+    <string name="dash_connect_approve_no_withdraw_funds">提取資金</string>
+    <string name="dash_connect_deny">拒絕</string>
+    <string name="dash_connect_confirm">確認:</string>
+    </resources>

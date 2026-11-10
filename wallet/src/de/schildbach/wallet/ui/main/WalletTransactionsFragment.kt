@@ -30,7 +30,6 @@ import android.widget.Toast
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.ConcatAdapter
 import de.schildbach.wallet.ui.CreateUsernameActivity
-import de.schildbach.wallet.ui.DashPayUserActivity
 import de.schildbach.wallet.ui.LockScreenActivity
 import de.schildbach.wallet.ui.dashpay.CreateIdentityService
 import de.schildbach.wallet.ui.dashpay.HistoryHeaderAdapter
@@ -51,6 +50,7 @@ import de.schildbach.wallet.data.InvitationValidationState
 import de.schildbach.wallet.service.platform.IdentityRepository
 import de.schildbach.wallet.service.platform.work.RestoreIdentityOperation
 import de.schildbach.wallet.ui.InviteHandlerViewModel
+import de.schildbach.wallet.ui.dashpay.user.DashPayUserBottomSheet
 import de.schildbach.wallet.ui.registerLockScreenDeactivated
 import de.schildbach.wallet.ui.transactions.TransactionDetailsDialogFragment
 import de.schildbach.wallet.ui.transactions.TransactionGroupDetailsFragment
@@ -80,6 +80,7 @@ class WalletTransactionsFragment : Fragment(R.layout.wallet_transactions_fragmen
     companion object {
         private const val HEADER_ITEM_TAG = "header"
         private val log = LoggerFactory.getLogger(WalletTransactionsFragment::class.java)
+        private val TX_ID_REGEX = Regex("^[0-9a-fA-F]{64}$")
     }
 
     private var firstPageLoadStartTime: Long = 0L
@@ -107,27 +108,22 @@ class WalletTransactionsFragment : Fragment(R.layout.wallet_transactions_fragmen
             viewLifecycleOwner.lifecycleScope.launch {
                 if (rowView is TransactionRowView) {
                     if (isProfileClick && rowView.contact != null) {
-                        requireContext().startActivity(
-                            DashPayUserActivity.createIntent(
-                                requireContext(),
-                                rowView.contact
-                            )
-                        )
+                        DashPayUserBottomSheet.newInstance(rowView.contact).show(requireActivity())
                     } else {
                         // For rows loaded from the display cache, txWrapper is null.
-                        // Fall back to the live wrapper list so CoinJoin/CrowdNode groups still open.
+                        // Fall back to the live wrapper list so CoinJoin groups still open.
                         val txWrapper = rowView.txWrapper ?: viewModel.getTransactionWrapper(rowView.id)
                         val fragment = when {
                             txWrapper != null && txWrapper.transactions.size > 1 -> {
-                                // Multi-tx group (CrowdNode / CoinJoin) — open group detail.
+                                // Multi-tx group (CoinJoin) — open group detail.
                                 viewModel.logEvent(AnalyticsConstants.Home.TRANSACTION_DETAILS)
                                 TransactionGroupDetailsFragment(txWrapper)
                             }
 
                             txWrapper != null -> {
                                 // Single-tx wrapper found in memory — open TX detail directly.
-                                // TransactionGroupDetailsFragment would show the wrong (default
-                                // CrowdNode) icon for non-group wrappers, so route here instead.
+                                // TransactionGroupDetailsFragment is only for multi-tx groups,
+                                // so route here instead.
                                 if (ServiceName.isDashSpend(rowView.service)) {
                                     viewModel.logEvent(AnalyticsConstants.DashSpend.DETAILS_GIFT_CARD)
                                     val txId = Sha256Hash.wrap(rowView.id)
@@ -152,8 +148,11 @@ class WalletTransactionsFragment : Fragment(R.layout.wallet_transactions_fragmen
                                 }
                             }
 
-                            rowView.transactionAmount == 1 -> {
+                            rowView.transactionAmount == 1 && TX_ID_REGEX.matches(rowView.id) -> {
                                 // Individual transaction — rowId is a 64-char txId hex string.
+                                // A CoinJoin group can also contain a single tx, but its
+                                // rowId is a group id ("coinjoin_<date>"), not a hash —
+                                // those fall through to the group loader below.
                                 viewModel.logEvent(AnalyticsConstants.Home.TRANSACTION_DETAILS)
                                 TransactionDetailsDialogFragment.newInstance(Sha256Hash.wrap(rowView.id))
                             }
@@ -166,7 +165,15 @@ class WalletTransactionsFragment : Fragment(R.layout.wallet_transactions_fragmen
                                     val activity = if (isAdded) activity else null
                                     if (wrapper != null && activity != null) {
                                         viewModel.logEvent(AnalyticsConstants.Home.TRANSACTION_DETAILS)
-                                        TransactionGroupDetailsFragment(wrapper).show(activity)
+                                        if (wrapper.transactions.size == 1) {
+                                            // Same routing as the in-memory path above: a group
+                                            // of one opens the transaction detail directly.
+                                            TransactionDetailsDialogFragment.newInstance(
+                                                wrapper.transactions.keys.first()
+                                            ).show(activity)
+                                        } else {
+                                            TransactionGroupDetailsFragment(wrapper).show(activity)
+                                        }
                                     } else if (wrapper == null) {
                                         log.warn("group {} not found in cache — cannot open details", rowView.id)
                                     }
