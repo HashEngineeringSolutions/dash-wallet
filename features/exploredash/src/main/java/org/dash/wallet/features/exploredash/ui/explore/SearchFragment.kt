@@ -235,7 +235,15 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                if (args.type == ExploreTopic.Merchants && !ctxSpendViewModel.checkToken()) {
+                if (args.type != ExploreTopic.Merchants) {
+                    return@repeatOnLifecycle
+                }
+
+                if (ctxSpendViewModel.isUserSignedInCTXSpend()) {
+                    // The merchant list is served by DashSpend, refresh it while we're here
+                    ctxSpendViewModel.updateDatabase()
+                } else if (ctxSpendViewModel.isMerchantDatabaseEmpty()) {
+                    // Nothing to show without an account, so ask the user to sign in
                     AdaptiveDialog.create(
                         null,
                         getString(R.string.token_expired_title),

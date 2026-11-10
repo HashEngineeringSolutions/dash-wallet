@@ -31,7 +31,9 @@ class ExploreDataSyncStatus @Inject constructor() : DataSyncStatusService {
         private val log = LoggerFactory.getLogger(ExploreDataSyncStatus::class.java)
     }
 
-    private val _syncProgressFlow = MutableStateFlow(Resource.loading(0.00))
+    // Nothing syncs until a merchant refresh is actually running, so start out idle
+    // rather than leaving the UI showing a sync that never progresses.
+    private val _syncProgressFlow = MutableStateFlow(Resource.success(100.0))
     private val _hasObservedLastError = MutableStateFlow(false)
 
     override fun getSyncProgressFlow(): Flow<Resource<Double>> = _syncProgressFlow

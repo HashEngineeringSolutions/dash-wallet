@@ -490,6 +490,19 @@ interface MerchantDao : BaseDao<Merchant> {
     @Query("SELECT count(*) FROM merchant")
     suspend fun getCount(): Int
 
+    @Query("SELECT * FROM merchant WHERE source = :source COLLATE NOCASE")
+    suspend fun getAllBySource(source: String): List<Merchant>
+
+    /**
+     * Drops the merchants of a single source that are no longer offered.
+     * [keepIds] must not be empty - an empty IN list is not valid SQL.
+     */
+    @Query("DELETE FROM merchant WHERE source = :source COLLATE NOCASE AND merchantId NOT IN (:keepIds)")
+    suspend fun removeMissing(source: String, keepIds: List<String>): Int
+
+    @Query("DELETE FROM merchant WHERE source = :source COLLATE NOCASE")
+    suspend fun removeBySource(source: String): Int
+
     @Query("SELECT * FROM merchant where merchantId = :merchantId")
     suspend fun getMerchantById(merchantId: String): Merchant?
 }

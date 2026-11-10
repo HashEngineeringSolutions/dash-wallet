@@ -53,10 +53,15 @@ import org.dash.wallet.features.exploredash.data.ctxspend.model.GiftCardResponse
 import org.dash.wallet.features.exploredash.data.explore.GiftCardDao
 import org.dash.wallet.features.exploredash.data.explore.MerchantDao
 import org.dash.wallet.features.exploredash.data.explore.model.Merchant
+import org.dash.wallet.features.exploredash.data.explore.model.MerchantType
+import org.dash.wallet.features.exploredash.data.explore.model.PaymentMethod
+import org.dash.wallet.features.exploredash.network.service.ctxspend.MerchantResponse
 import org.dash.wallet.features.exploredash.repository.CTXSpendException
 import org.dash.wallet.features.exploredash.repository.CTXSpendRepositoryInt
+import org.dash.wallet.features.exploredash.repository.ExploreDataSyncStatus
 import org.dash.wallet.features.exploredash.utils.CTXSpendConstants
 import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltViewModel
@@ -71,13 +76,15 @@ class CTXSpendViewModel @Inject constructor(
     networkState: NetworkStateInt,
     private val analytics: AnalyticsService,
     private val savedStateHandle: SavedStateHandle,
-    private val exploreDao: MerchantDao
+    private val exploreDao: MerchantDao,
+    private val syncStatus: ExploreDataSyncStatus
 ) : ViewModel() {
 
     companion object {
         private val log = LoggerFactory.getLogger(CTXSpendViewModel::class.java)
         private const val MERCHANT_ID_KEY = "merchant_id"
         private const val BALANCE_KEY = "balance"
+        private val MERCHANT_UPDATE_INTERVAL_MS = TimeUnit.MINUTES.toMillis(15)
     }
 
     val dashFormat: MonetaryFormat
@@ -126,6 +133,8 @@ class CTXSpendViewModel @Inject constructor(
     var maxCardPurchaseFiat: Fiat = Fiat.valueOf(Constants.USD_CURRENCY, 0)
 
     var openedCTXSpendTermsAndConditions = false
+
+    private var lastMerchantUpdate = 0L
 
     init {
         exchangeRates
@@ -275,7 +284,15 @@ class CTXSpendViewModel @Inject constructor(
 
     suspend fun verifyEmail(code: String) = repository.verifyEmail(code)
 
-    suspend fun logout() = repository.logout()
+    suspend fun logout() {
+        repository.logout()
+        // The merchant list belongs to the DashSpend account, so drop it rather than
+        // leaving a stale list that can no longer be used to buy anything.
+        withContext(Dispatchers.IO) {
+            exploreDao.removeBySource(ServiceName.CTXSpend)
+        }
+        lastMerchantUpdate = 0L
+    }
 
     fun saveGiftCardDummy(txId: Sha256Hash, giftCardResponse: GiftCardResponse) {
         val giftCard = GiftCard(
@@ -405,5 +422,93 @@ class CTXSpendViewModel @Inject constructor(
 
     suspend fun getMerchantById(merchantId: String): Merchant? = withContext(Dispatchers.IO) {
         exploreDao.getMerchantById(merchantId)
+    }
+
+    /**
+     * Pulls the merchant catalogue from CTX and mirrors it into the local explore
+     * database. CTX is the only merchant source in this build, so merchants that are
+     * no longer offered (or that CTX has disabled) are dropped from the table.
+     *
+     * Rows are matched on [Merchant.merchantId] and re-use the existing primary key so
+     * that the REPLACE insert updates a row rather than creating a duplicate.
+     */
+    suspend fun updateDatabase(force: Boolean = false) = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastMerchantUpdate < MERCHANT_UPDATE_INTERVAL_MS) {
+            return@withContext
+        }
+        lastMerchantUpdate = now
+
+        try {
+            syncStatus.setSyncProgress(0.0)
+            val remoteMerchants = repository.getAllMerchants()
+
+            if (remoteMerchants.isEmpty()) {
+                log.info("CTX returned no merchants, leaving the local database untouched")
+                syncStatus.setSyncProgress(100.0)
+                return@withContext
+            }
+
+            syncStatus.setSyncProgress(50.0)
+            val existingIds = exploreDao.getAllBySource(ServiceName.CTXSpend)
+                .associate { it.merchantId to it.id }
+
+            val enabled = remoteMerchants.filter { it.enabled }
+            exploreDao.save(enabled.map { it.toMerchant(existingIds[it.id] ?: 0) })
+
+            // Anything CTX no longer offers, or has disabled, should disappear from the list
+            val keepIds = enabled.map { it.id }
+            if (keepIds.isEmpty()) {
+                exploreDao.removeBySource(ServiceName.CTXSpend)
+            } else {
+                exploreDao.removeMissing(ServiceName.CTXSpend, keepIds)
+            }
+
+            log.info("updated {} CTX merchants ({} returned)", enabled.size, remoteMerchants.size)
+            syncStatus.setSyncProgress(100.0)
+        } catch (ex: Exception) {
+            log.error("failed to update the merchant database from CTX", ex)
+            lastMerchantUpdate = 0L // let the next visit retry
+            syncStatus.setSyncError(ex)
+        }
+    }
+
+    private fun MerchantResponse.toMerchant(existingId: Int): Merchant {
+        val amounts = denominations?.mapNotNull { it.toDoubleOrNull() }?.sorted() ?: listOf()
+
+        return Merchant(
+            deeplink = "",
+            plusCode = "",
+            addDate = "",
+            updateDate = "",
+            paymentMethod = PaymentMethod.GIFT_CARD,
+            merchantId = id,
+            redeemType = redeemType ?: "",
+            savingsPercentage = savingsPercentage,
+            denominationsType = denominationsType ?: "",
+            minCardPurchase = amounts.firstOrNull(),
+            maxCardPurchase = amounts.lastOrNull(),
+            physicalAmount = 0,
+            fixedDenomination = denominationsType == DenominationType.Fixed.value,
+            denominations = amounts.map { it.toInt() }
+        ).apply {
+            // Re-using the existing row id makes the REPLACE insert an update
+            this.id = existingId
+            name = this@toMerchant.name ?: ""
+            address1 = MerchantType.ONLINE
+            logoLocation = logoUrl
+            coverImage = cardImageUrl ?: ""
+            latitude = 0.0
+            longitude = 0.0
+            active = enabled
+            source = ServiceName.CTXSpend
+            sourceId = this@toMerchant.id
+            // CTX gift cards are redeemed online, there are no physical locations to show
+            type = MerchantType.ONLINE
+        }
+    }
+
+    suspend fun isMerchantDatabaseEmpty(): Boolean = withContext(Dispatchers.IO) {
+        exploreDao.getCount() == 0
     }
 }

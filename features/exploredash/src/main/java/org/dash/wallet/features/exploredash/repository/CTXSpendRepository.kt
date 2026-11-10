@@ -21,6 +21,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import org.dash.wallet.common.data.ResponseResource
 import org.dash.wallet.common.data.safeApiCall
+import org.dash.wallet.common.data.unwrap
 import org.dash.wallet.common.util.ResourceString
 import org.dash.wallet.features.exploredash.data.ctxspend.model.GetMerchantResponse
 import org.dash.wallet.features.exploredash.data.ctxspend.model.GiftCardResponse
@@ -29,6 +30,7 @@ import org.dash.wallet.features.exploredash.data.ctxspend.model.PurchaseGiftCard
 import org.dash.wallet.features.exploredash.data.ctxspend.model.VerifyEmailRequest
 import org.dash.wallet.features.exploredash.network.authenticator.TokenAuthenticator
 import org.dash.wallet.features.exploredash.network.service.ctxspend.CTXSpendApi
+import org.dash.wallet.features.exploredash.network.service.ctxspend.MerchantResponse
 import org.dash.wallet.features.exploredash.utils.CTXSpendConfig
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -79,6 +81,8 @@ class CTXSpendRepository @Inject constructor(
 ) : CTXSpendRepositoryInt {
     companion object {
         private val ONE_DAY = TimeUnit.DAYS.toMillis(1)
+        private const val MERCHANTS_PER_PAGE = 150
+        private const val MAX_MERCHANT_PAGES = 100
     }
     override val userEmail: Flow<String?> = config.observeSecureData(CTXSpendConfig.PREFS_KEY_CTX_PAY_EMAIL)
 
@@ -137,6 +141,26 @@ class CTXSpendRepository @Inject constructor(
         api.getGiftCard(txid)
     }
 
+    /**
+     * Fetches every merchant that CTX offers, walking through all pages of the
+     * paginated /merchants endpoint. Throws if any page fails so that callers can
+     * tell a partial list from a complete one.
+     */
+    override suspend fun getAllMerchants(): List<MerchantResponse> {
+        val merchants = mutableListOf<MerchantResponse>()
+        var page = 1
+        var pages = 1
+
+        do {
+            val response = safeApiCall { api.getAllMerchants(MERCHANTS_PER_PAGE, page) }.unwrap()
+            response.result?.let { merchants.addAll(it) }
+            pages = response.pagination?.pages ?: 1
+            page++
+        } while (page <= pages && page <= MAX_MERCHANT_PAGES)
+
+        return merchants
+    }
+
     override suspend fun refreshToken(): Boolean {
         return when (val tokenResponse = tokenAuthenticator.getUpdatedToken()) {
             is ResponseResource.Success -> {
@@ -173,4 +197,5 @@ interface CTXSpendRepositoryInt {
     suspend fun getMerchant(merchantId: String): GetMerchantResponse?
     suspend fun getGiftCardByTxid(txid: String): ResponseResource<GiftCardResponse?>
     suspend fun refreshToken(): Boolean
+    suspend fun getAllMerchants(): List<MerchantResponse>
 }
