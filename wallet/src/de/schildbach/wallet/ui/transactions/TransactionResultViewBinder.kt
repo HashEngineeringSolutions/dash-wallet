@@ -161,7 +161,7 @@ class TransactionResultViewBinder(
         } else {
             setInputs(inputAddresses, inflater)
             setOutputs(outputAddresses, inflater)
-            //setReturns(outputAssetLocks, inflater, false)
+            setReturns(outputAssetLocks, inflater, false, true)
         }
 
         // For displaying purposes only
@@ -234,7 +234,7 @@ class TransactionResultViewBinder(
 
         binding.taxCategory.text = context.getString(strResource!!)
 
-        if (transactionMetadata.service == ServiceName.CTXSpend) {
+        if (ServiceName.isDashSpend(transactionMetadata.service)) {
             iconRes = R.drawable.ic_gift_card_tx
         }
 

@@ -245,13 +245,6 @@ class MainViewModel @Inject constructor(
     val mixingSessions: Flow<Int>
         get() = coinJoinService.observeActiveSessions()
 
-    var decimalFormat: DecimalFormat = DecimalFormat("0.000")
-    val walletBalanceString: String
-        get() = decimalFormat.format(totalBalance.value?.toBigDecimal() ?: BigDecimal.ZERO)
-
-    val mixedBalanceString: String
-        get() = decimalFormat.format(mixedBalance.value?.toBigDecimal() ?: BigDecimal.ZERO)
-
     // DashPay
     private val isPlatformAvailable = MutableStateFlow(false)
 
@@ -768,7 +761,7 @@ class MainViewModel @Inject constructor(
     }
 
     private fun TransactionWrapper.isGiftCard(metadata: Map<Sha256Hash, PresentableTxMetadata>): Boolean {
-        return metadata[transactions.values.first().txId]?.service == ServiceName.CTXSpend
+        return ServiceName.isDashSpend(metadata[transactions.values.first().txId]?.service)
     }
 
     /**

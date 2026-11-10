@@ -469,6 +469,7 @@ class PlatformSynchronizationService @Inject constructor(
             contactRequest.accountReference
         )
         try {
+            Context.propagate(platformRepo.walletApplication.wallet!!.context)
             if (!platformRepo.walletApplication.wallet!!.hasSendingKeyChain(contact)) {
                 log.info("adding received request: ${contactRequest.ownerId} to wallet")
                 val contactIdentity = platform.identities.get(contactRequest.ownerId)
@@ -1396,9 +1397,13 @@ class PlatformSynchronizationService @Inject constructor(
         }
     }
 
+    private var hasCheckedTopups = false // only run once
     private suspend fun checkTopUps() {
-        platformRepo.getWalletEncryptionKey()?.let {
-            topUpRepository.checkTopUps(it)
+        if (!hasCheckedTopups) {
+            platformRepo.getWalletEncryptionKey()?.let {
+                topUpRepository.checkTopUps(it)
+                hasCheckedTopups = true
+            }
         }
     }
 }
