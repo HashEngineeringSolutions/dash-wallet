@@ -34,6 +34,7 @@ import org.dash.wallet.features.exploredash.network.service.ctxspend.MerchantRes
 import org.dash.wallet.features.exploredash.utils.CTXSpendConfig
 import java.io.IOException
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.net.ssl.SSLHandshakeException
 
@@ -102,8 +103,8 @@ class CTXSpendRepository @Inject constructor(
     companion object {
         private const val MERCHANTS_PER_PAGE = 150
         private const val MAX_MERCHANT_PAGES = 100
+        private val REFRESH_TOKEN_EXPIRATION = TimeUnit.DAYS.toMillis(90)
     }
-
     private val giftCardMap = hashMapOf<String, GetMerchantResponse>()
 
     override val userEmail: Flow<String?> = config.observeSecureData(CTXSpendConfig.PREFS_KEY_CTX_PAY_EMAIL)
@@ -121,7 +122,10 @@ class CTXSpendRepository @Inject constructor(
         val email = config.getSecuredData(CTXSpendConfig.PREFS_KEY_CTX_PAY_EMAIL)
         val response = api.verifyEmail(VerifyEmailRequest(email = email!!, code = code))
         config.setSecuredData(CTXSpendConfig.PREFS_KEY_ACCESS_TOKEN, response?.accessToken!!)
-        config.setSecuredData(CTXSpendConfig.PREFS_KEY_REFRESH_TOKEN, response?.refreshToken!!)
+        config.setSecuredData(CTXSpendConfig.PREFS_KEY_REFRESH_TOKEN, response.refreshToken!!)
+        val time = System.currentTimeMillis()
+        config.set(CTXSpendConfig.PREFS_KEY_ACCESS_TOKEN_TIME, time)
+        config.set(CTXSpendConfig.PREFS_KEY_REFRESH_TOKEN_TIME, time)
         return config.getSecuredData(CTXSpendConfig.PREFS_KEY_ACCESS_TOKEN)?.isNotEmpty() ?: false
     }
 
@@ -135,6 +139,8 @@ class CTXSpendRepository @Inject constructor(
     suspend fun reset() {
         config.setSecuredData(CTXSpendConfig.PREFS_KEY_ACCESS_TOKEN, "")
         config.setSecuredData(CTXSpendConfig.PREFS_KEY_REFRESH_TOKEN, "")
+        config.set(CTXSpendConfig.PREFS_KEY_ACCESS_TOKEN_TIME, 0L)
+        config.set(CTXSpendConfig.PREFS_KEY_REFRESH_TOKEN_TIME, 0L)
     }
 
     override suspend fun purchaseGiftCard(
@@ -214,12 +220,21 @@ class CTXSpendRepository @Inject constructor(
             giftCardMap[merchantId] = it
             UpdatedMerchantDetails(
                 id = response.id,
-                savingsPercentage = response.savingsPercentage,
+                savingsPercentage = response.discount,
                 denominationsType = response.denominationsType,
                 denominations = response.denominations.map { denom -> denom.toDouble() },
                 redeemType = response.redeemType,
                 enabled = response.enabled
             )
+        }
+    }
+
+    suspend fun checkToken(): Boolean {
+        val refreshTokenTime = config.get(CTXSpendConfig.PREFS_KEY_REFRESH_TOKEN_TIME)
+        return if (refreshTokenTime == null) {
+            false
+        } else {
+            (System.currentTimeMillis() - refreshTokenTime) < REFRESH_TOKEN_EXPIRATION
         }
     }
 
@@ -256,11 +271,14 @@ class CTXSpendRepository @Inject constructor(
             tokenResponse?.let {
                 config.setSecuredData(CTXSpendConfig.PREFS_KEY_ACCESS_TOKEN, it.accessToken ?: "")
                 config.setSecuredData(CTXSpendConfig.PREFS_KEY_REFRESH_TOKEN, it.refreshToken ?: "")
+                config.set(CTXSpendConfig.PREFS_KEY_ACCESS_TOKEN_TIME, System.currentTimeMillis())
                 true
             } ?: false
         } catch (e: Exception) {
             config.setSecuredData(CTXSpendConfig.PREFS_KEY_ACCESS_TOKEN, "")
             config.setSecuredData(CTXSpendConfig.PREFS_KEY_REFRESH_TOKEN, "")
+            config.set(CTXSpendConfig.PREFS_KEY_ACCESS_TOKEN_TIME, 0L)
+            config.set(CTXSpendConfig.PREFS_KEY_REFRESH_TOKEN_TIME, 0L)
             false
         }
     }
@@ -270,7 +288,7 @@ class CTXSpendRepository @Inject constructor(
     }
 
     override fun getGiftCardDiscount(merchantId: String, denomination: Double): Double {
-        return giftCardMap[merchantId]?.savingsPercentage?.let {
+        return giftCardMap[merchantId]?.discount?.let {
             it.toDouble() / 10000.0
         } ?: 0.0
     }

@@ -234,6 +234,12 @@ class WalletFragment : Fragment(R.layout.home_content) {
             }
         }
 
+        viewModel.remindMetadata.observe(viewLifecycleOwner) { shouldRemind ->
+            if (shouldRemind) {
+                safeNavigate(WalletFragmentDirections.homeToTransactionMetadataSettings())
+            }
+        }
+
         viewModel.dashPayProfile.observe(viewLifecycleOwner) { profile ->
             if (viewModel.hasIdentity) {
                 ProfilePictureDisplay.display(binding.dashpayUserAvatar, profile, true)
@@ -242,7 +248,7 @@ class WalletFragment : Fragment(R.layout.home_content) {
         }
 
         viewModel.blockchainIdentity.observe(viewLifecycleOwner) { identity ->
-            if (identity?.creationComplete == true) {
+            if (identity?.hasUsername == true) {
                 ProfilePictureDisplay.display(binding.dashpayUserAvatar, viewModel.dashPayProfile.value, true)
                 setNotificationIndicator()
             }
@@ -424,7 +430,11 @@ class WalletFragment : Fragment(R.layout.home_content) {
                     R.id.paymentsFragment,
                     bundleOf(
                         PaymentsFragment.ARG_ACTIVE_TAB to PaymentsFragment.ACTIVE_TAB_PAY
-                    )
+                    ),
+                    NavOptions.Builder()
+                        .setLaunchSingleTop(true)
+                        .setPopUpTo(R.id.walletFragment, false)
+                        .build()
                 )
             }
             ShortcutOption.RECEIVE -> {
@@ -433,7 +443,11 @@ class WalletFragment : Fragment(R.layout.home_content) {
                     R.id.paymentsFragment,
                     bundleOf(
                         PaymentsFragment.ARG_ACTIVE_TAB to PaymentsFragment.ACTIVE_TAB_RECEIVE
-                    )
+                    ),
+                    NavOptions.Builder()
+                        .setLaunchSingleTop(true)
+                        .setPopUpTo(R.id.walletFragment, false)
+                        .build()
                 )
             }
             ShortcutOption.EXPLORE -> {

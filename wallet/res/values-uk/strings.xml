@@ -207,6 +207,13 @@
     <string name="restore_wallet_dialog_success_replay">Ваш гаманець був успішно відновлений. Його баланс визначиться згодом. Це займе трохи часу.</string>
     <string name="restore_wallet_dialog_success_encrypted">Попередження: ваш гаманець захищено PIN-кодом витрат. Переконайтеся, що ви пам’ятаєте про це, перш ніж отримати платіж на цей гаманець.</string>
     <string name="import_keys_dialog_failure">Гаманець не можливо відновити:\n\n%s\n\Неправильний пароль?</string>
+    <string name="restore_wallet_creation_date_label">Дата створення гаманця (необов\'язково)</string>
+    <string name="restore_wallet_creation_date_info">Вибір дати створення гаманця дозволяє швидше синхронізувати дані, скануючи дані лише з цієї дати.</string>
+    <string name="restore_wallet_select_date">Обрати дату створення гаманця</string>
+    <string name="restore_wallet_selected_date">Вибрано: %s</string>
+    <string name="restore_wallet_date_picker_title">Коли було створено ваш гаманець?</string>
+    <string name="wallet_creation_date_info_title">Як дата створення гаманця може пришвидшити процес?</string>
+    <string name="wallet_creation_date_info_description">Якщо ви знаєте приблизну дату створення гаманця, ви можете ввести її, і транзакції з цієї дати будуть отримані, що пришвидшить синхронізацію. Зверніть увагу, що якщо ви введете дату, пізнішу за дату створення гаманця, старіші транзакції не будуть завантажені.</string>
     <string name="export_keys_dialog_title">Резервна копія гаманця</string>
     <string name="backup_wallet_dialog_message">Ваш гаманець буде зашифрований за допомогою пароля і будет записаний на зовнішній накопичувач.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Ваш гаманець захищений платіжним PIN-кодом. Обов’язково запам’ятайте PIN-код на додаток до резервного пароля!</string>
@@ -282,6 +289,12 @@
     <string name="preferences_initiate_reset_summary">Пересканувати блокчейн, транзакції та баланс гаманця. Повторне відтворення займе деякий час, тому робіть це, лише якщо знаєте чому.</string>
     <string name="preferences_initiate_reset_dialog_message">Ви хочете пересканувати блокчейн?\n\nЦе зробить тимчасово недоступними ваші баланс та список транзакцій. Вони будуть відновлені у процесі синхронізації блокчейна. Переконайтеся, що у вас є надійне підключення до інтернету.</string>
     <string name="preferences_initiate_reset_dialog_positive">Повторне сканування</string>
+    <string name="rescan_blockchain_dialog_title">Ви впевнені, що хочете повторно просканувати блокчейн?</string>
+    <string name="rescan_blockchain_dialog_message">Це тимчасово приховає баланс вашого гаманця та видалить транзакції. Обидва параметри відновляться під час синхронізації блокчейну. Переконайтеся, що у вас надійне підключення до Інтернету.</string>
+    <string name="rescan_blockchain_select_date_label">Оберіть дату створення гаманця (необов\'язково)</string>
+    <string name="rescan_blockchain_date_info_description">Інформація про дату створення гаманця</string>
+    <string name="rescan_blockchain_select_date_placeholder">Вибрати</string>
+    <string name="rescan_blockchain_confirm_button">Повторне сканування</string>
     <string name="preferences_extended_public_key_title">Показати xpub</string>
     <string name="preferences_extended_public_key_summary">Перегляньте розширений відкритий ключ свого гаманця, щоб його можна було імпортувати в інші програми та служби. Будьте обережні: це призведе до розкриття вашої грошової конфіденційності цій програмі.</string>
     <string name="bitmap_fragment_share">Поділитися...</string>
@@ -300,6 +313,15 @@
     <string name="report_issue_dialog_collect_wallet_dump">Додати дамп пам\'яті гаманця</string>
     <string name="report_issue_dialog_mail_intent_failed">Помилка при відправці звіту.</string>
     <string name="report_issue_dialog_generating_report">Формування звіту</string>
+    <string name="report_issue_dialog_status_device_info">інформація про пристрій</string>
+    <string name="report_issue_dialog_status_installed_packages">список встановлених пакетів</string>
+    <string name="report_issue_dialog_status_application_log">лог додатку</string>
+    <string name="report_issue_dialog_status_application_info">інформація додатку</string>
+    <string name="report_issue_dialog_status_wallet_dump">дамп гаманця (повільно)</string>
+    <string name="report_issue_dialog_status_contextual_info">контекстна інформація</string>
+    <string name="report_issue_dialog_status_background_traces">фонові трасування</string>
+    <string name="report_issue_dialog_status_stack_trace">трасування стеку</string>
+    <string name="report_issue_dialog_status_finishing">завершується</string>
     <string name="report_transaction_history_export">Експорт</string>
     <string name="report_transaction_history_title">Експорт CSV</string>
     <string name="report_transaction_history_not_synced_title">Експорт CSV</string>
@@ -319,6 +341,7 @@
 
 
     <string name="about_title">Про програму</string>
+    <string name="about_dash_title">Про Dash</string>
     <string name="about_version_title">Версія</string>
     <string name="about_copyright_title">Авторське право</string>
     <string name="about_license_title">Ліцензія</string>
@@ -341,6 +364,9 @@
     <string name="notification_inactivity_action_dismiss">Нагадати пізніше</string>
     <string name="notification_inactivity_action_dismiss_forever">Не нагадувати</string>
     <string name="notification_bluetooth_service_listening">Готовий приймати платежі через Bluetooth</string>
+    <string name="notification_sync_paused">Синхронізація блокчейну призупинена</string>
+    <string name="notification_background_processes_paused">Фонова обробка призупинена</string>
+    <string name="notification_background_processes_paused_text">Ви досягли 6-годинного ліміту фонової служби Android для мікшування або синхронізації блокчейну. Натисніть, щоб скинути…</string>
     <string name="appwidget_wallet_balance_title">Баланс Dash</string>
 
     <!-- generic buttons -->
@@ -424,4 +450,9 @@
     <string name="select_option">Виберіть опцію</string>
     <string name="customize_shortcuts">Налаштуйте панель швидкого доступу</string>
     <string name="customize_shortcuts_description">Утримуйте будь-яку кнопку вище, щоб замінити її на потрібну вам функцію.</string>
+
+    <!-- PIN Upgrade Dialog -->
+    <string name="upgrade_pin_title">Вам потрібно оновити свій PIN-код</string>
+    <string name="upgrade_pin_description">Задайте новий PIN-код</string>
+    <string name="upgrade_pin_continue">Продовжити</string>
 </resources>

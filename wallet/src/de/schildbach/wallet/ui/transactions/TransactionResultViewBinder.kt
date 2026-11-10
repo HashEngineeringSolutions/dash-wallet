@@ -76,6 +76,9 @@ class TransactionResultViewBinder(
     private var iconRes: Int? = null
     private var customTitle: String? = null
     private var dashPayProfile: DashPayProfile? = null
+    // Address List
+    private var inputAddresses: List<Address> = listOf()
+    private var outputAddresses: List<Address> = listOf()
     private var outputAssetLocks = listOf<String>()
 
     fun bind(tx: Transaction, profile: DashPayProfile?, payeeName: String? = null, payeeSecuredBy: String? = null) {
@@ -98,10 +101,6 @@ class TransactionResultViewBinder(
         }
 
         updateStatus()
-
-        // Address List
-        val inputAddresses: List<Address>
-        val outputAddresses: List<Address>
 
         if (isSent) {
             inputAddresses = TransactionUtils.getFromAddressOfSent(tx)
@@ -138,7 +137,7 @@ class TransactionResultViewBinder(
             } else {
                 binding.inputsContainer.addView(userNameView)
                 binding.inputsContainer.setOnClickListener { openProfile(profile) }
-                setOutputs(outputAddresses, inflater)
+                setOutputs(outputAddresses, outputAssetLocks, inflater)
             }
 
             if (profile.displayName.isNotEmpty()) {
@@ -160,8 +159,16 @@ class TransactionResultViewBinder(
             binding.checkIcon.setOnClickListener { openProfile(profile) }
         } else {
             setInputs(inputAddresses, inflater)
-            setOutputs(outputAddresses, inflater)
-            setReturns(outputAssetLocks, inflater, false, true)
+            setOutputs(outputAddresses, outputAssetLocks, inflater)
+            setReturns(
+                tx.versionShort,
+                tx.type,
+                outputAddresses,
+                outputAssetLocks,
+                inflater,
+                error = false,
+                completed = true
+            )
         }
 
         // For displaying purposes only
@@ -384,8 +391,9 @@ class TransactionResultViewBinder(
         }
     }
 
-    private fun setOutputs(outputAddresses: List<Address>, inflater: LayoutInflater) {
-        binding.outputsContainer.isVisible = outputAddresses.isNotEmpty()
+    private fun setOutputs(outputAddresses: List<Address>, outputOpReturns: List<String>, inflater: LayoutInflater) {
+        binding.outputsContainer.isVisible = (outputOpReturns.isNotEmpty() && outputOpReturns.contains("OP RETURN")) || outputAddresses.isNotEmpty()
+        binding.transactionOutputAddressesContainer.isVisible = outputAddresses.isNotEmpty()
         outputAddresses.forEach {
             val addressView = inflater.inflate(
                 R.layout.transaction_result_address_row,
@@ -397,28 +405,61 @@ class TransactionResultViewBinder(
         }
     }
 
-    private fun setReturns(outputOpReturns: List<String>, inflater: LayoutInflater, error: Boolean, completed: Boolean) {
-        binding.outputsContainer.isVisible = outputOpReturns.isNotEmpty() && outputOpReturns.contains("OP RETURN")
+    private fun setReturns(
+        transactionVersion: Int,
+        transactionType: Transaction.Type,
+        transoutputAddresses: List<Address>,
+        outputOpReturns: List<String>,
+        inflater: LayoutInflater,
+        error: Boolean,
+        completed: Boolean
+    ) {
+        binding.outputsContainer.isVisible = (outputOpReturns.isNotEmpty() && outputOpReturns.contains("OP RETURN")) || outputAddresses.isNotEmpty()
+        binding.transactionOutputOpReturnsContainer.isVisible = (outputOpReturns.isNotEmpty() && outputOpReturns.contains("OP RETURN"))
         outputOpReturns.forEach {
-            val addressView = inflater.inflate(
-                R.layout.transaction_result_address_row,
-                binding.transactionOutputAddressesContainer,
-                false
-            ) as TextView
-            addressView.text = when (it) {
-                "OP RETURN" -> when {
-                    error -> context.getString(R.string.platform_credits_error)
-                    completed -> context.getString(R.string.platform_credits)
-                    else -> context.getString(R.string.platform_credits_not_transferred)
+            when (transactionVersion) {
+                Transaction.SPECIAL_VERSION -> {
+                    if (transactionType == Transaction.Type.TRANSACTION_ASSET_LOCK) {
+                        val addressView = inflater.inflate(
+                            R.layout.transaction_result_address_row,
+                            binding.transactionOutputOpReturnsContainer,
+                            false
+                        ) as TextView
+                        addressView.text = when (it) {
+                            "OP RETURN" -> when {
+                                error -> context.getString(R.string.platform_credits_error)
+                                completed -> context.getString(R.string.platform_credits)
+                                else -> context.getString(R.string.platform_credits_not_transferred)
+                            }
+
+                            else -> ""
+                        }
+                        if (addressView.text.isNotEmpty()) {
+                            binding.transactionOutputOpReturnsContainer.addView(addressView)
+                        }
+                    }
                 }
-                else -> ""
+                Transaction.TIMELOCK_VERSION, 1 -> {
+                    val addressView = inflater.inflate(
+                        R.layout.transaction_result_address_row,
+                        binding.transactionOutputOpReturnsContainer,
+                        false
+                    ) as TextView
+                    addressView.text = "OP RETURN"
+                    binding.transactionOutputOpReturnsContainer.addView(addressView)
+
+                }
             }
-            binding.transactionOutputAddressesContainer.addView(addressView)
         }
     }
 
-    fun setSentToReturn(error: Boolean, completed: Boolean) {
-        binding.transactionOutputAddressesContainer.removeAllViews()
-        setReturns(outputAssetLocks, LayoutInflater.from(context), error, completed)
+    fun setSentToReturn(
+        transactionVersion: Int,
+        transactionType: Transaction.Type,
+        error: Boolean,
+        completed: Boolean
+    ) {
+        binding.transactionOutputOpReturnsContainer.removeAllViews()
+        setReturns(transactionVersion, transactionType, outputAddresses, outputAssetLocks, LayoutInflater.from(context), error, completed)
     }
 }

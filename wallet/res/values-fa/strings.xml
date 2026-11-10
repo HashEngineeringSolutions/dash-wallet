@@ -205,6 +205,13 @@
     <string name="restore_wallet_dialog_success_replay">کیف پول‌تان با موفقیت بازگردانی شد. موجودی آن بعدا تعیین می‌شود. این کار زمان‌بر خواهد بود. </string>
     <string name="restore_wallet_dialog_success_encrypted">هشدار: کیف پول‌تان دارای رمز ویژه خرج کردن است. پیش از دریافت این کیف پول، اطمینان یابید که همچنان این رمز ویژه را به خاطر می‌آورید. </string>
     <string name="import_keys_dialog_failure">کیف پول را نمی‌توان بازگردانی کرد: n\n\%sn\n\آیا مطمئن هستید گذرواژه درست است؟</string>
+    <string name="restore_wallet_creation_date_label">تاریخ ایجاد کیف پول (غیرالزامی)</string>
+    <string name="restore_wallet_creation_date_info">انتخاب اینکه چه وقت کیف پول‌تان ایجاد شده امکان همگام‌سازی سریع‌تر توسط اسکن، از آن تاریخ به بعد را فراهم می‌کند. </string>
+    <string name="restore_wallet_select_date">انتخاب تاریخ ایجاد</string>
+    <string name="restore_wallet_selected_date">انتخاب‌شده: %s</string>
+    <string name="restore_wallet_date_picker_title">کیف پول شما چه وقت ایجاد شد؟</string>
+    <string name="wallet_creation_date_info_title">چگونه تاریخ ایجاد کیف پول‌تان به سرعت‌بخشی به فرآیند می‌انجامد؟ </string>
+    <string name="wallet_creation_date_info_description">اگر تاریخ حدودی ایجاد کیف پول را بدانید، می‌توانید آن را وارد کرده و تراکنش‌ها از آن تاریخ به بعد بازیابی می‌شود و در نتیجه، همگام‌سازی سریع‌تر خواهد بود. لطفا دقت داشته باشید که اگر تاریخی را وارد کنید که پس از تاریخ ایجاد کیف پول‌تان باشد، تراکنش‌های قبلی دانلود نمی‌شوند. </string>
     <string name="export_keys_dialog_title">تهیه نسخه پشتیبان از کیف پول</string>
     <string name="backup_wallet_dialog_message">نسخه پشتیبان با گذرواژه انتخابی رمزگذاری شده و بر روی حافظه خارجی نوشته می‌شود.</string>
     <string name="backup_wallet_dialog_warning_encrypted">کیف پول‌تان توسط رمزپرداخت حفاظت می‌شود. اطمینان یابید که علاوه بر گذرواژه نسخه پشتیبان، این رمز را نیز به خاطر داشته باشید!</string>
@@ -280,6 +287,12 @@
     <string name="preferences_initiate_reset_summary">بلاکچین، تراکنش‌‌ها و موجودی کیف پول را دوباره اسکن کن. این کار کمی زمان می‌برد، به همین دلیل، اگر واقعا نیاز داشتید این کار را انجام دهید. </string>
     <string name="preferences_initiate_reset_dialog_message">مایلید بلاکچین را دوباره اسکن کنید؟ \n\n این اقدام موجب می‌شود موجودی‌تان به شکل موقت پنهان شود و تراکنش‌ها نیز حذف شوند. هر دوی اینها پس از پس از تکمیل عملیات همزمان‌سازی بلاکچین بازمی‌گردند. اطمینان یابید اتصال‌تان به اینترنت پایدار است. </string>
     <string name="preferences_initiate_reset_dialog_positive">اسکن دوباره</string>
+    <string name="rescan_blockchain_dialog_title">آیا مطمئنید که می‌خواهید بلاکچین را دوباره اسکن کنید؟‌</string>
+    <string name="rescan_blockchain_dialog_message">این اقدام به صورت موقت، موجود کیف پول‌تان را پنهان کرده و تراکنش‌ها را از بین می‌برد. البته با پیشرفت اسکن بلاکچین، هر دوی آنها بازمی‌گردند. اطمینان یابید که اتصال پایداری به اینترنت دارید. </string>
+    <string name="rescan_blockchain_select_date_label">تاریخ ایجاد کیف پول را انتخاب کنید (غیرالزامی)</string>
+    <string name="rescan_blockchain_date_info_description">اطلاعات درباره تاریخ ایجاد کیف پول</string>
+    <string name="rescan_blockchain_select_date_placeholder">انتخاب</string>
+    <string name="rescan_blockchain_confirm_button">اسکن دوباره</string>
     <string name="preferences_extended_public_key_title">نمایش کلید عمومی جامع</string>
     <string name="preferences_extended_public_key_summary">مشاهده کلید عمومی گسترده برای کیف پول‌‌تان: این کلید عمومی را می‌توان به سایر اپلیکیشن‌ها و خدمات نیز ارائه کرد. مراقب باشید: این کار سبب می‌شود حریم خصوصی مالی شما برای آن اپلیکیشن خارجی آشکار شود. </string>
     <string name="bitmap_fragment_share">در حال به اشتراک‌ گذاری...</string>
@@ -298,6 +311,15 @@
     <string name="report_issue_dialog_collect_wallet_dump">پیوست کردن والت دامپ</string>
     <string name="report_issue_dialog_mail_intent_failed">ارسال گزارش ناموفق بود</string>
     <string name="report_issue_dialog_generating_report"> ایجاد گزارش</string>
+    <string name="report_issue_dialog_status_device_info">اطلاعات دستگاه</string>
+    <string name="report_issue_dialog_status_installed_packages">فهرست دستگاه‌های نصب شده</string>
+    <string name="report_issue_dialog_status_application_log">لاگ اپلیکیشن</string>
+    <string name="report_issue_dialog_status_application_info">اطلاعات اپلیکیشن</string>
+    <string name="report_issue_dialog_status_wallet_dump">دامپ کیف پول (آهسته)</string>
+    <string name="report_issue_dialog_status_contextual_info">اطلاعات زمینه‌ای</string>
+    <string name="report_issue_dialog_status_background_traces">دنباله‌های پس‌زمینه</string>
+    <string name="report_issue_dialog_status_stack_trace">دنباله‌های استک</string>
+    <string name="report_issue_dialog_status_finishing">در حال پایان</string>
     <string name="report_transaction_history_export">بیرون دادن</string>
     <string name="report_transaction_history_title">بیرون دادن فرمت CSV</string>
     <string name="report_transaction_history_not_synced_title">بیرون دادن فرمت CSV</string>
@@ -317,6 +339,7 @@
 
 
     <string name="about_title">اطلاعات بیشتر</string>
+    <string name="about_dash_title">درباره دش</string>
     <string name="about_version_title">نسخه</string>
     <string name="about_copyright_title">کپی‌رایت</string>
     <string name="about_license_title">لیسانس</string>
@@ -339,6 +362,9 @@
     <string name="notification_inactivity_action_dismiss">بعدا یادآوری کن!</string>
     <string name="notification_inactivity_action_dismiss_forever">دیگر یادآوری نکن!</string>
     <string name="notification_bluetooth_service_listening">آماده دریافت پرداختی از طریق بلوتوث</string>
+    <string name="notification_sync_paused">همزمان‌سازی با بلاکچین متوقف شد</string>
+    <string name="notification_background_processes_paused">فرایند پس‌زمینه متوقف شد</string>
+    <string name="notification_background_processes_paused_text">به سقف ۶ ساعته اندروید برای عملیات ترکیب یا همزمان‌سازی با بلاکچین رسیدید. برای ریست، اینجا را لمس کنید...</string>
     <string name="appwidget_wallet_balance_title">موجودی دش</string>
 
     <!-- generic buttons -->
@@ -427,4 +453,9 @@
     <string name="select_option">انتخاب گزینه</string>
     <string name="customize_shortcuts">سفارشی‌سازی نوار میانبر</string>
     <string name="customize_shortcuts_description">یکی از دگمه‌های بالا را نگه دارید تا آن را با کاربرد مورد نظرتان جایگزین کنید</string>
+
+    <!-- PIN Upgrade Dialog -->
+    <string name="upgrade_pin_title">باید پین‌تان را به‌روزرسانی کنید. </string>
+    <string name="upgrade_pin_description">تعریف پین کد جدید</string>
+    <string name="upgrade_pin_continue">ادامه</string>
 </resources>

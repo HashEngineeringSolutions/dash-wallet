@@ -203,6 +203,13 @@
     <string name="restore_wallet_dialog_success_replay">Tu billetera fue restaurada satisfactoriamente. El balance será determinado a continuación. Esto llevará algún tiempo.</string>
     <string name="restore_wallet_dialog_success_encrypted">Advertencia: tu billetera está protegida por un PIN. Asegúrate de recordarlo antes de recibir fondos en esta billetera.</string>
     <string name="import_keys_dialog_failure">La billetera no pudo ser restaurada:\n\n%s\n\n¿Contraseña errónea?</string>
+    <string name="restore_wallet_creation_date_label">Fecha de Creación de Billetera (Opcional)</string>
+    <string name="restore_wallet_creation_date_info">Marcar la fecha de creación de su billetera permite sincronización más rápida al solo sincronizar transacciones a partir de esa fecha.</string>
+    <string name="restore_wallet_select_date">Seleccione Fecha de Creación.</string>
+    <string name="restore_wallet_selected_date">Selecciono: 1%s</string>
+    <string name="restore_wallet_date_picker_title">¿Cuándo fue creada su billetera?</string>
+    <string name="wallet_creation_date_info_title">¿Cómo puede la fecha de creación acelerar el proceso? </string>
+    <string name="wallet_creation_date_info_description">Si conoce la fecha aproximada de creación de su billetera, puede ingresarla y se recuperarán las transacciones a partir de esa fecha, lo que agilizará la sincronización. Tenga en cuenta que, si ingresa una fecha posterior a la de creación de la billetera, no se descargarán las transacciones anteriores.</string>
     <string name="export_keys_dialog_title">Hacer copia de seguridad de la cartera</string>
     <string name="backup_wallet_dialog_message">Tu copia de seguridad será encriptada con la contraseña que elijas y guardada en una unidad de almacenamiento externo.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Tu cartera está protegida con un PIN de pagos. ¡Asegúrate de recordar el PIN, además de la contraseña de tu copia de seguridad!</string>
@@ -278,11 +285,18 @@
     <string name="preferences_initiate_reset_summary">Vuelve a escanear la cadena de bloques, las transacciones y el saldo de la billetera. La reproducción tardará un rato, así que hazlo solo si sabes por qué.</string>
     <string name="preferences_initiate_reset_dialog_message">¿te gustaría volver a escanear la cadena de bloques?\n\nEsto ocultará temporalmente el saldo de tu billetera y eliminará las transacciones. Ambos se recuperarán a medida que avance la sincronización de la cadena de bloques. Asegúrate de tener una conexión confiable a Internet.</string>
     <string name="preferences_initiate_reset_dialog_positive">Escanear nuevamente</string>
+    <string name="rescan_blockchain_dialog_title">¿Estás seguro de que deseas volver a escanear la cadena de bloques?</string>
+    <string name="rescan_blockchain_dialog_message">Esto ocultará temporalmente el saldo de tu billetera y eliminará las transacciones. Ambas se recuperarán a medida que avance la sincronización de la cadena de bloques. Asegúrate de tener una conexión a internet confiable.</string>
+    <string name="rescan_blockchain_select_date_label">Seleccione la fecha de creación de la billetera (opcional)</string>
+    <string name="rescan_blockchain_date_info_description">Información sobre la fecha de creación de la billetera</string>
+    <string name="rescan_blockchain_select_date_placeholder">Seleccionar</string>
+    <string name="rescan_blockchain_confirm_button">Escanear nuevamente</string>
     <string name="preferences_extended_public_key_title">Mostrar xpub</string>
     <string name="preferences_extended_public_key_summary">Ve la llave publica extendida de tu billetera, para que pueda ser importada hacia otras apps y servicios ten cuidado: hacer esto dara a conocer tu privacidad monetaria a esa app.</string>
     <string name="bitmap_fragment_share">Comparte…</string>
     <string name="extended_public_key_fragment_title">Extender llave publica</string>
     <string name="extended_public_key_fragment_share">Comparte xpub…</string>
+    <string name="extended_public_key_share_key">Compartir llave</string>
     <string name="report_issue_dialog_title_issue">Informar incidencia</string>
     <string name="report_issue_dialog_title_crash">Detectado error grave anterior</string>
     <string name="report_issue_dialog_title_transaction">Reportar problema con el pago seleccionado</string>
@@ -296,6 +310,15 @@
     <string name="report_issue_dialog_collect_wallet_dump">Añadir el volcado de datos de la billetera</string>
     <string name="report_issue_dialog_mail_intent_failed">Ha fallado el envío del informe.</string>
     <string name="report_issue_dialog_generating_report">Generando reporte</string>
+    <string name="report_issue_dialog_status_device_info">información del dispositivo</string>
+    <string name="report_issue_dialog_status_installed_packages">lista de paquetes instalados</string>
+    <string name="report_issue_dialog_status_application_log">registro de la aplicación</string>
+    <string name="report_issue_dialog_status_application_info">información de la aplicación</string>
+    <string name="report_issue_dialog_status_wallet_dump">descarga de la billetera (lento)</string>
+    <string name="report_issue_dialog_status_contextual_info">información de contexto</string>
+    <string name="report_issue_dialog_status_background_traces">rastros de fondo</string>
+    <string name="report_issue_dialog_status_stack_trace">seguimientos de pila</string>
+    <string name="report_issue_dialog_status_finishing">acabado</string>
     <string name="report_transaction_history_export">Exportar</string>
     <string name="report_transaction_history_title">Exportar CSV</string>
     <string name="report_transaction_history_not_synced_title">Exportar CSV</string>
@@ -315,6 +338,7 @@
 
 
     <string name="about_title">Acerca de</string>
+    <string name="about_dash_title">Sobre Dash</string>
     <string name="about_version_title">Versión</string>
     <string name="about_copyright_title">Copyright</string>
     <string name="about_license_title">Licencia</string>
@@ -337,6 +361,9 @@
     <string name="notification_inactivity_action_dismiss">Recuerdame despues</string>
     <string name="notification_inactivity_action_dismiss_forever">No me recuerdes</string>
     <string name="notification_bluetooth_service_listening">Listo para recibir pagos vía Bluetooth</string>
+    <string name="notification_sync_paused">Sincronización de la cadena de bloques pausada</string>
+    <string name="notification_background_processes_paused">Procesamiento en el fondo pausado</string>
+    <string name="notification_background_processes_paused_text">Ha llegado al límite de Android por cada 6 horas, de servicio para procesamiento de mezclado o sincronización. Apreté el botón reset...</string>
     <string name="appwidget_wallet_balance_title">Saldo en Dash</string>
 
     <!-- generic buttons -->
@@ -420,4 +447,9 @@
     <string name="select_option">Elija una opción</string>
     <string name="customize_shortcuts">Personalice la barra de accesos directos</string>
     <string name="customize_shortcuts_description">Apreté cualquier botón arriba para reemplazarlo con la función que necesita</string>
+
+    <!-- PIN Upgrade Dialog -->
+    <string name="upgrade_pin_title">Debe actualizar su PIN</string>
+    <string name="upgrade_pin_description">Configura un nuevo PIN</string>
+    <string name="upgrade_pin_continue">Continuar</string>
 </resources>

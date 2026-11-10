@@ -77,8 +77,9 @@ abstract class ExploreDashModule {
 
         @Provides fun provideFirebaseStorage() = Fireplace.storage
 
-        fun provideRemoteDataSource(config: CTXSpendConfig): RemoteDataSource {
-            return RemoteDataSource(config)
+        @Provides
+        fun provideRemoteDataSource(config: CTXSpendConfig, walletDataProvider: WalletDataProvider): RemoteDataSource {
+            return RemoteDataSource(config, walletDataProvider)
         }
 
         @Provides

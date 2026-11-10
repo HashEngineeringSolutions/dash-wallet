@@ -14,9 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+@file:OptIn(FlowPreview::class)
 package de.schildbach.wallet.service
 
 import android.annotation.SuppressLint
+import android.app.AlarmManager
 import android.app.ForegroundServiceStartNotAllowedException
 import android.app.Notification
 import android.app.NotificationManager
@@ -28,6 +30,9 @@ import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.net.Uri
 import android.os.Binder
 import android.os.Build
@@ -38,7 +43,10 @@ import android.text.format.DateUtils
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.common.base.Stopwatch
 import dagger.hilt.android.AndroidEntryPoint
@@ -50,15 +58,19 @@ import de.schildbach.wallet.data.AddressBookProvider
 import de.schildbach.wallet.database.dao.BlockchainStateDao
 import de.schildbach.wallet.database.dao.ExchangeRatesDao
 import de.schildbach.wallet.service.extensions.registerCrowdNodeConfirmedAddressFilter
+import de.schildbach.wallet.service.platform.IdentityRepository
 import de.schildbach.wallet.service.platform.PlatformSyncService
+import de.schildbach.wallet.transactions.WalletObserver.Companion.CONFIRMED_DEPTH
+import de.schildbach.wallet.service.platform.TopUpRepository
 import de.schildbach.wallet.ui.OnboardingActivity.Companion.createIntent
-import de.schildbach.wallet.ui.main.MainActivity
 import de.schildbach.wallet.ui.dashpay.OnPreBlockProgressListener
 import de.schildbach.wallet.ui.dashpay.PlatformRepo
 import de.schildbach.wallet.ui.dashpay.PreBlockStage
+import de.schildbach.wallet.ui.main.MainActivity
 import de.schildbach.wallet.ui.staking.StakingActivity
 import de.schildbach.wallet.util.AllowLockTimeRiskAnalysis
 import de.schildbach.wallet.util.AllowLockTimeRiskAnalysis.OfflineAnalyzer
+import de.schildbach.wallet.util.AnrException
 import de.schildbach.wallet.util.BlockchainStateUtils
 import de.schildbach.wallet.util.CrashReporter
 import de.schildbach.wallet.util.ThrottlingWalletChangeListener
@@ -66,12 +78,24 @@ import de.schildbach.wallet_test.R
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.sample
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.bitcoinj.core.Address
 import org.bitcoinj.core.Block
 import org.bitcoinj.core.BlockChain
@@ -90,6 +114,8 @@ import org.bitcoinj.core.listeners.DownloadProgressTracker
 import org.bitcoinj.core.listeners.PeerConnectedEventListener
 import org.bitcoinj.core.listeners.PeerDisconnectedEventListener
 import org.bitcoinj.core.listeners.PreBlocksDownloadListener
+import org.bitcoinj.core.listeners.TimeoutError
+import org.bitcoinj.core.listeners.TimeoutErrorListener
 import org.bitcoinj.evolution.AssetLockTransaction
 import org.bitcoinj.evolution.SimplifiedMasternodeListDiff
 import org.bitcoinj.evolution.SimplifiedMasternodeListManager
@@ -109,12 +135,18 @@ import org.bitcoinj.wallet.DefaultRiskAnalysis
 import org.bitcoinj.wallet.Wallet
 import org.bitcoinj.wallet.authentication.AuthenticationGroupExtension
 import org.dash.wallet.common.Configuration
+import org.dash.wallet.common.data.BlockStoreLastFix
+import org.dash.wallet.common.data.BlockchainServiceConfig
+import org.dash.wallet.common.data.BlockchainServiceConfig.Companion.BLOCKCHAIN_STORE_LAST_FIX
+import org.dash.wallet.common.data.BlockchainServiceConfig.Companion.BLOCKCHAIN_STORE_MEMORY_FAILURE
 import org.dash.wallet.common.data.NetworkStatus
 import org.dash.wallet.common.data.WalletUIConfig
 import org.dash.wallet.common.data.entity.BlockchainState
 import org.dash.wallet.common.data.entity.BlockchainState.Impediment
+import org.dash.wallet.common.services.AuthenticationManager
 import org.dash.wallet.common.services.NotificationService
 import org.dash.wallet.common.services.TransactionMetadataProvider
+import org.dash.wallet.common.services.analytics.AnalyticsService
 import org.dash.wallet.common.transactions.TransactionUtils.getWalletAddressOfReceived
 import org.dash.wallet.common.transactions.filters.NotFromAddressTxFilter
 import org.dash.wallet.common.util.Constants.PREFIX_ALMOST_EQUAL_TO
@@ -145,6 +177,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import kotlin.math.max
+import org.bitcoinj.core.listeners.NewBestBlockListener
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * @author Andreas Schildbach
@@ -152,6 +186,18 @@ import kotlin.math.max
  */
 @AndroidEntryPoint
 class BlockchainServiceImpl : LifecycleService(), BlockchainService {
+
+    private val appLifecycleObserver = object : DefaultLifecycleObserver {
+        override fun onStart(owner: LifecycleOwner) {
+            log.info("App moved to foreground")
+            isAppInBackground = false
+        }
+
+        override fun onStop(owner: LifecycleOwner) {
+            log.info("App moved to background")
+            isAppInBackground = true
+        }
+    }
 
     companion object {
         private const val MINIMUM_PEER_COUNT = 16
@@ -170,6 +216,12 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
         private val log = LoggerFactory.getLogger(BlockchainServiceImpl::class.java)
         const val START_AS_FOREGROUND_EXTRA = "start_as_foreground"
         var cleanupDeferred: CompletableDeferred<Unit>? = null
+        private val isCleaningUp = AtomicBoolean(false)
+
+        // TEST ONLY: Reduce timeout for testing onTimeout callback
+        // Set to 0 to disable test timeout (use Android's default 6-hour limit)
+        // Set to 1-2 minutes for testing the timeout behavior
+        private val TEST_TIMEOUT_MINUTES = 0L // Change to 0 to disable
     }
     private val serviceJob = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
@@ -195,8 +247,9 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
     @Inject lateinit var transactionMetadataProvider: TransactionMetadataProvider
 
     @Inject lateinit var platformSyncService: PlatformSyncService
-
-    @Inject lateinit var  platformRepo: PlatformRepo
+    @Inject lateinit var identityRepo: IdentityRepository
+    @Inject lateinit var platformRepo: PlatformRepo
+    @Inject lateinit var topUpRepository: TopUpRepository
 
     @Inject lateinit var  packageInfoProvider: PackageInfoProvider
 
@@ -209,6 +262,9 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
     lateinit var dashSystemService: DashSystemService
 
     @Inject lateinit var coinJoinService: CoinJoinService
+    @Inject lateinit var serviceConfig: BlockchainServiceConfig
+    @Inject lateinit var analyticsService: AnalyticsService
+    @Inject lateinit var securityFunctions: AuthenticationManager
 
     private var blockStore: BlockStore? = null
     private var headerStore: BlockStore? = null
@@ -238,7 +294,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
     private var resetBlockchainOnShutdown = false
     private var deleteWalletFileOnShutdown = false
 
-    //Settings to bypass dashj default dns seeds
+    // Settings to bypass dashj default dns seeds
     private val seedPeerDiscovery = SeedPeers(Constants.NETWORK_PARAMETERS)
     private val dnsDiscovery = DnsDiscovery(Constants.DNS_SEED, Constants.NETWORK_PARAMETERS)
     var peerDiscoveryList = ArrayList<PeerDiscovery>(2)
@@ -250,6 +306,12 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
     private var mixedBalance = Coin.ZERO
     private var foregroundService = ForegroundService.NONE
     private var pendingForegroundNotification: Notification? = null
+
+    // Background state tracking for Android 15 thread optimization
+    private var isAppInBackground = false
+
+    // KeyStore Status
+    private var isKeyStoreHealthy = true
 
     // Risk Analyser for Transactions that is PeerGroup Aware
     private var riskAnalyzer: AllowLockTimeRiskAnalysis.Analyzer? = null
@@ -266,6 +328,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
             transactionMetadataProvider.syncTransaction(tx)
         }
     }
+    private val currentBlock = MutableStateFlow<StoredBlock?>(null)
 
     private val walletEventListener: ThrottlingWalletChangeListener =
         object : ThrottlingWalletChangeListener(
@@ -344,6 +407,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
                         }
                     }
                 }
+                maybeAddMonitoring(tx, wallet)
                 handleMetadata(tx)
                 handleContactPayments(tx)
                 updateAppWidget()
@@ -360,11 +424,11 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
                     val authExtension =
                         wallet.getKeyChainExtension(AuthenticationGroupExtension.EXTENSION_ID) as AuthenticationGroupExtension
                     val cftx = authExtension.getAssetLockTransaction(tx)
-                    val blockChainHeadTime = blockChain!!.chainHead.header.time.time
-                    platformRepo.handleSentAssetLockTransaction(cftx, blockChainHeadTime)
+                    topUpRepository.handleSentAssetLockTransaction(cftx, tx.updateTime.time)
 
                     // TODO: if we detect a username creation that we haven't processed, should we?
                 }
+                maybeAddMonitoring(tx, wallet)
                 handleMetadata(tx)
                 updateAppWidget()
             }
@@ -392,6 +456,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
             }
         }
     private var resetMNListsOnPeerGroupStart = false
+    @SuppressLint("WrongConstant")
     private fun notifyCoinsReceived(
         address: Address?, amount: Coin,
         exchangeRate: ExchangeRate?
@@ -450,10 +515,88 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
         nm!!.notify(Constants.NOTIFICATION_ID_COINS_RECEIVED, notification.build())
     }
 
+    private val oldTransactionsToMonitor = ConcurrentHashMap<Sha256Hash, Transaction>()
+    private var txConfidenceJob: Job? = null
+
+    private fun updateTxConfidence() {
+        application.wallet?.let { wallet ->
+            val txesToRemove = arrayListOf<Sha256Hash>()
+            oldTransactionsToMonitor.forEach { (_, tx) ->
+                val transactionConfidence = tx.getConfidence(wallet.context)
+                val shouldStopListening = if (transactionConfidence.confidenceType == TransactionConfidence.ConfidenceType.BUILDING) {
+                    transactionConfidence.depthInBlocks = wallet.lastBlockSeenHeight - transactionConfidence.appearedAtChainHeight + 1
+//                    log.info(
+//                        "tx {}; {} == {}",
+//                        transactionConfidence.transactionHash,
+//                        transactionConfidence.depthInBlocks,
+//                        wallet.lastBlockSeenHeight - transactionConfidence.appearedAtChainHeight + 1
+//                    )
+
+                    val requiredDepth = if (tx.isCoinBase) {
+                        wallet.params.spendableCoinbaseDepth
+                    } else {
+                        CONFIRMED_DEPTH
+                    }
+
+                    val result = transactionConfidence.depthInBlocks >= requiredDepth
+                    transactionConfidence.queueListeners(TransactionConfidence.Listener.ChangeReason.DEPTH)
+                    result
+                } else {
+                    false
+                }
+
+                if (shouldStopListening) {
+                    txesToRemove.add(transactionConfidence.transactionHash)
+                }
+            }
+            txesToRemove.forEach {
+                oldTransactionsToMonitor.remove(it)
+            }
+        }
+    }
+
+    private fun stopMonitoringOlderTransactions(wallet: Wallet) {
+        if (wallet.isNotifyTxOnNextBlock) {
+            return
+        }
+        log.info("stop monitoring {} old transactions", oldTransactionsToMonitor.size)
+        oldTransactionsToMonitor.clear()
+    }
+
+    private fun monitorOlderTransactions(wallet: Wallet) {
+        if (wallet.isNotifyTxOnNextBlock) {
+            return
+        }
+        val transactions = wallet.getTransactions(true)
+        transactions.forEach { tx ->
+            maybeAddMonitoring(tx, wallet)
+        }
+        log.info("monitoring {} old transactions", oldTransactionsToMonitor.size)
+    }
+
+    private fun maybeAddMonitoring(tx: Transaction, wallet: Wallet) {
+        if (wallet.isNotifyTxOnNextBlock) {
+            return
+        }
+        val confidence = tx.getConfidence(wallet.context)
+        val shouldMonitor = when (confidence.confidenceType) {
+            TransactionConfidence.ConfidenceType.PENDING -> true
+            TransactionConfidence.ConfidenceType.BUILDING -> when {
+                tx.isCoinBase -> confidence.depthInBlocks < wallet.params.spendableCoinbaseDepth
+                else -> confidence.depthInBlocks < 6
+            }
+
+            else -> false
+        }
+        if (shouldMonitor) {
+            oldTransactionsToMonitor[tx.txId] = tx
+        }
+    }
+
     private inner class PeerConnectivityListener : PeerConnectedEventListener,
         PeerDisconnectedEventListener, SharedPreferences.OnSharedPreferenceChangeListener {
         private var peerCount = 0
-        private val stopped = AtomicBoolean(false)
+        val stopped = AtomicBoolean(false)
 
         init {
             config.registerOnSharedPreferenceChangeListener(this)
@@ -479,6 +622,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
             if (Configuration.PREFS_KEY_CONNECTIVITY_NOTIFICATION == key) changed(peerCount)
         }
 
+        @SuppressLint("WrongConstant")
         private fun changed(numPeers: Int) {
             if (stopped.get()) return
             val networkStatus = blockchainStateDataProvider.getNetworkStatus()
@@ -524,10 +668,81 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
     private abstract inner class MyDownloadProgressTracker
         : DownloadProgressTracker(Constants.SYNC_FLAGS.contains(MasternodeSync.SYNC_FLAGS.SYNC_BLOCKS_AFTER_PREPROCESSING)), OnPreBlockProgressListener
 
+    private val timeoutErrorListener = TimeoutErrorListener { error, peer ->
+        log.info("handling timeout error due to $error from $peer")
+        when (error) {
+            TimeoutError.BLOCKSTORE_MEMORY_ACCESS -> {
+                serviceScope.launch {
+                    if (serviceConfig.get(BLOCKCHAIN_STORE_MEMORY_FAILURE) != true) {
+                        serviceConfig.set(BLOCKCHAIN_STORE_MEMORY_FAILURE, true)
+                        log.warn("BLOCKSTORE_MEMORY_ACCESS timeout detected - forcing shutdown and scheduling restart in 1 minute")
+                        analyticsService.logError(Exception("Blockstore memory stalled"))
+                        rescheduleService()
+
+                        // Force immediate shutdown
+                        withContext(Dispatchers.Main) {
+                            stopSelf()
+                        }
+                    }
+                }
+            }
+            TimeoutError.UNKNOWN -> {
+
+            }
+            else -> {}
+        }
+    }
+
+    @SuppressLint("WrongConstant")
+    private fun rescheduleService() {
+        // Schedule restart in 1 minute
+        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+        val serviceIntent = Intent(
+            application,
+            BlockchainServiceImpl::class.java
+        )
+        val alarmIntent: PendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            serviceIntent.putExtra(START_AS_FOREGROUND_EXTRA, true)
+            PendingIntent.getForegroundService(
+                application, 0, serviceIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        } else {
+            PendingIntent.getService(
+                application, 0, serviceIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+        }
+        // alarmManager.cancel(alarmIntent)
+
+        val restartTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1)
+        alarmManager.setInexactRepeating(
+            AlarmManager.RTC_WAKEUP,
+            restartTime,
+            AlarmManager.INTERVAL_FIFTEEN_MINUTES,
+            alarmIntent
+        )
+
+        log.info("Scheduled service restart in 1 minute at {}", Date(restartTime))
+    }
+
     private val blockchainDownloadListener: MyDownloadProgressTracker =
         object : MyDownloadProgressTracker() {
+            val watch = Stopwatch.createUnstarted()
             private val lastMessageTime = AtomicLong(0)
             private var throttleDelay: Long = -1
+
+            override fun onHeadersDownloadStarted(peer: Peer?, blocksLeft: Int) {
+                super.onHeadersDownloadStarted(peer, blocksLeft)
+            }
+
+            override fun onChainDownloadStarted(peer: Peer?, blocksLeft: Int) {
+                super.onChainDownloadStarted(peer, blocksLeft)
+                if (!watch.isRunning) {
+                    watch.start();
+                }
+            }
+
             override fun onBlocksDownloaded(
                 peer: Peer, block: Block, filteredBlock: FilteredBlock?,
                 blocksLeft: Int
@@ -579,18 +794,21 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
             }
 
             /** This method is called by super.onBlocksDownloaded when the percentage
-                of the chain downloaded is 100.0% (completely done)
-            */
+             *  of the chain downloaded is 100.0% (completely done)
+             */
             override fun doneDownload() {
                 super.doneDownload()
-                log.info("DoneDownload {}", syncPercentage)
+                if (watch.isRunning) {
+                    watch.stop()
+                }
+                log.info("DoneDownload {} in {}", syncPercentage, watch)
                 // if the chain is already synced from a previous session, then syncPercentage = 0
                 // set to 100% so that observers will see that sync is completed
                 syncPercentage = 100
                 updateBlockchainState()
                 if (Constants.SUPPORTS_PLATFORM) {
                     serviceScope.launch {
-                        platformRepo.updateFrequentContacts()
+                        identityRepo.updateFrequentContacts()
                     }
                 }
             }
@@ -640,67 +858,136 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
                 if (increment > preBlocksWeight * 100) increment = preBlocksWeight * 100
                 log.debug("PreBlockDownload: " + increment + "%..." + preBlocksWeight + " " + stage.name + " " + peerGroup!!.syncStage.name)
                 if (peerGroup != null && peerGroup!!.syncStage == PeerGroup.SyncStage.PREBLOCKS) {
-                    syncPercentage = (startPreBlockPercent + increment).toInt()
+                    syncPercentage = max(syncPercentage.toDouble(), startPreBlockPercent + increment).toInt()
                     log.info("PreBlockDownload: " + syncPercentage + "%..." + stage.name)
                     postOrPostDelayed()
                 }
                 lastPreBlockStage = stage
             }
         }
-    private var connectivityReceiverRegistered = false
-    private val connectivityReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            serviceScope.launch {
-                val action = intent.action
-                if (ConnectivityManager.CONNECTIVITY_ACTION == action) {
-                    val networkInfo = connectivityManager.activeNetworkInfo
-                    val hasConnectivity = networkInfo != null && networkInfo.isConnected
-                    if (log.isInfoEnabled) {
-                        val s = StringBuilder("active network is ")
-                            .append(if (hasConnectivity) "up" else "down")
-                        if (networkInfo != null) {
-                            s.append(", type: ").append(networkInfo.typeName)
-                            s.append(", state: ").append(networkInfo.state).append('/')
-                                .append(networkInfo.detailedState)
-                            val extraInfo = networkInfo.extraInfo
-                            if (extraInfo != null) s.append(", extraInfo: ").append(extraInfo)
-                            val reason = networkInfo.reason
-                            if (reason != null) s.append(", reason: ").append(reason)
-                        }
-                        log.info(s.toString())
-                    }
-                    if (hasConnectivity) {
-                        impediments.remove(Impediment.NETWORK)
+    private var networkCallbackRegistered = false
+    private lateinit var networkCallback: ConnectivityManager.NetworkCallback
+    private val availableNetworks: MutableSet<Network> = ConcurrentHashMap.newKeySet()
+    private inner class NetworkCallbackImpl : ConnectivityManager.NetworkCallback() {
+        init {
+            // Setup security health monitoring
+            securityFunctions.observeHealth().observe(this@BlockchainServiceImpl) { status ->
+                // val isKeyStoreHealthyNow = isKeyStoreHealthy
+                isKeyStoreHealthy = status.isHealthy
+//                when(status) {
+//                    SecuritySystemStatus.HEALTHY,
+//                    SecuritySystemStatus.HEALTHY_WITH_FALLBACKS -> true
+//                    else -> false
+//                }
+                //if (isKeyStoreHealthyNow != isKeyStoreHealthy) {
+                    if (isKeyStoreHealthy) {
+                        impediments.remove(Impediment.SECURITY)
                     } else {
-                        impediments.add(Impediment.NETWORK)
+                        impediments.add(Impediment.SECURITY)
                     }
                     updateBlockchainStateImpediments()
                     check()
-                } else if (Intent.ACTION_DEVICE_STORAGE_LOW == action) {
-                    log.info("device storage low")
-                    impediments.add(Impediment.STORAGE)
-                    updateBlockchainStateImpediments()
-                    check()
-                } else if (Intent.ACTION_DEVICE_STORAGE_OK == action) {
-                    log.info("device storage ok")
-                    impediments.remove(Impediment.STORAGE)
+                //}
+            }
+        }
+        override fun onAvailable(network: Network) {
+            serviceScope.launch {
+                val capabilities = connectivityManager.getNetworkCapabilities(network)
+                val hasInternet = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+                val hasValidated = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
+
+                if (log.isInfoEnabled) {
+                    val s = StringBuilder("network available: ")
+                        .append(network)
+                    if (capabilities != null) {
+                        s.append(", hasInternet: ").append(hasInternet)
+                        s.append(", validated: ").append(hasValidated)
+                        if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                            s.append(", type: WiFi")
+                        } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                            s.append(", type: Cellular")
+                        } else if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                            s.append(", type: Ethernet")
+                        }
+                    }
+                    log.info(s.toString())
+                }
+
+                if (hasInternet && hasValidated) {
+                    availableNetworks.add(network)
+                    impediments.remove(Impediment.NETWORK)
                     updateBlockchainStateImpediments()
                     check()
                 }
             }
         }
 
-        private fun check() {
+        override fun onLost(network: Network) {
             serviceScope.launch {
-                // make sure that onCreate is finished
-                onCreateCompleted.await()
-                log.info("acquiring check() mutex")
-                checkMutex.lock()
+                availableNetworks.remove(network)
+                log.info("network lost: $network, remaining networks: ${availableNetworks.size}")
+
+                // Only add impediment if no suitable networks remain
+                if (availableNetworks.isEmpty()) {
+                    impediments.add(Impediment.NETWORK)
+                    updateBlockchainStateImpediments()
+                    check()
+                }
+            }
+        }
+
+        override fun onCapabilitiesChanged(network: Network, capabilities: NetworkCapabilities) {
+            serviceScope.launch {
+                val hasInternet = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                val hasValidated = capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+
+                if (log.isInfoEnabled) {
+                    val s = StringBuilder("network capabilities changed: ")
+                        .append(network)
+                        .append(", hasInternet: ").append(hasInternet)
+                        .append(", validated: ").append(hasValidated)
+                    log.info(s.toString())
+                }
+
+                if (hasInternet && hasValidated) {
+                    impediments.remove(Impediment.NETWORK)
+                } else {
+                    impediments.add(Impediment.NETWORK)
+                }
+                updateBlockchainStateImpediments()
+                check()
+            }
+        }
+
+        override fun onUnavailable() {
+            super.onUnavailable()
+            serviceScope.launch {
+                log.info("network unavailable - no network satisfies request")
+                impediments.add(Impediment.NETWORK)
+                updateBlockchainStateImpediments()
+                check()
+            }
+        }
+
+        fun check() {
+            serviceScope.launch {
                 try {
-                    checkService()
-                } finally {
-                    checkMutex.unlock()
+                    // make sure that onCreate is finished
+                    onCreateCompleted.await()
+                    log.info("acquiring check() mutex")
+
+                    // Use withLock to guarantee mutex release even if coroutine is cancelled
+                    checkMutex.withLock {
+                        try {
+                            checkService()
+                        } catch (e: Exception) {
+                            log.error("checkService() failed with exception", e)
+                            // Don't rethrow - we want to ensure clean mutex release
+                        }
+                    }
                     log.info("releasing check() mutex")
+                } catch (e: Exception) {
+                    log.error("check() failed", e)
                 }
             }
         }
@@ -746,15 +1033,22 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
                 peerGroup!!.setDownloadTxDependencies(0) // recursive implementation causes StackOverflowError
                 peerGroup!!.addWallet(wallet)
                 peerGroup!!.setUserAgent(Constants.USER_AGENT, packageInfoProvider.versionName)
+                log.info("Adding PeerConnectivityListener to peerGroup: listener={}, stopped={}",
+                    peerConnectivityListener, peerConnectivityListener?.stopped?.get())
                 peerGroup!!.addConnectedEventListener(peerConnectivityListener)
                 peerGroup!!.addDisconnectedEventListener(peerConnectivityListener)
+                peerGroup!!.addTimeoutErrorListener(executor, timeoutErrorListener)
+                log.info("Successfully added peer listeners to peerGroup")
                 val maxConnectedPeers = application.maxConnectedPeers()
                 val trustedPeerHost = config.trustedPeerHost
                 val hasTrustedPeer = trustedPeerHost != null
                 val connectTrustedPeerOnly = hasTrustedPeer && config.trustedPeerOnly
                 peerGroup!!.maxConnections = if (connectTrustedPeerOnly) 1 else maxConnectedPeers
+                peerGroup!!.maxStalls = 1000
+                peerGroup!!.setStallThreshold(30, 5 * Block.HEADER_SIZE)
                 peerGroup!!.setConnectTimeoutMillis(Constants.PEER_TIMEOUT_MS)
                 peerGroup!!.setPeerDiscoveryTimeoutMillis(Constants.PEER_DISCOVERY_TIMEOUT_MS.toLong())
+                peerGroup!!.isUseCompressedHeaders = true
                 peerGroup!!.addPeerDiscovery(object : PeerDiscovery {
                     //Keep Original code here for now
                     //private final PeerDiscovery normalPeerDiscovery = MultiplexingDiscovery
@@ -906,7 +1200,6 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
                 platformSyncService.addPreBlockProgressListener(blockchainDownloadListener)
             } else if (impediments.isNotEmpty() && peerGroup != null) {
                 blockchainStateDataProvider.setNetworkStatus(NetworkStatus.NOT_AVAILABLE)
-                dashSystemService.system.close()
                 log.info("stopping peergroup")
                 peerGroup!!.removeDisconnectedEventListener(peerConnectivityListener)
                 peerGroup!!.removeConnectedEventListener(peerConnectivityListener)
@@ -914,13 +1207,26 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
                 peerGroup!!.removeWallet(wallet)
                 platformSyncService.removePreBlockProgressListener(blockchainDownloadListener)
                 peerGroup!!.stopAsync()
+                try {
+                    dashSystemService.system.close()
+                } catch (e: Exception) {
+                    log.error("Error closing dash system service", e)
+                }
                 // use the offline risk analyzer
-                wallet!!.riskAnalyzer =
-                    OfflineAnalyzer(config.bestHeightEver, System.currentTimeMillis() / 1000)
-                riskAnalyzer!!.shutdown()
+                if (wallet != null) {
+                    wallet.riskAnalyzer =
+                        OfflineAnalyzer(config.bestHeightEver, System.currentTimeMillis() / 1000)
+                }
+                try {
+                    riskAnalyzer?.shutdown()
+                } catch (e: Exception) {
+                    log.error("Error shutting down risk analyzer", e)
+                }
                 peerGroup = null
                 log.debug("releasing wakelock")
-                wakeLock!!.release()
+                if (wakeLock!!.isHeld) {
+                    wakeLock!!.release()
+                }
             }
         }
     }
@@ -1004,6 +1310,9 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
                 // if idling, shutdown service
                 if (isIdle && mixingStatus != MixingStatus.MIXING) {
                     log.info("idling detected, stopping service")
+                    if (blockchainState?.replaying == true) {
+                        rescheduleService()
+                    }
                     stopSelf()
                 }
             }
@@ -1036,6 +1345,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
         org.bitcoinj.core.Context.propagate(Constants.CONTEXT)
     }
 
+    @SuppressLint("WrongConstant")
     override fun onCreate() {
         serviceCreatedAt = System.currentTimeMillis()
         log.info(".onCreate()")
@@ -1044,13 +1354,48 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
         val lockName = "$packageName blockchain sync"
         val pm = getSystemService(POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, lockName)
+
+        // Register for app lifecycle events to detect background/foreground transitions
+        ProcessLifecycleOwner.get().lifecycle.addObserver(appLifecycleObserver)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundAndCatch(createNetworkSyncNotification())
+
+            // TEST ONLY: Simulate onTimeout callback for testing
+            if (TEST_TIMEOUT_MINUTES > 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                serviceScope.launch {
+                    delay(TimeUnit.MINUTES.toMillis(TEST_TIMEOUT_MINUTES))
+                    log.warn("TEST: Triggering onTimeout() after {} minutes", TEST_TIMEOUT_MINUTES)
+                    onTimeout(1, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+                }
+            }
         }
         serviceScope.launch {
             try {
                 log.info("onCreate() serviceScope waiting for cleanup {}", cleanupDeferred?.isActive)
-                cleanupDeferred?.await()
+
+                val cleanupCompleted = withTimeoutOrNull(15_000) {
+                    cleanupDeferred?.await()
+                    true
+                } != null
+
+                if (!cleanupCompleted) {
+                    log.error("CRITICAL: Cleanup did not complete within 15 seconds")
+                    log.error("This indicates a deadlock in onDestroy - cannot proceed with onCreate")
+                    log.error("Stopping service to prevent resource conflicts and file lock exceptions")
+
+                    // Complete onCreate to unblock any waiting onStartCommand calls
+                    if (onCreateCompleted.isActive) {
+                        onCreateCompleted.complete(Unit)
+                    }
+
+                    // Stop the service - we cannot safely initialize with cleanup still running
+                    withContext(Dispatchers.Main) {
+                        stopSelf()
+                    }
+                    return@launch
+                }
+
                 propagateContext()
                 val wallet = application.wallet
                 if (wallet == null) {
@@ -1077,8 +1422,130 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
                     blockStore?.chainHead // detect corruptions as early as possible
                     headerStore = SPVBlockStore(Constants.NETWORK_PARAMETERS, headerChainFile)
                     headerStore?.chainHead // detect corruptions as early as possible
+                    wallet.isNotifyTxOnNextBlock = false
+                    val blockchainStoreMemoryError = serviceConfig.get(BLOCKCHAIN_STORE_MEMORY_FAILURE) ?: false
+                    if (blockchainStoreMemoryError) {
+                        try {
+                            // the stores are open, copy 100 blocks to a new store.
+                            log.info("attempting to fix blockchain memory stalls by copying from store: {}", serviceConfig.getBlockStoreLastFix())
+
+                            val blockchainFileTemp = File(getDir("blockstore", MODE_PRIVATE), Constants.Files.BLOCKCHAIN_FILENAME + "-temp")
+                            val headerFileTemp = File(getDir("blockstore", MODE_PRIVATE), Constants.Files.HEADERS_FILENAME + "-temp")
+
+                            // Clean up any existing temp files from previous failed attempts
+                            blockchainFileTemp.delete()
+                            headerFileTemp.delete()
+
+                            var blockStoreTemp: SPVBlockStore? = null
+                            var headerStoreTemp: SPVBlockStore? = null
+
+                            try {
+                                blockStoreTemp = SPVBlockStore(Constants.NETWORK_PARAMETERS, blockchainFileTemp)
+                                headerStoreTemp = SPVBlockStore(Constants.NETWORK_PARAMETERS, headerFileTemp)
+
+                                // Copy blockchain blocks
+                                var cursor = blockStore!!.chainHead
+                                val chainHead = cursor
+                                blockStoreTemp.put(cursor)
+                                var blockCount = 1
+                                for (i in 0 until 500) {
+                                    cursor = cursor!!.getPrev(blockStore!!)
+                                    if (cursor == null || cursor.header == Constants.NETWORK_PARAMETERS.genesisBlock) {
+                                        break
+                                    }
+                                    blockStoreTemp.put(cursor)
+                                    blockCount++
+                                }
+                                blockStoreTemp.chainHead = chainHead
+                                log.info("copied {} blocks to temp store", blockCount)
+
+                                // Copy header blocks
+                                cursor = headerStore!!.chainHead
+                                val headerChainHead = cursor
+                                headerStoreTemp.put(cursor)
+                                var headerCount = 1
+                                for (i in 0 until 500) {
+                                    cursor = cursor!!.getPrev(headerStore!!)
+                                    if (cursor == null || cursor.header == Constants.NETWORK_PARAMETERS.genesisBlock) {
+                                        break
+                                    }
+                                    headerStoreTemp.put(cursor)
+                                    headerCount++
+                                }
+                                headerStoreTemp.chainHead = headerChainHead
+                                log.info("copied {} headers to temp store", headerCount)
+
+                                // Close temp stores first
+                                headerStoreTemp.close()
+                                headerStoreTemp = null
+                                blockStoreTemp.close()
+                                blockStoreTemp = null
+
+                                // Close old stores
+                                blockStore!!.close()
+                                headerStore!!.close()
+
+                                // Delete old files
+                                if (!blockChainFile!!.delete()) {
+                                    log.error("Failed to delete old blockchain file")
+                                    throw IOException("Failed to delete old blockchain file")
+                                }
+                                if (!headerChainFile!!.delete()) {
+                                    log.error("Failed to delete old header chain file")
+                                    throw IOException("Failed to delete old header chain file")
+                                }
+
+                                // Rename temp files to actual files
+                                if (!blockchainFileTemp.renameTo(blockChainFile!!)) {
+                                    log.error("Failed to rename temp blockchain file")
+                                    throw IOException("Failed to rename temp blockchain file")
+                                }
+                                if (!headerFileTemp.renameTo(headerChainFile!!)) {
+                                    log.error("Failed to rename temp header file")
+                                    throw IOException("Failed to rename temp header file")
+                                }
+
+                                log.info("completed file replacement, now reloading the block stores")
+                                blockStore = SPVBlockStore(Constants.NETWORK_PARAMETERS, blockChainFile)
+                                blockStore?.chainHead // detect corruptions as early as possible
+                                headerStore = SPVBlockStore(Constants.NETWORK_PARAMETERS, headerChainFile)
+                                headerStore?.chainHead // detect corruptions as early as possible
+                                log.info("block stores reloaded successfully")
+
+                                // Record that we attempted this fix
+                                serviceConfig.set(BLOCKCHAIN_STORE_LAST_FIX, BlockStoreLastFix.COPY_FROM_STORE.name)
+                                serviceConfig.set(BLOCKCHAIN_STORE_MEMORY_FAILURE, false)
+                            } finally {
+                                // Ensure temp stores are closed even if an error occurs
+                                try {
+                                    blockStoreTemp?.close()
+                                } catch (e: Exception) {
+                                    log.warn("Error closing temp blockStore", e)
+                                }
+                                try {
+                                    headerStoreTemp?.close()
+                                } catch (e: Exception) {
+                                    log.warn("Error closing temp headerStore", e)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            log.error("Failed to fix blockchain memory stalls by copying from store", e)
+                            // Clean up temp files on failure
+                            try {
+                                val blockchainFileTemp = File(getDir("blockstore", MODE_PRIVATE), Constants.Files.BLOCKCHAIN_FILENAME + "-temp")
+                                val headerFileTemp = File(getDir("blockstore", MODE_PRIVATE), Constants.Files.HEADERS_FILENAME + "-temp")
+                                blockchainFileTemp.delete()
+                                headerFileTemp.delete()
+                            } catch (cleanupEx: Exception) {
+                                log.warn("Error cleaning up temp files", cleanupEx)
+                            }
+                        }
+                    }
                     withContext(Dispatchers.Main) { verifyBlockStores() }
-                    val earliestKeyCreationTime = wallet.earliestKeyCreationTime
+//                    if (blockStore is TestingSPVBlockStore) {
+//                        (blockStore as TestingSPVBlockStore).setBlockGetMethod(true)
+//                    }
+                    val earliestKeyCreationTime = serviceConfig.getWalletCreationDate() ?: wallet.earliestKeyCreationTime
                     if (!blockChainFileExists && earliestKeyCreationTime > 0) {
                         try {
                             val watch = Stopwatch.createStarted()
@@ -1104,36 +1571,57 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
                         }
                     }
                 } catch (x: BlockStoreException) {
-                    blockChainFile!!.delete()
-                    headerChainFile!!.delete()
-                    resetMNLists(false)
-                    val msg = "blockstore cannot be created"
-                    log.error(msg, x)
-                    throw Error(msg, x)
+                    // Check if this is a file lock exception - don't delete files if another service is using them
+                    val isFileLockException = x.cause?.javaClass?.simpleName?.contains("OverlappingFileLockException") == true ||
+                                            x.message?.contains("OverlappingFileLockException") == true ||
+                                            x.message?.contains("FileLock") == true
+                    
+                    if (isFileLockException) {
+                        log.warn("BlockStore creation failed due to file lock conflict - NOT deleting blockchain files as another service may be using them: {}", x.message)
+                        val msg = "blockstore cannot be created due to file lock conflict - files preserved"
+                        log.error(msg, x)
+                        throw Error(msg, x)
+                    } else {
+                        log.warn("BlockStore creation failed due to corruption or other error - deleting blockchain files for clean restart: {}", x.message)
+                        blockChainFile!!.delete()
+                        headerChainFile!!.delete()
+                        resetMNLists(false)
+                        val msg = "blockstore cannot be created"
+                        log.error(msg, x)
+                        throw Error(msg, x)
+                    }
                 }
                 try {
+                    propagateContext()
                     blockChain = BlockChain(Constants.NETWORK_PARAMETERS, wallet, blockStore)
                     headerChain = BlockChain(Constants.NETWORK_PARAMETERS, headerStore)
                     blockchainStateDataProvider.setBlockChain(blockChain)
                 } catch (x: BlockStoreException) {
                     throw Error("blockchain cannot be created", x)
                 }
-                // register receivers on the main thread
+                // register network and storage receivers on the main thread
                 withContext(Dispatchers.Main) {
-                    val intentFilter = IntentFilter()
-                    intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION)
-                    intentFilter.addAction(Intent.ACTION_DEVICE_STORAGE_LOW)
-                    intentFilter.addAction(Intent.ACTION_DEVICE_STORAGE_OK)
-                    registerReceiver(connectivityReceiver, intentFilter) // implicitly start PeerGroup
-                    connectivityReceiverRegistered = true
-                    log.info("receiver register: connectivityReceiver, {}", connectivityReceiver)
+                    // Initialize network callback (now that securityFunctions is available)
+                    networkCallback = NetworkCallbackImpl()
+
+                    // Register network callback for modern network monitoring
+                    // Use NetworkRequest to reliably detect when no validated network is available (e.g., airplane mode)
+                    val networkRequest = NetworkRequest.Builder()
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+                        .build()
+                    connectivityManager.registerNetworkCallback(networkRequest, networkCallback)
+                    networkCallbackRegistered = true
+                    log.info("network callback registered with NetworkRequest: {}", networkCallback)
                 }
+                monitorOlderTransactions(wallet)
                 wallet.addCoinsReceivedEventListener(
                     Threading.SAME_THREAD,
                     walletEventListener
                 )
                 wallet.addCoinsSentEventListener(Threading.SAME_THREAD, walletEventListener)
                 wallet.addChangeEventListener(Threading.SAME_THREAD, walletEventListener)
+                blockChain?.addNewBestBlockListener(newBestBlockListener)
                 config.registerOnSharedPreferenceChangeListener(sharedPrefsChangeListener)
                 withContext(Dispatchers.Main) {
                     registerReceiver(tickReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
@@ -1157,6 +1645,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
                 application.observeTotalBalance().observe(this@BlockchainServiceImpl) {
                     balance = it
                     handleBlockchainStateNotification(blockchainState, mixingStatus, mixingProgress)
+                    updateAppWidget()
                 }
 
                 // we need the mixed balance for the CoinJoin notification
@@ -1165,12 +1654,24 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
                     handleBlockchainStateNotification(blockchainState, mixingStatus, mixingProgress)
                 }
 
+
+                txConfidenceJob = merge(
+                    currentBlock.filterNotNull().sample(APPWIDGET_THROTTLE_MS),
+                    currentBlock.filterNotNull().debounce(APPWIDGET_THROTTLE_MS)
+                ).distinctUntilChanged()
+                    .onEach { updateTxConfidence() }
+                    .launchIn(serviceScope)
+
                 onCreateCompleted.complete(Unit)
                 log.info(".onCreate() finished")
             } catch (t: Throwable) {
-                log.error(".onCreate() failed", t)
+                log.error("Service initialization failed in background coroutine, stopping service", t)
                 if (onCreateCompleted.isActive) {
                     onCreateCompleted.complete(Unit)
+                }
+                // Service is in a broken state - stop it gracefully
+                handler.post {
+                    stopSelf()
                 }
             }
         }
@@ -1291,6 +1792,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
         return START_NOT_STICKY
     }
 
+    @SuppressLint("WrongConstant")
     private fun startForeground(notification: Notification) {
         //Shows ongoing notification promoting service to foreground service and
         //preventing it from being killed in Android 26 or later
@@ -1309,6 +1811,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             try {
                 startForeground(notification)
+                log.info("start foreground service")
             } catch (e: ForegroundServiceStartNotAllowedException) {
                 log.info("failed to start in foreground, try again", e)
                 // On Android 15+, we'll retry later when the app is in foreground
@@ -1317,6 +1820,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
             }
         } else {
             startForeground(notification)
+            log.info("start foreground service")
         }
     }
 
@@ -1327,6 +1831,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
             if (pendingForegroundNotification != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 try {
                     startForeground(pendingForegroundNotification!!)
+                    log.info("start foreground service (delayed)")
                     pendingForegroundNotification = null
                     log.info("Successfully started foreground service on retry")
                 } catch (e: ForegroundServiceStartNotAllowedException) {
@@ -1346,47 +1851,130 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
             unregisterReceiver(tickReceiver)
             tickRecieverRegistered = false
         }
-        if (connectivityReceiverRegistered) {
-            unregisterReceiver(connectivityReceiver)
-            connectivityReceiverRegistered = false
+        if (networkCallbackRegistered) {
+            connectivityManager.unregisterNetworkCallback(networkCallback)
+            networkCallbackRegistered = false
+            availableNetworks.clear()
         }
+        ProcessLifecycleOwner.get().lifecycle.removeObserver(appLifecycleObserver)
+
+        log.info("receivers unregistered, Now starting coroutine to finish the rest of the cleanup")
+
+        // Monitor the entire cleanup process with timeout reporting
+        val cleanupThread = Thread.currentThread()
+        val cleanupMonitorJob = serviceScope.launch {
+            delay(5_000) // Wait 5 seconds before first check
+            var checkCount = 0
+            while (isActive) {
+                if (checkCount > 4) return@launch
+                checkCount++
+                log.warn("onDestroy() cleanup is taking longer than {} seconds", 5 * checkCount)
+                try {
+                    val anrException = AnrException(cleanupThread)
+                    anrException.logProcessMap()
+                } catch (e: Exception) {
+                    log.error("Failed to dump thread traces during cleanup timeout", e)
+                }
+                // Wait another 5 seconds before next check
+                delay(5_000)
+            }
+        }
+
         serviceScope.launch {
             try {
                 log.info("The onCreateCompleted is active: {}", onCreateCompleted.isActive)
                 onCreateCompleted.await() // wait until onCreate is finished
                 log.info("The check() mutex is locked: {}", checkMutex.isLocked)
-                cleanupDeferred = CompletableDeferred()
-                checkMutex.lock()
+                // Prevent multiple cleanup operations using atomic flag
+                if (!isCleaningUp.compareAndSet(false, true)) {
+                    log.info("Another onDestroy() is already running cleanup, skipping duplicate cleanup")
+                    return@launch
+                }
+
+                // Create cleanup coordination only if none exists or existing one is already completed
+                val existingCleanup = cleanupDeferred
+                if (existingCleanup == null || existingCleanup.isCompleted) {
+                    cleanupDeferred = CompletableDeferred()
+                    log.info("Created new cleanupDeferred for coordination (previous was {})",
+                        if (existingCleanup == null) "null" else "completed")
+                } else {
+                    log.info("Using existing active cleanupDeferred for coordination")
+                }
+
+                // Try to acquire mutex with timeout
+                val mutexAcquired = withTimeoutOrNull(5_000) {
+                    checkMutex.lock()
+                    true
+                } != null
+
+                if (!mutexAcquired) {
+                    log.error("CRITICAL: Failed to acquire check() mutex within 5 seconds")
+                    log.error("A check() operation appears to be deadlocked - proceeding with cleanup anyway")
+                    log.error("This may result in resource leaks but allows service restart")
+                    // Dump all thread stack traces using AnrException
+                    try {
+                        val anrException = de.schildbach.wallet.util.AnrException(Thread.currentThread())
+                        anrException.logProcessMap()
+                    } catch (e: Exception) {
+                        log.error("Failed to dump thread traces", e)
+                    }
+
+                }
+
+                log.info("detaching from wallet")
                 WalletApplication.scheduleStartBlockchainService(this@BlockchainServiceImpl) //disconnect feature
+                blockChain?.removeNewBestBlockListener(newBestBlockListener)
+                // Cancel tx confidence monitoring job before cleanup to prevent CME
+                txConfidenceJob?.cancel()
+                txConfidenceJob?.join()
+                txConfidenceJob = null
+
                 val wallet = application.wallet
                 if (wallet != null) {
                     wallet.removeChangeEventListener(walletEventListener)
                     wallet.removeCoinsSentEventListener(walletEventListener)
                     wallet.removeCoinsReceivedEventListener(walletEventListener)
+
+                    stopMonitoringOlderTransactions(wallet)
                 }
                 config.unregisterOnSharedPreferenceChangeListener(sharedPrefsChangeListener)
                 platformSyncService.shutdown()
                 if (peerGroup != null) {
+                    log.info("shutting down peerGroup and system services")
                     propagateContext()
-                    dashSystemService.system.close()
-                    peerGroup!!.removeDisconnectedEventListener(peerConnectivityListener)
-                    peerGroup!!.removeConnectedEventListener(peerConnectivityListener)
+                    // we may need to skip these, or move them to after the forceStop because they grab a lock
+                    if (!peerGroup!!.lock.isLocked) {
+                        peerGroup!!.removeDisconnectedEventListener(peerConnectivityListener)
+                        peerGroup!!.removeConnectedEventListener(peerConnectivityListener)
+                        peerGroup!!.removeTimeoutErrorListener(timeoutErrorListener)
+                    }
                     peerGroup!!.removeWallet(application.wallet)
                     platformSyncService.removePreBlockProgressListener(blockchainDownloadListener)
+                    log.info("CLEANUP STEP 1: peerGroup listeners and wallet removed")
                     blockchainStateDataProvider.setNetworkStatus(NetworkStatus.DISCONNECTING)
-                    peerGroup!!.stop()
+                    log.info("CLEANUP STEP 2: About to call peerGroup.forceStop(7000)")
+                    peerGroup!!.forceStop(7_000)
+                    log.info("CLEANUP STEP 2: peerGroup.forceStop() completed")
                     blockchainStateDataProvider.setNetworkStatus(NetworkStatus.STOPPED)
+                    log.info("CLEANUP STEP 3: About to close dashSystemService.system")
+                    dashSystemService.system.close()
+                    log.info("CLEANUP STEP 3: Dash system services are shutdown")
                     if (wallet != null) {
                         wallet.riskAnalyzer = defaultRiskAnalyzer
                     }
+                    log.info("CLEANUP STEP 4: About to shutdown riskAnalyzer")
                     riskAnalyzer!!.shutdown()
-                    log.info("peergroup stopped")
+                    log.info("CLEANUP STEP 4: riskAnalyzer shutdown completed, peergroup fully stopped")
                 }
+                log.info("CLEANUP STEP 5: About to stop peerConnectivityListener")
                 peerConnectivityListener!!.stop()
+                log.info("CLEANUP STEP 5: peerConnectivityListener stopped")
                 delayHandler.removeCallbacksAndMessages(null)
+                log.info("CLEANUP STEP 6: delayHandler callbacks cleared")
                 try {
-                    blockStore!!.close()
-                    headerStore!!.close()
+                    log.info("closing blockchain stores")
+                    blockStore?.close()
+                    headerStore?.close()
                     blockchainStateDataProvider.setBlockChain(null)
                 } catch (x: BlockStoreException) {
                     throw RuntimeException(x)
@@ -1411,17 +1999,28 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
                     }
                     //Clear the blockchain identity
                     application.clearDatabases(false)
+                    resetBlockchainState()
                 }
+                log.info("closing bootstrap streams")
                 closeStream(mnlistinfoBootStrapStream)
                 closeStream(qrinfoBootStrapStream)
             } finally {
                 log.info("serviceJob cancelled after " + (System.currentTimeMillis() - serviceCreatedAt) / 1000 / 60 + " minutes")
                 serviceJob.cancel()
-                checkMutex.unlock()
+                if (checkMutex.isLocked) {
+                    checkMutex.unlock()
+                }
+                isCleaningUp.set(false)
                 cleanupDeferred?.complete(Unit)
+                // Cancel the cleanup monitor since cleanup is done
+                cleanupMonitorJob.cancel()
             }
         }
         log.info("service was up for " + (System.currentTimeMillis() - serviceCreatedAt) / 1000 / 60 + " minutes")
+    }
+
+    private fun resetBlockchainState() {
+        syncPercentage = 0
     }
 
     override fun onTrimMemory(level: Int) {
@@ -1434,7 +2033,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onTimeout(startId: Int, fgsType: Int) {
-        log.warn("Foreground service timeout reached for startId: $startId, fgsType: $fgsType")
+        log.info("onTimeoutCalled({}, {})", startId, fgsType)
         log.info("DataSync foreground service 6-hour limit exceeded, stopping service")
         
         // Show notification about the timeout
@@ -1451,6 +2050,7 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
         super.onTimeout(startId, fgsType)
     }
 
+    @SuppressLint("WrongConstant")
     private fun showTimeoutNotification() {
         val mainActivityIntent = MainActivity.createIntent(this).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -1503,6 +2103,33 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
         blockchainStateDataProvider.updateImpediments(impediments)
     }
 
+//    /**
+//     * Check impediments and start/stop peergroup accordingly
+//     * Can be called from network callbacks or security health observers
+//     */
+//    private fun checkImpediments() {
+//        serviceScope.launch {
+//            try {
+//                // make sure that onCreate is finished
+//                onCreateCompleted.await()
+//                log.info("acquiring check() mutex")
+//
+//                // Use withLock to guarantee mutex release even if coroutine is cancelled
+//                checkMutex.withLock {
+//                    try {
+//                        checkService()
+//                    } catch (e: Exception) {
+//                        log.error("checkService() failed with exception", e)
+//                        // Don't rethrow - we want to ensure clean mutex release
+//                    }
+//                }
+//                log.info("releasing check() mutex")
+//            } catch (e: Exception) {
+//                log.error("check() failed", e)
+//            }
+//        }
+//    }
+
     private fun updateBlockchainState() {
         blockchainStateDataProvider.updateBlockchainState(
             blockChain!!, impediments, percentageSync(),
@@ -1510,8 +2137,8 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
         )
     }
 
-    override fun getConnectedPeers(): List<Peer>? {
-        return if (peerGroup != null) peerGroup!!.connectedPeers else null
+    override fun getConnectedPeers(): List<Peer> {
+        return if (peerGroup != null) peerGroup!!.connectedPeers else emptyList()
     }
 
     override fun getRecentBlocks(maxBlocks: Int): List<StoredBlock> {
@@ -1551,26 +2178,30 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
             //Handle Ongoing notification state
             val syncing =
                 blockchainState.bestChainDate!!.time < Utils.currentTimeMillis() - DateUtils.HOUR_IN_MILLIS //1 hour
-            if (!syncing && blockchainState.bestChainHeight == config.bestChainHeightEver && mixingStatus != MixingStatus.MIXING && mixingStatus != MixingStatus.FINISHING) {
-                //Remove ongoing notification if blockchain sync finished
-                stopForeground(true)
-                foregroundService = ForegroundService.NONE
-                nm!!.cancel(Constants.NOTIFICATION_ID_BLOCKCHAIN_SYNC)
-            } else if (blockchainState.replaying || syncing) {
-                //Shows ongoing notification when synchronizing the blockchain
-                val notification = createNetworkSyncNotification(blockchainState)
-                nm!!.notify(Constants.NOTIFICATION_ID_BLOCKCHAIN_SYNC, notification)
-            } else if (mixingStatus == MixingStatus.MIXING || mixingStatus == MixingStatus.PAUSED || mixingStatus == MixingStatus.FINISHING) {
-                log.info("foreground service: {}", foregroundService)
-                if (foregroundService == ForegroundService.NONE) {
-                    log.info("foreground service not active, create notification")
-                    startForegroundAndCatch(createCoinJoinNotification())
-                    foregroundService = ForegroundService.COINJOIN_MIXING
-                } else {
-                    log.info("foreground service active, update notification")
-                    val notification = createCoinJoinNotification()
+            try {
+                if (!syncing && blockchainState.bestChainHeight == config.bestChainHeightEver && mixingStatus != MixingStatus.MIXING && mixingStatus != MixingStatus.FINISHING) {
+                    //Remove ongoing notification if blockchain sync finished
+                    stopForeground(true)
+                    foregroundService = ForegroundService.NONE
+                    nm!!.cancel(Constants.NOTIFICATION_ID_BLOCKCHAIN_SYNC)
+                } else if (blockchainState.replaying || syncing) {
+                    //Shows ongoing notification when synchronizing the blockchain
+                    val notification = createNetworkSyncNotification(blockchainState)
                     nm!!.notify(Constants.NOTIFICATION_ID_BLOCKCHAIN_SYNC, notification)
+                } else if (mixingStatus == MixingStatus.MIXING || mixingStatus == MixingStatus.PAUSED || mixingStatus == MixingStatus.FINISHING) {
+                    log.info("foreground service: {}", foregroundService)
+                    if (foregroundService == ForegroundService.NONE) {
+                        log.info("foreground service not active, create notification")
+                        startForegroundAndCatch(createCoinJoinNotification())
+                        foregroundService = ForegroundService.COINJOIN_MIXING
+                    } else {
+                        log.info("foreground service active, update notification")
+                        val notification = createCoinJoinNotification()
+                        nm!!.notify(Constants.NOTIFICATION_ID_BLOCKCHAIN_SYNC, notification)
+                    }
                 }
+            } catch (e: RuntimeException) {
+                log.warn("notification manager call failed, system may be shutting down", e)
             }
         }
         this.blockchainState = blockchainState
@@ -1582,19 +2213,26 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
     }
 
     private var handleContactPaymentsJob: Job? = null
+    private val pendingContactPaymentTxs = mutableListOf<Transaction>()
 
     private fun handleContactPayments(tx: Transaction) {
         if (blockchainState?.replaying != true) {
+            synchronized(pendingContactPaymentTxs) {
+                pendingContactPaymentTxs.add(tx)
+            }
             handleContactPaymentsJob?.cancel()
             handleContactPaymentsJob = serviceScope.launch {
                 delay(TimeUnit.SECONDS.toMillis(1)) // debounce delay, 1 second
-                platformRepo.updateFrequentContacts(tx)
+                val txsToProcess = synchronized(pendingContactPaymentTxs) {
+                    pendingContactPaymentTxs.toList().also { pendingContactPaymentTxs.clear() }
+                }
+                txsToProcess.forEach { identityRepo.updateFrequentContacts(it) }
             }
         }
     }
 
     private fun updateAppWidget() {
-        val balance = application.getWalletBalance()
+        // val balance = application.getWalletBalance()
         WalletBalanceWidgetProvider.updateWidgets(this@BlockchainServiceImpl, balance)
     }
 
@@ -1631,23 +2269,22 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
         }
     }
 
-    // TODO: should we have a backup blockchain file?
-    //    private NewBestBlockListener newBestBlockListener = block -> {
-    //        try {
-    //            backupBlockStore.put(block);
-    //        } catch (BlockStoreException x) {
-    //            throw new RuntimeException(x);
-    //        }
-    //    };
+     //TODO: should we have a backup blockchain file?
+    private val newBestBlockListener: NewBestBlockListener = NewBestBlockListener {
+        currentBlock.value = it
+    }
+
     @Throws(BlockStoreException::class)
     private fun verifyBlockStore(store: BlockStore?): Boolean {
+        val watch = Stopwatch.createStarted()
         var cursor = store!!.chainHead
-        for (i in 0..9) {
+        for (i in 0 until 100) {
             cursor = cursor!!.getPrev(store)
             if (cursor == null || cursor.header == Constants.NETWORK_PARAMETERS.genesisBlock) {
                 break
             }
         }
+        log.info("verify blockstore: {}, {} loaded", watch, cursor?.let { store.chainHead.height - it.height })
         return true
     }
 
@@ -1657,7 +2294,9 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
     ): Boolean {
         return try {
             val future = scheduledExecutorService.schedule<Boolean>(
-                { verifyBlockStore(store) }, 100, TimeUnit.MILLISECONDS
+                { verifyBlockStore(store) },
+                100,
+                TimeUnit.MILLISECONDS
             )
             future[1, TimeUnit.SECONDS]
         } catch (e: Exception) {
@@ -1734,6 +2373,6 @@ class BlockchainServiceImpl : LifecycleService(), BlockchainService {
 //                throw new BlockStoreException("can't verify and recover");
 //            }
 //        }
-        log.info("blockstore files verified: {}, {}", verifiedBlockStore, verifiedHeaderStore)
+        log.info("blockstore files verified: {}, {}", verifiedHeaderStore, verifiedBlockStore)
     }
 }
