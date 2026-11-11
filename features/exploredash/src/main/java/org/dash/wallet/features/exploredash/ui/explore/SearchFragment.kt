@@ -64,6 +64,7 @@ import org.dash.wallet.common.ui.observeOnDestroy
 import org.dash.wallet.common.ui.setRoundedBackground
 import org.dash.wallet.common.ui.viewBinding
 import org.dash.wallet.common.util.*
+import org.dash.wallet.features.exploredash.ExploreSyncWorker
 import org.dash.wallet.features.exploredash.R
 import org.dash.wallet.features.exploredash.data.dashspend.GiftCardProviderType
 import org.dash.wallet.features.exploredash.data.explore.model.Atm
@@ -1071,6 +1072,9 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
                 onExploreLogOutClicked = {
                     lifecycleScope.launch {
                         dashSpendViewModel.logout(selectedProvider)
+                        // This service's merchants are no longer purchasable, so rebuild the
+                        // list without them rather than leaving dead rows behind.
+                        ExploreSyncWorker.runForAccountChange(requireContext().applicationContext)
                     }
                 }
             )

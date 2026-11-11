@@ -38,6 +38,7 @@ import org.dash.wallet.common.ui.enter_amount.NumericKeyboardView
 import org.dash.wallet.common.ui.viewBinding
 import org.dash.wallet.common.util.KeyboardUtil
 import org.dash.wallet.common.util.safeNavigate
+import org.dash.wallet.features.exploredash.ExploreSyncWorker
 import org.dash.wallet.features.exploredash.R
 import org.dash.wallet.features.exploredash.data.dashspend.GiftCardProviderType
 import org.dash.wallet.features.exploredash.databinding.FragmentDashSpendUserAuthBinding
@@ -250,6 +251,9 @@ class DashSpendUserAuthFragment : Fragment(R.layout.fragment_dash_spend_user_aut
                 if (success) {
                     viewModel.logEvent(AnalyticsConstants.DashSpend.SUCCESSFUL_LOGIN)
                     hideKeyboard()
+                    // The merchant list is built from the services the user is signed in to,
+                    // so this account's merchants only appear once a sync has run.
+                    ExploreSyncWorker.runForAccountChange(requireContext().applicationContext)
                     // Navigate based on the provider from nav args, not viewModel.selectedProvider:
                     // selectedProvider is non-persisted nav-graph ViewModel state that resets to null
                     // when the ViewModel is recreated (e.g. process death while the user leaves the app

@@ -29,9 +29,16 @@ import kotlinx.coroutines.withContext
 import org.dash.wallet.common.services.analytics.AnalyticsService
 import org.dash.wallet.common.services.analytics.FireplaceNetworkException
 import org.dash.wallet.features.exploredash.data.dashspend.GiftCardProvider
+import org.dash.wallet.features.exploredash.data.dashspend.GiftCardProviderType
 import org.dash.wallet.features.exploredash.data.explore.model.Merchant
+import org.dash.wallet.features.exploredash.repository.CTXMerchantCatalogSource
+import org.dash.wallet.features.exploredash.repository.CTXSpendRepository
+import org.dash.wallet.features.exploredash.repository.DashSpendRepositoryFactory
 import org.dash.wallet.features.exploredash.repository.ExploreDataSyncStatus
 import org.dash.wallet.features.exploredash.repository.ExploreRepository
+import org.dash.wallet.features.exploredash.repository.MerchantCatalogSync
+import org.dash.wallet.features.exploredash.repository.PiggyCardsMerchantCatalogSource
+import org.dash.wallet.features.exploredash.repository.PiggyCardsRepository
 import org.dash.wallet.features.exploredash.utils.ExploreConfig
 import org.dash.wallet.features.exploredash.utils.PiggyCardsConstants.SUPPORT_PIGGY_CARDS_TEST_MERCHANT
 import org.dash.wallet.features.exploredash.utils.PiggyCardsTestMerchants
@@ -49,7 +56,8 @@ class ExploreSyncWorker @AssistedInject constructor(
     private val analytics: AnalyticsService,
     private val exploreRepository: ExploreRepository,
     private val syncStatus: ExploreDataSyncStatus,
-    private val exploreConfig: ExploreConfig
+    private val exploreConfig: ExploreConfig,
+    private val repositoryFactory: DashSpendRepositoryFactory
 ) : CoroutineWorker(appContext, workerParams) {
     companion object {
         const val USE_TEST_DB_KEY = "use_test_database"
@@ -69,6 +77,27 @@ class ExploreSyncWorker @AssistedInject constructor(
 
             WorkManager.getInstance(context)
                 .enqueueUniqueWork("Sync Explore Data", ExistingWorkPolicy.KEEP, syncDataWorkRequest)
+        }
+
+        /**
+         * Rebuilds the merchant list after a gift card account is connected or disconnected.
+         *
+         * The merchant table is assembled from the services the user is signed in to, so
+         * signing in or out changes what the list should contain. Unlike [run] this replaces
+         * a sync already in flight: that one was started under the previous auth state and
+         * would write the list the user just changed.
+         */
+        fun runForAccountChange(@ApplicationContext context: Context) {
+            val syncDataWorkRequest = OneTimeWorkRequest.Builder(ExploreSyncWorker::class.java)
+                .setBackoffCriteria(
+                    BackoffPolicy.EXPONENTIAL,
+                    WorkRequest.DEFAULT_BACKOFF_DELAY_MILLIS,
+                    TimeUnit.MILLISECONDS
+                )
+                .build()
+
+            WorkManager.getInstance(context)
+                .enqueueUniqueWork("Sync Explore Data", ExistingWorkPolicy.REPLACE, syncDataWorkRequest)
         }
     }
 
@@ -135,6 +164,7 @@ class ExploreSyncWorker @AssistedInject constructor(
 
                     exploreConfig.saveExploreDatabasePrefs(databasePrefs)
 
+                    syncMerchantCatalog()
                     addPiggyCardsTestMerchantIfNeeded()
                     return@withContext Result.success()
                 }
@@ -150,6 +180,7 @@ class ExploreSyncWorker @AssistedInject constructor(
             log.info("sync explore db finished, took $timeInMillis ms")
 
             syncStatus.setSyncProgress(100.0)
+            syncMerchantCatalog()
             addPiggyCardsTestMerchantIfNeeded()
         } catch (ex: FireplaceNetworkException) {
             log.warn("sync explore no network", ex)
@@ -172,6 +203,44 @@ class ExploreSyncWorker @AssistedInject constructor(
         databasePrefs = exploreConfig.exploreDatabasePrefs.first()
         exploreConfig.saveExploreDatabasePrefs(databasePrefs.copy(failedSyncAttempts = 0))
         return@withContext Result.success()
+    }
+
+    /**
+     * Rebuilds the merchant table from the gift card services the user is signed in to.
+     *
+     * Upstream fills this table from the preloaded `explore.db`, which this build cannot
+     * download, so without this step the merchant list is empty no matter how the rest of the
+     * sync goes. Failures are swallowed: a merchant list that could not be refreshed is worth
+     * less than the rest of the sync, and the existing rows stay usable.
+     */
+    private suspend fun syncMerchantCatalog() {
+        try {
+            val database = ExploreDatabase.getAppDatabase(appContext, exploreConfig)
+            val sources = listOf(
+                CTXMerchantCatalogSource(
+                    repositoryFactory.create(GiftCardProviderType.CTX) as CTXSpendRepository
+                ),
+                PiggyCardsMerchantCatalogSource(
+                    repositoryFactory.create(GiftCardProviderType.PiggyCards) as PiggyCardsRepository
+                )
+            )
+
+            val result = MerchantCatalogSync(
+                merchantDao = database.merchantDao(),
+                giftCardProviderDao = database.giftCardProviderDao(),
+                sources = sources,
+                // The test merchants are written by addPiggyCardsTestMerchantIfNeeded() and
+                // carry the same source as real PiggyCards rows, so the sync has to be told
+                // to leave them alone.
+                protectedMerchantIds = PiggyCardsTestMerchants.ALL.map { it.merchantId }.toSet()
+            ).sync()
+
+            if (result.failedSources.isNotEmpty()) {
+                log.warn("merchant catalogue sync could not reach: {}", result.failedSources)
+            }
+        } catch (ex: Exception) {
+            log.error("merchant catalogue sync failed", ex)
+        }
     }
 
     private suspend fun addPiggyCardsTestMerchantIfNeeded() {

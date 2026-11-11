@@ -534,6 +534,26 @@ class PiggyCardsRepository @Inject constructor(
         TODO("PiggyCards requires an orderId, not a txId")
     }
 
+    /**
+     * Every brand PiggyCards currently lists for [DEFAULT_COUNTRY].
+     *
+     * A brand carries only an id and a name, so anything else the merchant list needs
+     * (logo, discount, denominations) has to come from [getGiftCardsForBrand].
+     */
+    suspend fun getAllBrands(): List<Brand> = api.getBrands(DEFAULT_COUNTRY)
+
+    /**
+     * The purchasable gift cards for one brand, with the globally disabled ones removed.
+     */
+    suspend fun getGiftCardsForBrand(brandId: String): List<Giftcard> {
+        val response = api.getGiftCards(DEFAULT_COUNTRY, brandId)
+        val disabled = brandId.toIntOrNull()?.let { disabledGiftCards[it] }.orEmpty()
+
+        return response?.data.orEmpty().filter { giftCard ->
+            disabled.none { name -> giftCard.name.contains(name) }
+        }
+    }
+
     suspend fun getAccountEmail(): String? {
         return config.getSecuredData(PiggyCardsConfig.PREFS_KEY_EMAIL)
     }

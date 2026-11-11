@@ -24,4 +24,10 @@ interface GiftCardProviderDao {
 
     @Query("DELETE FROM gift_card_providers WHERE merchantId IN (:merchantIds)")
     suspend fun deleteByMerchantIds(merchantIds: List<String>): Int
+
+    @Query("DELETE FROM gift_card_providers WHERE provider = :provider")
+    suspend fun deleteByProvider(provider: String): Int
+
+    @Query("DELETE FROM gift_card_providers WHERE provider = :provider AND merchantId NOT IN (:keepMerchantIds)")
+    suspend fun deleteByProviderExcept(provider: String, keepMerchantIds: List<String>): Int
 }
