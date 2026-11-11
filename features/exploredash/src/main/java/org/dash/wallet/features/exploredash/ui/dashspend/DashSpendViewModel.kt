@@ -737,6 +737,21 @@ class DashSpendViewModel @Inject constructor(
             }.launchIn(viewModelScope)
     }
 
+    /**
+     * Whether any gift card service is connected.
+     *
+     * The merchant list is assembled from the connected services, so with none of them the
+     * list is empty for a reason the user can act on, rather than because nothing matched.
+     */
+    suspend fun hasAnyAccount(): Boolean = providers.values.any {
+        try {
+            it.isUserSignedIn()
+        } catch (ex: Exception) {
+            log.warn("could not check a gift card session: {}", ex.message)
+            false
+        }
+    }
+
     suspend fun isUserSignedInService(provider: GiftCardProviderType): Boolean {
         return providers[provider]?.isUserSignedIn() == true
     }

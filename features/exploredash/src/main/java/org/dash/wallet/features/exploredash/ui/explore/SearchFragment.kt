@@ -79,6 +79,7 @@ import org.dash.wallet.features.exploredash.ui.adapters.MerchantsLocationsAdapte
 import org.dash.wallet.features.exploredash.ui.adapters.SearchHeaderAdapter
 import org.dash.wallet.features.exploredash.ui.dashspend.DashSpendUserAuthFragment
 import org.dash.wallet.features.exploredash.ui.dashspend.DashSpendViewModel
+import org.dash.wallet.features.exploredash.ui.dashspend.dialogs.DashSpendAccountsDialog
 import org.dash.wallet.features.exploredash.ui.dashspend.dialogs.DashSpendLoginInfoDialog
 import org.dash.wallet.features.exploredash.ui.dashspend.dialogs.DashSpendTermsDialog
 import org.dash.wallet.features.exploredash.ui.explore.dialogs.ExploreDashInfoDialog
@@ -406,8 +407,16 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
             openFilters()
         }
 
+        // Only the merchant list is built from the gift card services, so the ATM list has no
+        // use for an accounts button.
+        binding.accountsButton.isVisible = isMerchantTopic
+        binding.accountsButton.setOnClickListener { showAccountsDialog() }
+
+        binding.connectAccountBtn.setOnClickListener { showAccountsDialog() }
+
         viewModel.filterMode.observe(viewLifecycleOwner) { mode ->
             binding.noResultsPanel.isVisible = false
+            binding.noAccountsPanel.isVisible = false
             searchHeaderAdapter.title = getSearchTitle()
             searchHeaderAdapter.subtitle = getSearchSubtitle()
             searchHeaderAdapter.setFilterMode(mode)
@@ -439,6 +448,39 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
                 }
             }
         }
+    }
+
+    /**
+     * Chooses which empty state the merchant list shows.
+     *
+     * An empty merchant list has two very different causes in this build. Normally it means
+     * the filters matched nothing, and "reset filters" is the fix. But the list is assembled
+     * from the gift card services the user has connected, so with none connected it is empty
+     * no matter what the filters say, and offering to reset them would send the user in a
+     * circle.
+     */
+    private fun updateEmptyState(isEmpty: Boolean) {
+        if (!isEmpty || !isMerchantTopic) {
+            binding.noResultsPanel.isVisible = isEmpty
+            binding.noAccountsPanel.isVisible = false
+            return
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val hasAccount = dashSpendViewModel.hasAnyAccount()
+            binding.noAccountsPanel.isVisible = !hasAccount
+            binding.noResultsPanel.isVisible = hasAccount
+        }
+    }
+
+    private fun showAccountsDialog() {
+        DashSpendAccountsDialog.newInstance()
+            .setOnConnect { provider -> showLoginDialog(provider) }
+            .setOnDisconnected {
+                // Rebuild the list without the service that just went away.
+                ExploreSyncWorker.runForAccountChange(requireContext().applicationContext)
+            }
+            .show(requireActivity())
     }
 
     private fun showLoginDialog(provider: GiftCardProviderType) {
@@ -486,6 +528,7 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     private fun setupSearchInput(bottomSheet: BottomSheetBehavior<ConstraintLayout>) {
         searchHeaderAdapter.setOnSearchQueryChanged {
             binding.noResultsPanel.isVisible = false
+            binding.noAccountsPanel.isVisible = false
             viewModel.submitSearchQuery(it)
         }
 
@@ -530,7 +573,7 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
 
         viewModel.pagingSearchResultsCount.observe(viewLifecycleOwner) {
             searchHeaderAdapter.subtitle = getSearchSubtitle()
-            binding.noResultsPanel.isVisible = it <= 0
+            updateEmptyState(isEmpty = it <= 0)
         }
 
         viewModel.searchLocationName.observe(viewLifecycleOwner) { searchHeaderAdapter.title = getSearchTitle() }

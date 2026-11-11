@@ -49,6 +49,19 @@
                     android:layout_gravity="center" />
                     
                 <ImageButton
+                    android:id="@+id/accounts_button"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="end"
+                    android:layout_marginEnd="56dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:src="@drawable/ic_gift_card"
+                    android:contentDescription="@string/dash_spend_accounts_title"
+                    android:visibility="gone"
+                    app:tint="@color/dash_blue"
+                    tools:visibility="visible" />
+
+                <ImageButton
                     android:id="@+id/info_button"
                     android:layout_width="48dp"
                     android:layout_height="48dp"
@@ -162,6 +175,47 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent" />
+
+            <LinearLayout
+                android:id="@+id/no_accounts_panel"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="120dp"
+                android:layout_marginHorizontal="24dp"
+                android:gravity="center_horizontal"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                tools:visibility="gone">
+
+                <TextView
+                    style="@style/Subtitle1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textAlignment="gravity"
+                    android:text="@string/dash_spend_no_accounts_title" />
+
+                <TextView
+                    style="@style/Body2.Secondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:textAlignment="gravity"
+                    android:text="@string/dash_spend_no_accounts_message" />
+
+                <Button
+                    android:id="@+id/connect_account_btn"
+                    style="@style/Button.Primary.Blue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/dash_spend_accounts_manage" />
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/no_results_panel"

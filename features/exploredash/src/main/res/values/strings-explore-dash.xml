@@ -38,6 +38,21 @@
     <string name="explore_atms">ATMs</string>
     <string name="explore_all_states">All states</string>
     <string name="explore_no_results">No Results Found</string>
+
+    <!-- Gift card accounts: this build builds the merchant list from the services the
+         user has connected, so it needs to say so and offer a way to connect them. -->
+    <string name="dash_spend_accounts_title">Gift card accounts</string>
+    <string name="dash_spend_accounts_subtitle">Merchants come from the services you connect. Connect both to see every merchant and compare discounts.</string>
+    <string name="dash_spend_account_connected">Connected as %1$s</string>
+    <string name="dash_spend_account_connected_no_email">Connected</string>
+    <string name="dash_spend_account_not_connected">Not connected</string>
+    <string name="dash_spend_account_connect">Connect</string>
+    <string name="dash_spend_account_disconnect">Disconnect</string>
+    <string name="dash_spend_accounts_manage">Manage accounts</string>
+    <string name="dash_spend_no_accounts_title">No merchants yet</string>
+    <string name="dash_spend_no_accounts_message">Connect a gift card account to see the merchants you can spend Dash with.</string>
+    <string name="dash_spend_disconnect_title">Disconnect %1$s?</string>
+    <string name="dash_spend_disconnect_message">Its merchants will be removed from the list. Gift cards you have already bought are not affected.</string>
     <string name="explore_all_merchants">All Merchants</string>
     <string name="explore_in_radius">%1$s in %2$s</string>
     <string name="explore_no_merchants">No merchants</string>
