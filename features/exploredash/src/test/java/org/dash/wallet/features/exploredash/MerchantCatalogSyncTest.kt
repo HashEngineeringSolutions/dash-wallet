@@ -24,6 +24,7 @@ import org.dash.wallet.features.exploredash.data.dashspend.GiftCardProviderType
 import org.dash.wallet.features.exploredash.data.dashspend.MerchantCatalogEntry
 import org.dash.wallet.features.exploredash.data.explore.MerchantDao
 import org.dash.wallet.features.exploredash.data.explore.model.Merchant
+import org.dash.wallet.features.exploredash.repository.CatalogAnswer
 import org.dash.wallet.features.exploredash.repository.MerchantCatalogSource
 import org.dash.wallet.features.exploredash.repository.MerchantCatalogSync
 import org.junit.Assert.assertEquals
@@ -79,6 +80,12 @@ class MerchantCatalogSyncTest {
             val provider = invocation.arguments[0] as String
             store.removeProviders { it.provider == provider }
         }
+        onBlocking { deleteByProviderAndMerchantIds(any(), any()) } doAnswer { invocation ->
+            val provider = invocation.arguments[0] as String
+            @Suppress("UNCHECKED_CAST")
+            val ids = invocation.arguments[1] as List<String>
+            store.removeProviders { it.provider == provider && it.merchantId in ids }
+        }
         onBlocking { deleteByProviderExcept(any(), any()) } doAnswer { invocation ->
             val provider = invocation.arguments[0] as String
             @Suppress("UNCHECKED_CAST")
@@ -96,11 +103,17 @@ class MerchantCatalogSyncTest {
         provider: GiftCardProviderType,
         available: Boolean = true,
         entries: List<MerchantCatalogEntry> = emptyList(),
-        failure: Exception? = null
+        failure: Exception? = null,
+        /** Mirrors a service that answered for some of its brands but not all of them. */
+        missing: Int = 0
     ) = object : MerchantCatalogSource {
         override val provider = provider
         override suspend fun isAvailable() = available
-        override suspend fun fetch(): List<MerchantCatalogEntry> = failure?.let { throw it } ?: entries
+        override suspend fun fetch(): CatalogAnswer = when {
+            failure != null -> throw failure
+            missing > 0 -> CatalogAnswer.Partial(entries, missing)
+            else -> CatalogAnswer.Complete(entries)
+        }
     }
 
     private fun entry(
@@ -176,14 +189,15 @@ class MerchantCatalogSyncTest {
             )
         ).sync()
 
-        // CTX signs out; PiggyCards still has a session and still sells the brand.
+        // CTX is disconnected; PiggyCards still has a session and still sells the brand.
         MerchantCatalogSync(
             merchantDao(store),
             providerDao(store),
             listOf(
                 source(GiftCardProviderType.CTX, available = false),
                 source(GiftCardProviderType.PiggyCards, entries = listOf(entry("Amazon", "77")))
-            )
+            ),
+            disconnected = setOf(GiftCardProviderType.CTX)
         ).sync()
 
         assertEquals("the merchant should survive, it is still purchasable", 1, store.merchants.size)
@@ -205,7 +219,8 @@ class MerchantCatalogSyncTest {
         MerchantCatalogSync(
             merchantDao(store),
             providerDao(store),
-            listOf(source(GiftCardProviderType.CTX, available = false))
+            listOf(source(GiftCardProviderType.CTX, available = false)),
+            disconnected = setOf(GiftCardProviderType.CTX)
         ).sync()
 
         assertTrue("nothing can be bought, so nothing should be listed", store.merchants.isEmpty())
@@ -254,11 +269,120 @@ class MerchantCatalogSyncTest {
             merchantDao(store),
             providerDao(store),
             listOf(source(GiftCardProviderType.PiggyCards, available = false)),
-            protectedMerchantIds = setOf(testMerchantId)
+            protectedMerchantIds = setOf(testMerchantId),
+            disconnected = setOf(GiftCardProviderType.PiggyCards)
         ).sync()
 
         assertTrue("the test merchant must survive a PiggyCards sign-out", store.merchants.containsKey(testMerchantId))
         assertEquals(1, store.providers.size)
+    }
+
+    @Test
+    fun `a service that cannot be checked keeps its merchants`() = runTest {
+        val store = FakeStore()
+
+        MerchantCatalogSync(
+            merchantDao(store),
+            providerDao(store),
+            listOf(source(GiftCardProviderType.CTX, entries = listOf(entry("Amazon", "ctx-1"))))
+        ).sync()
+
+        // No session, and the user disconnected nothing: an expired token that could not be
+        // renewed offline, or a secure read that failed, both land here.
+        MerchantCatalogSync(
+            merchantDao(store),
+            providerDao(store),
+            listOf(source(GiftCardProviderType.CTX, available = false))
+        ).sync()
+
+        assertEquals("an unanswerable session check must not empty the list", 1, store.merchants.size)
+        assertEquals(1, store.providers.size)
+    }
+
+    @Test
+    fun `an incomplete catalogue does not remove the brands missing from it`() = runTest {
+        val store = FakeStore()
+
+        MerchantCatalogSync(
+            merchantDao(store),
+            providerDao(store),
+            listOf(
+                source(
+                    GiftCardProviderType.PiggyCards,
+                    entries = listOf(entry("Amazon", "77"), entry("Target", "78"))
+                )
+            )
+        ).sync()
+        assertEquals(2, store.merchants.size)
+
+        // Target's detail request failed this time, so it is absent from the answer. That is a
+        // gap in the answer, not evidence PiggyCards stopped selling it.
+        MerchantCatalogSync(
+            merchantDao(store),
+            providerDao(store),
+            listOf(
+                source(
+                    GiftCardProviderType.PiggyCards,
+                    entries = listOf(entry("Amazon", "77")),
+                    missing = 1
+                )
+            )
+        ).sync()
+
+        assertEquals("a brand missing from an incomplete answer must survive", 2, store.merchants.size)
+        assertEquals(2, store.providers.size)
+    }
+
+    @Test
+    fun `a merchant kept alive by a retained provider stays active`() = runTest {
+        val store = FakeStore()
+
+        MerchantCatalogSync(
+            merchantDao(store),
+            providerDao(store),
+            listOf(
+                source(GiftCardProviderType.CTX, entries = listOf(entry("Amazon", "ctx-1"))),
+                source(GiftCardProviderType.PiggyCards, entries = listOf(entry("Amazon", "77")))
+            )
+        ).sync()
+
+        // CTX has the brand but cannot sell it; PiggyCards fails, so its active row is kept.
+        MerchantCatalogSync(
+            merchantDao(store),
+            providerDao(store),
+            listOf(
+                source(
+                    GiftCardProviderType.CTX,
+                    entries = listOf(entry("Amazon", "ctx-1", active = false))
+                ),
+                source(GiftCardProviderType.PiggyCards, failure = RuntimeException("502 Bad Gateway"))
+            )
+        ).sync()
+
+        assertEquals(
+            "PiggyCards can still sell it, so the merchant must not be written inactive",
+            true,
+            store.merchants.values.single().active
+        )
+    }
+
+    @Test
+    fun `the write pass runs inside one transaction`() = runTest {
+        val store = FakeStore()
+        var wrapped = false
+
+        MerchantCatalogSync(
+            merchantDao(store),
+            providerDao(store),
+            listOf(source(GiftCardProviderType.CTX, entries = listOf(entry("Amazon", "ctx-1")))),
+            inTransaction = { block ->
+                wrapped = true
+                block()
+            }
+        ).sync()
+
+        assertTrue("the rewrite must be atomic, or a kill mid-way strands merchants", wrapped)
+        assertEquals(1, store.merchants.size)
     }
 
     @Test

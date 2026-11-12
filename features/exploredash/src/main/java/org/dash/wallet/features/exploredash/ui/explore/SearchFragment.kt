@@ -37,6 +37,7 @@ import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.net.toUri
+import androidx.core.os.BundleCompat
 import androidx.core.view.*
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -103,6 +104,9 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     private var bottomSheetWasExpanded: Boolean = false
     private var isKeyboardShowing: Boolean = false
     private var hasLocationBeenRequested: Boolean = false
+
+    /** The empty-state account check in flight, cancelled when the result set changes. */
+    private var emptyStateJob: Job? = null
     private var previousScreenState: ScreenState = ScreenState.SearchResults
     private var onBackPressedCallback: OnBackPressedCallback? = null
     private var transitionAnimator: AnimatorSet? = null
@@ -411,6 +415,7 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
         // use for an accounts button.
         binding.accountsButton.isVisible = isMerchantTopic
         binding.accountsButton.setOnClickListener { showAccountsDialog() }
+        observeAccountsDialog()
 
         binding.connectAccountBtn.setOnClickListener { showAccountsDialog() }
 
@@ -460,13 +465,18 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
      * circle.
      */
     private fun updateEmptyState(isEmpty: Boolean) {
+        // Whichever check was running described an older result set. Checking an account can
+        // suspend for a token renewal, and by the time it answers the query or the filters may
+        // have produced results: applying it then would paint an empty-state panel over them.
+        emptyStateJob?.cancel()
+
         if (!isEmpty || !isMerchantTopic) {
             binding.noResultsPanel.isVisible = isEmpty
             binding.noAccountsPanel.isVisible = false
             return
         }
 
-        viewLifecycleOwner.lifecycleScope.launch {
+        emptyStateJob = viewLifecycleOwner.lifecycleScope.launch {
             val hasAccount = dashSpendViewModel.hasAnyAccount()
             binding.noAccountsPanel.isVisible = !hasAccount
             binding.noResultsPanel.isVisible = hasAccount
@@ -474,13 +484,27 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     }
 
     private fun showAccountsDialog() {
-        DashSpendAccountsDialog.newInstance()
-            .setOnConnect { provider -> showLoginDialog(provider) }
-            .setOnDisconnected {
-                // Rebuild the list without the service that just went away.
-                ExploreSyncWorker.runForAccountChange(requireContext().applicationContext)
-            }
-            .show(requireActivity())
+        DashSpendAccountsDialog.newInstance().show(requireActivity())
+    }
+
+    /**
+     * Listens for the accounts sheet asking to open a service's login.
+     *
+     * Registered here rather than where the sheet is shown, so that it is back in place after
+     * the fragment is recreated with the sheet still open. Disconnecting needs no counterpart:
+     * the sheet's view model rebuilds the list itself.
+     */
+    private fun observeAccountsDialog() {
+        requireActivity().supportFragmentManager.setFragmentResultListener(
+            DashSpendAccountsDialog.REQUEST_CONNECT,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            BundleCompat.getParcelable(
+                bundle,
+                DashSpendAccountsDialog.RESULT_PROVIDER,
+                GiftCardProviderType::class.java
+            )?.let { provider -> showLoginDialog(provider) }
+        }
     }
 
     private fun showLoginDialog(provider: GiftCardProviderType) {
@@ -1116,8 +1140,13 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
                     lifecycleScope.launch {
                         dashSpendViewModel.logout(selectedProvider)
                         // This service's merchants are no longer purchasable, so rebuild the
-                        // list without them rather than leaving dead rows behind.
-                        ExploreSyncWorker.runForAccountChange(requireContext().applicationContext)
+                        // list without them rather than leaving dead rows behind. Naming the
+                        // service is what lets the sync remove its rows: see
+                        // ExploreSyncWorker.runForAccountChange.
+                        ExploreSyncWorker.runForAccountChange(
+                            requireContext().applicationContext,
+                            disconnected = selectedProvider
+                        )
                     }
                 }
             )

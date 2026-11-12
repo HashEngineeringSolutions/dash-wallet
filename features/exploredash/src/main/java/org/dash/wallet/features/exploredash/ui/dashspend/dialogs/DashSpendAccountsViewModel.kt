@@ -17,16 +17,20 @@
 
 package org.dash.wallet.features.exploredash.ui.dashspend.dialogs
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.dash.wallet.features.exploredash.ExploreSyncWorker
 import org.dash.wallet.features.exploredash.data.dashspend.GiftCardProviderType
 import org.dash.wallet.features.exploredash.repository.DashSpendRepository
 import org.dash.wallet.features.exploredash.repository.DashSpendRepositoryFactory
@@ -52,6 +56,7 @@ data class DashSpendAccountsUIState(
  */
 @HiltViewModel
 class DashSpendAccountsViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context,
     repositoryFactory: DashSpendRepositoryFactory
 ) : ViewModel() {
     companion object {
@@ -70,8 +75,20 @@ class DashSpendAccountsViewModel @Inject constructor(
         refresh()
     }
 
+    /**
+     * The refresh in flight, if any.
+     *
+     * Only one runs at a time. Checking a PiggyCards session renews an expired token, so an
+     * overlapping check means two logins racing, and a login that lands after [disconnect] has
+     * cleared the credentials writes its access token straight back over them: the account the
+     * user just disconnected is signed in again, possibly after the sync that removed its
+     * merchants has already run.
+     */
+    private var refreshJob: Job? = null
+
     fun refresh() {
-        viewModelScope.launch {
+        refreshJob?.cancel()
+        refreshJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
 
             // PiggyCards renews an expired token as part of answering this, so it can reach the
@@ -100,10 +117,25 @@ class DashSpendAccountsViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Signs out of [provider] and rebuilds the merchant list without it.
+     *
+     * The rebuild belongs here rather than in a listener the caller installs: the sheet's
+     * listeners are lost when the fragment is recreated, and a disconnect whose rebuild was
+     * dropped leaves merchants in the list that can no longer be bought. This is also the only
+     * place that tells the sync a removal was the user's doing — see
+     * [ExploreSyncWorker.runForAccountChange].
+     */
     suspend fun disconnect(provider: GiftCardProviderType) {
+        // Before the logout, not after: a session check already in flight can be renewing the
+        // token this is about to clear, and would write it back once it answered.
+        refreshJob?.cancel()
+
         withContext(Dispatchers.IO) {
             repositories.getValue(provider).logout()
         }
+
+        ExploreSyncWorker.runForAccountChange(appContext, disconnected = provider)
         refresh()
     }
 }

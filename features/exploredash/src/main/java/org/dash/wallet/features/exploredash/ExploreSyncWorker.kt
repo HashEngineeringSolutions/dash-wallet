@@ -19,6 +19,7 @@ package org.dash.wallet.features.exploredash
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker
+import androidx.room.withTransaction
 import androidx.work.*
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -61,6 +62,20 @@ class ExploreSyncWorker @AssistedInject constructor(
 ) : CoroutineWorker(appContext, workerParams) {
     companion object {
         const val USE_TEST_DB_KEY = "use_test_database"
+        const val DISCONNECTED_PROVIDER_KEY = "disconnected_provider"
+
+        /**
+         * How many times to re-run a sync whose merchant catalogue could not be loaded.
+         *
+         * The first catalogue request after a login is the only chance to fill the list, so a
+         * transient failure has to be retried or the user is left with an empty Explore screen
+         * and nothing but signing out and back in to fix it. The cap stops a service that is
+         * down for the day from retrying on battery forever.
+         */
+        private const val MAX_CATALOG_ATTEMPTS = 5
+
+        private val ALL_PROVIDERS = listOf(GiftCardProviderType.CTX, GiftCardProviderType.PiggyCards)
+
         private val log = LoggerFactory.getLogger(ExploreSyncWorker::class.java)
 
         fun run(@ApplicationContext context: Context, isMainNet: Boolean) {
@@ -86,13 +101,27 @@ class ExploreSyncWorker @AssistedInject constructor(
          * signing in or out changes what the list should contain. Unlike [run] this replaces
          * a sync already in flight: that one was started under the previous auth state and
          * would write the list the user just changed.
+         *
+         * [disconnected] names the service the user just signed out of, and is the only thing
+         * that lets the sync delete that service's merchants. Nothing else can stand in for
+         * it: a session check answers false for an unreachable network and an unreadable
+         * keystore as readily as for a sign-out, and acting on that answer costs the user
+         * their whole list. Pass null when connecting or refreshing.
          */
-        fun runForAccountChange(@ApplicationContext context: Context) {
+        fun runForAccountChange(
+            @ApplicationContext context: Context,
+            disconnected: GiftCardProviderType? = null
+        ) {
             val syncDataWorkRequest = OneTimeWorkRequest.Builder(ExploreSyncWorker::class.java)
                 .setBackoffCriteria(
                     BackoffPolicy.EXPONENTIAL,
                     WorkRequest.DEFAULT_BACKOFF_DELAY_MILLIS,
                     TimeUnit.MILLISECONDS
+                )
+                .setInputData(
+                    Data.Builder()
+                        .putString(DISCONNECTED_PROVIDER_KEY, disconnected?.name)
+                        .build()
                 )
                 .build()
 
@@ -106,6 +135,7 @@ class ExploreSyncWorker @AssistedInject constructor(
 
         var remoteDataTimestamp = 0L
         var preloadedDbTimestamp = 0L
+        var catalogSynced = true
         var databasePrefs = exploreConfig.exploreDatabasePrefs.first()
 
         try {
@@ -164,9 +194,9 @@ class ExploreSyncWorker @AssistedInject constructor(
 
                     exploreConfig.saveExploreDatabasePrefs(databasePrefs)
 
-                    syncMerchantCatalog()
+                    val synced = syncMerchantCatalog()
                     addPiggyCardsTestMerchantIfNeeded()
-                    return@withContext Result.success()
+                    return@withContext catalogResult(synced)
                 }
                 syncStatus.setSyncProgress(10.0)
 
@@ -180,7 +210,7 @@ class ExploreSyncWorker @AssistedInject constructor(
             log.info("sync explore db finished, took $timeInMillis ms")
 
             syncStatus.setSyncProgress(100.0)
-            syncMerchantCatalog()
+            catalogSynced = syncMerchantCatalog()
             addPiggyCardsTestMerchantIfNeeded()
         } catch (ex: FireplaceNetworkException) {
             log.warn("sync explore no network", ex)
@@ -202,7 +232,7 @@ class ExploreSyncWorker @AssistedInject constructor(
 
         databasePrefs = exploreConfig.exploreDatabasePrefs.first()
         exploreConfig.saveExploreDatabasePrefs(databasePrefs.copy(failedSyncAttempts = 0))
-        return@withContext Result.success()
+        return@withContext catalogResult(catalogSynced)
     }
 
     /**
@@ -213,8 +243,8 @@ class ExploreSyncWorker @AssistedInject constructor(
      * sync goes. Failures are swallowed: a merchant list that could not be refreshed is worth
      * less than the rest of the sync, and the existing rows stay usable.
      */
-    private suspend fun syncMerchantCatalog() {
-        try {
+    private suspend fun syncMerchantCatalog(): Boolean {
+        return try {
             val database = ExploreDatabase.getAppDatabase(appContext, exploreConfig)
             val sources = listOf(
                 CTXMerchantCatalogSource(
@@ -225,6 +255,12 @@ class ExploreSyncWorker @AssistedInject constructor(
                 )
             )
 
+            // Matched strictly, never through GiftCardProviderType.fromProviderName: that
+            // falls back to CTX for anything it does not recognise, and here an unrecognised
+            // name would authorise deleting a service the user never disconnected.
+            val disconnected = inputData.getString(DISCONNECTED_PROVIDER_KEY)
+                ?.let { name -> ALL_PROVIDERS.firstOrNull { it.name == name } }
+
             val result = MerchantCatalogSync(
                 merchantDao = database.merchantDao(),
                 giftCardProviderDao = database.giftCardProviderDao(),
@@ -232,14 +268,39 @@ class ExploreSyncWorker @AssistedInject constructor(
                 // The test merchants are written by addPiggyCardsTestMerchantIfNeeded() and
                 // carry the same source as real PiggyCards rows, so the sync has to be told
                 // to leave them alone.
-                protectedMerchantIds = PiggyCardsTestMerchants.ALL.map { it.merchantId }.toSet()
+                protectedMerchantIds = PiggyCardsTestMerchants.ALL.map { it.merchantId }.toSet(),
+                disconnected = setOfNotNull(disconnected),
+                inTransaction = { block -> database.withTransaction(block) }
             ).sync()
 
             if (result.failedSources.isNotEmpty()) {
                 log.warn("merchant catalogue sync could not reach: {}", result.failedSources)
             }
+
+            result.failedSources.isEmpty()
         } catch (ex: Exception) {
             log.error("merchant catalogue sync failed", ex)
+            false
+        }
+    }
+
+    /**
+     * Whether a catalogue that could not be loaded is worth another attempt.
+     *
+     * Returning success here would throw away the backoff the work request is configured with,
+     * and nothing else re-runs this: the sync fires on sign-in and on an account change, so a
+     * user whose first post-login catalogue request timed out would be left with an empty list
+     * until they signed out and back in.
+     */
+    private fun catalogResult(synced: Boolean): Result = when {
+        synced -> Result.success()
+        runAttemptCount < MAX_CATALOG_ATTEMPTS -> {
+            log.warn("merchant catalogue incomplete, retrying (attempt {})", runAttemptCount + 1)
+            Result.retry()
+        }
+        else -> {
+            log.warn("merchant catalogue still incomplete after {} attempts, giving up", runAttemptCount)
+            Result.success()
         }
     }
 

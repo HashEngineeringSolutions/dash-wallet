@@ -38,4 +38,15 @@ interface GiftCardProviderDao {
 
     @Query("DELETE FROM gift_card_providers WHERE provider = :provider AND merchantId NOT IN (:keepMerchantIds)")
     suspend fun deleteByProviderExcept(provider: String, keepMerchantIds: List<String>): Int
+
+    /**
+     * Clears one service's rows for the given merchants only.
+     *
+     * For a service whose catalogue came back incomplete: the rows it did report have to be
+     * replaced, while everything it could not answer for this run is left alone. Replacing
+     * means deleting first, because `id` is an autogenerate primary key, so an insert of a row
+     * built with `id = 0` adds a duplicate instead of overwriting whatever is already there.
+     */
+    @Query("DELETE FROM gift_card_providers WHERE provider = :provider AND merchantId IN (:merchantIds)")
+    suspend fun deleteByProviderAndMerchantIds(provider: String, merchantIds: List<String>): Int
 }

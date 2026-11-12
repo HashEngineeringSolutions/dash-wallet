@@ -21,7 +21,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import androidx.annotation.StyleRes
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
+import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -47,6 +49,17 @@ import org.dash.wallet.features.exploredash.databinding.ItemDashSpendAccountBind
 @AndroidEntryPoint
 class DashSpendAccountsDialog : OffsetDialogFragment(R.layout.dialog_dash_spend_accounts) {
     companion object {
+        /**
+         * Result key for "the user asked to connect [RESULT_PROVIDER]".
+         *
+         * A fragment result rather than a listener field: the login flow lives in another
+         * fragment, so this sheet can be recreated while it is open, and a listener set when
+         * the sheet was first shown does not survive that. The caller registers for this in
+         * its own onViewCreated, where re-creation puts it back.
+         */
+        const val REQUEST_CONNECT = "dash_spend_accounts_connect"
+        const val RESULT_PROVIDER = "provider"
+
         fun newInstance() = DashSpendAccountsDialog()
     }
 
@@ -55,14 +68,6 @@ class DashSpendAccountsDialog : OffsetDialogFragment(R.layout.dialog_dash_spend_
 
     private val binding by viewBinding(DialogDashSpendAccountsBinding::bind)
     private val viewModel by viewModels<DashSpendAccountsViewModel>()
-
-    /** Raised when the user asks to connect [GiftCardProviderType], after this sheet closes. */
-    private var onConnectListener: ((GiftCardProviderType) -> Unit)? = null
-    private var onDisconnectedListener: ((GiftCardProviderType) -> Unit)? = null
-
-    fun setOnConnect(listener: (GiftCardProviderType) -> Unit) = apply { onConnectListener = listener }
-
-    fun setOnDisconnected(listener: (GiftCardProviderType) -> Unit) = apply { onDisconnectedListener = listener }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -111,7 +116,7 @@ class DashSpendAccountsDialog : OffsetDialogFragment(R.layout.dialog_dash_spend_
                     // Close first: the login flow replaces this screen, and leaving the sheet
                     // behind it would put it back on top when the user returns.
                     dismiss()
-                    onConnectListener?.invoke(account.provider)
+                    setFragmentResult(REQUEST_CONNECT, bundleOf(RESULT_PROVIDER to account.provider))
                 }
             }
 
@@ -128,10 +133,9 @@ class DashSpendAccountsDialog : OffsetDialogFragment(R.layout.dialog_dash_spend_
             getString(R.string.dash_spend_account_disconnect)
         ).show(requireActivity()) { confirmed ->
             if (confirmed == true) {
-                lifecycleScope.launch {
-                    viewModel.disconnect(provider)
-                    onDisconnectedListener?.invoke(provider)
-                }
+                // The rebuild of the merchant list is the view model's job, not a listener's:
+                // see DashSpendAccountsViewModel.disconnect.
+                lifecycleScope.launch { viewModel.disconnect(provider) }
             }
         }
     }
