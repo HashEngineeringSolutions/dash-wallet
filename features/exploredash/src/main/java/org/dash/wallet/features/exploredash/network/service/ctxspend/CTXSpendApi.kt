@@ -17,12 +17,12 @@
 package org.dash.wallet.features.exploredash.network.service.ctxspend
 
 import com.google.gson.annotations.SerializedName
-import org.dash.wallet.features.exploredash.data.ctxspend.model.GetMerchantResponse
-import org.dash.wallet.features.exploredash.data.ctxspend.model.GiftCardResponse
-import org.dash.wallet.features.exploredash.data.ctxspend.model.LoginRequest
-import org.dash.wallet.features.exploredash.data.ctxspend.model.PurchaseGiftCardRequest
-import org.dash.wallet.features.exploredash.data.ctxspend.model.RefreshTokenResponse
-import org.dash.wallet.features.exploredash.data.ctxspend.model.VerifyEmailRequest
+import org.dash.wallet.features.exploredash.data.dashspend.ctx.model.GetMerchantResponse
+import org.dash.wallet.features.exploredash.data.dashspend.ctx.model.GiftCardResponse
+import org.dash.wallet.features.exploredash.data.dashspend.ctx.model.LoginRequest
+import org.dash.wallet.features.exploredash.data.dashspend.ctx.model.PurchaseGiftCardRequest
+import org.dash.wallet.features.exploredash.data.dashspend.ctx.model.RefreshTokenResponse
+import org.dash.wallet.features.exploredash.data.dashspend.ctx.model.VerifyEmailRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -74,10 +74,13 @@ interface CTXSpendApi {
     suspend fun verifyEmail(@Body verifyEmailRequest: VerifyEmailRequest): RefreshTokenResponse?
 
     @POST("gift-cards")
-    suspend fun purchaseGiftCard(@Body purchaseGiftCardRequest: PurchaseGiftCardRequest): GiftCardResponse?
+    suspend fun purchaseGiftCard(@Body purchaseGiftCardRequest: PurchaseGiftCardRequest): GiftCardResponse
 
     @GET("gift-cards")
-    suspend fun getGiftCard(@Query("txid") txid: String): GiftCardResponse?
+    suspend fun getGiftCardByTxId(@Query("txid") txid: String): GiftCardResponse?
+
+    @GET("gift-cards/{id}")
+    suspend fun getGiftCardByOrderId(@Path("id") id: String): GiftCardResponse?
 
     @GET("merchants/{id}")
     suspend fun getMerchant(@Path("id") id: String): GetMerchantResponse?

@@ -46,14 +46,15 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.NavigationUI.onNavDestinationSelected
 import androidx.navigation.ui.NavigationUI.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import de.schildbach.wallet.WalletBalanceWidgetProvider
 import de.schildbach.wallet.service.CoinJoinMode
+import de.schildbach.wallet.ui.LockScreenActivity
 import de.schildbach.wallet.ui.more.MoreFragment
 import de.schildbach.wallet_test.R
 import kotlinx.coroutines.Dispatchers
@@ -91,7 +92,7 @@ object MainActivityExt {
 
         viewModel.blockchainIdentity.observe(this) { identityData ->
 
-            if (identityData?.creationComplete == true) {
+            if (identityData?.hasUsername == true) {
                 navView.menu.getItem(CONTACTS_BUTTON_INDEX).isVisible = true
                 navView.menu.getItem(EXPLORE_BUTTON_INDEX).isVisible = true
             } else {
@@ -115,19 +116,55 @@ object MainActivityExt {
                 }
                 R.id.paymentsFragment -> {
                     viewModel.logEvent(AnalyticsConstants.Home.SEND_RECEIVE_BUTTON)
-                    return@setOnItemSelectedListener onNavDestinationSelected(item, navController)
+                    navController.navigate(
+                        R.id.paymentsFragment,
+                        null,
+                        NavOptions.Builder()
+                            .setLaunchSingleTop(true)
+                            .setPopUpTo(navController.graph.startDestinationId, false, true)
+                            .setRestoreState(true)
+                            .build()
+                    )
+                    return@setOnItemSelectedListener true
                 }
                 R.id.moreFragment -> {
                     viewModel.logEvent(AnalyticsConstants.Home.NAV_MORE)
-                    return@setOnItemSelectedListener onNavDestinationSelected(item, navController)
+                    navController.navigate(
+                        R.id.moreFragment,
+                        null,
+                        NavOptions.Builder()
+                            .setLaunchSingleTop(true)
+                            .setPopUpTo(navController.graph.startDestinationId, false, true)
+                            .setRestoreState(true)
+                            .build()
+                    )
+                    return@setOnItemSelectedListener true
                 }
                 R.id.contactsFragment -> {
                     viewModel.logEvent(AnalyticsConstants.Home.NAV_CONTACTS)
-                    return@setOnItemSelectedListener onNavDestinationSelected(item, navController)
+                    navController.navigate(
+                        R.id.contactsFragment,
+                        null,
+                        NavOptions.Builder()
+                            .setLaunchSingleTop(true)
+                            .setPopUpTo(navController.graph.startDestinationId, false, true)
+                            .setRestoreState(true)
+                            .build()
+                    )
+                    return@setOnItemSelectedListener true
                 }
                 R.id.exploreFragment -> {
                     viewModel.logEvent(AnalyticsConstants.Home.NAV_EXPLORE)
-                    return@setOnItemSelectedListener onNavDestinationSelected(item, navController)
+                    navController.navigate(
+                        R.id.exploreFragment,
+                        null,
+                        NavOptions.Builder()
+                            .setLaunchSingleTop(true)
+                            .setPopUpTo(navController.graph.startDestinationId, false, true)
+                            .setRestoreState(true)
+                            .build()
+                    )
+                    return@setOnItemSelectedListener true
                 }
                 else -> {
                     return@setOnItemSelectedListener false
@@ -256,7 +293,7 @@ object MainActivityExt {
                 val position = getString(if (diffSeconds > 0) R.string.timeskew_ahead else R.string.timeskew_behind)
                 getString(R.string.wallet_coinjoin_timeskew_dialog_msg, position, abs(diffSeconds))
             } else {
-                getString(R.string.wallet_timeskew_dialog_msg, diffSeconds / 1000)
+                getString(R.string.wallet_timeskew_dialog_msg, abs(diffSeconds) / 60)
             },
             getString(R.string.button_dismiss),
             if (hasSettings) getString(R.string.button_settings) else null
@@ -427,3 +464,11 @@ object MainActivityExt {
         }
     }
 }
+
+fun Fragment.isLockScreenActive(): Boolean = if (activity is LockScreenActivity) {
+    (activity as LockScreenActivity).lockScreenDisplayed
+} else {
+    false
+}
+
+

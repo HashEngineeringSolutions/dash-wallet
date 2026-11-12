@@ -1,5 +1,6 @@
 package de.schildbach.wallet.service.work
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.Data
@@ -8,9 +9,10 @@ import androidx.work.workDataOf
 import kotlinx.coroutines.delay
 import org.slf4j.LoggerFactory
 
-abstract class BaseWorker(context: Context, parameters: WorkerParameters)
-    : CoroutineWorker(context, parameters) {
-
+abstract class BaseWorker(
+    context: Context,
+    parameters: WorkerParameters
+): CoroutineWorker(context, parameters) {
     companion object {
         private val log = LoggerFactory.getLogger(BaseWorker::class.java)
 
@@ -19,12 +21,20 @@ abstract class BaseWorker(context: Context, parameters: WorkerParameters)
         const val KEY_EXCEPTION = "BaseWorker.EXCEPTION"
         const val KEY_EXCEPTION_ARGS = "BaseWorker.EXCEPTION_ARGS"
 
-        fun extractError(date: Data): String? {
-            return date.getString(KEY_ERROR_MESSAGE)
+        fun extractError(data: Data?): String? {
+            return data?.getString(KEY_ERROR_MESSAGE)
         }
 
-        fun extractProgress(date: Data): Int {
-            return date.getInt(KEY_PROGRESS, -1)
+        fun extractProgress(data: Data?): Int {
+            return data?.getInt(KEY_PROGRESS, -1) ?: -1
+        }
+
+        fun errorResult(message: String): Result {
+            return Result.failure(
+                workDataOf(
+                    KEY_ERROR_MESSAGE to message
+                )
+            )
         }
     }
 
@@ -32,6 +42,7 @@ abstract class BaseWorker(context: Context, parameters: WorkerParameters)
         setProgress(workDataOf(KEY_PROGRESS to progress))
     }
 
+    @SuppressLint("RestrictedApi")
     override suspend fun doWork(): Result {
         setProgress(0)
         val result = doWorkWithBaseProgress()

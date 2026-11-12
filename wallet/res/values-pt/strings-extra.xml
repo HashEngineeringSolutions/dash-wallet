@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <string name="onboarding_create_wallet">Criar uma Nova Carteira</string>
-    <string name="onboarding_recover_wallet">Restaurar a partir da frase de recuperação</string>
-    <string name="onboarding_restore_wallet">Restaurar carteira a partir de um arquivo</string>
+    <string name="onboarding_create_wallet">Criar nova carteira</string>
+    <string name="onboarding_recover_wallet">Restaurar carteira</string>
+    <string name="onboarding_restore_wallet">Restaurar carteira a partir de arquivo</string>
     <string name="onboarding_load_wallet_error">Não foi possível carregar a carteira!</string>
 
     <string name="set_pin_create_new_wallet">Criar uma Nova Carteira</string>
@@ -23,6 +23,7 @@
     <string name="dialog_confirm_confirm">Confirme</string>
     <string name="dialog_confirm_pay_to">Enviar para</string>
     <string name="dialog_confirm_secured_by">Protegido por</string>
+    <string name="dialog_confirm_connected_to_unsecured">Conectado (não seguro)</string>
     <string name="dialog_confirm_fee">Taxa de rede</string>
     <string name="dialog_confirm_total">Total</string>
     <string name="dialog_confirm_accept_contact_request">Aceitar solicitação de contato</string>
@@ -38,6 +39,8 @@
     <string name="shortcut_pay_to_contact">Enviar para contato</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_buy_sell">Comprar &amp; Vender</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_dash_dex">Dash DEX</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_receive">Receber</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
@@ -68,6 +71,11 @@
 
     <string name="pay_title">Enviar</string>
     <string name="history_title">Histórico</string>
+    <string name="wallet_transactions_building_cache">Determinando o histórico de transações…</string>
+    <string name="history_refresh_dialog_title">Atualizar lista de transações</string>
+    <string name="history_refresh_dialog_message">Isso limpará o cache de exibição das transações e o reconstruirá do zero. A lista ficará temporariamente indisponível durante o processo.</string>
+    <string name="history_refresh_dialog_confirm">Atualizar</string>
+    <string name="history_refresh_complete">Lista de transações atualizada</string>
     <string name="more_title">Mais</string>
     <string name="settings_title">Ajustes</string>
     <string name="security_title">Segurança</string>
@@ -86,6 +94,7 @@
     <string name="payments_pay_to_clipboard_sub_title">Nenhum endereço copiado</string>
 
     <string name="forgot_pin_title">Esqueceu o PIN?</string>
+    <string name="forgot_pin_setup_new_pin_title">Definir um novo PIN</string>
     <string name="forgot_pin_message">Você pode definir um novo PIN com a ajuda da sua frase de recuperação.</string>
     <string name="forgot_pin_instruction_1">Insira a Frase de Recuperação para recuperar a sua carteira.</string>
     <string name="forgot_pin_instruction_2">Definir um novo PIN</string>
@@ -264,7 +273,7 @@
     <string name="authenticate_switch_to_fingerprint">Usar Digital</string>
     <string name="authenticate_switch_to_pin">Usar PIN</string>
 
-    <string name="menu_invite_title">Convidar</string>
+    <string name="menu_invite_title">Convites</string>
     <string name="menu_invite_subtitle">Ajude seus amigos e familiares a entrarem no Dash</string>
     <string name="menu_buy_and_sell_title">Comprar &amp; Vender Dash</string>
     <string name="menu_buy_and_sell_subtitle">Conectar com exchange de terceiros</string>
@@ -276,7 +285,7 @@
     <string name="menu_settings_subtitle">Moeda padrão, atalhos, sobre...</string>
     <string name="menu_tools_title">Ferramentas</string>
     <string name="menu_tools_subtitle">Importe chave privada…</string>
-    <string name="menu_local_currency">Moeda Local</string>
+    <string name="menu_local_currency">Moeda local</string>
     <string name="menu_rescan_blockchain">Reexaminar blockchain</string>
     <string name="menu_contact_support_title">Contato com o Suporte</string>
     <string name="menu_contact_support_subtitle">Reportar um problema</string>
@@ -284,19 +293,27 @@
     <string name="menu_explore_subtitle">Encontrar comerciantes que aceitam DASH</string>
 
     <string name="tools_address_book">Livro de endereços</string>
-    <string name="tools_import_private_key">Importar Chave Privada</string>
+    <string name="tools_import_private_key">Importe chave privada</string>
+    <string name="import_private_key_description">Esta ação irá transferir todas as moedas da sua carteira de papel Dash para o aplicativo DashPay neste dispositivo.</string>
     <string name="tools_network_monitor">Monitor de rede</string>
-    <string name="tools_show_xpub">Chave Pública Estendida</string>
+    <string name="tools_show_xpub">Chave pública estendida (BIP44)</string>
 
     <string name="about_help_us_improve">Ajude-nos a melhorar a sua experiência</string>
     <string name="about_review_and_rate">Avalie o aplicativo</string>
     <string name="about_contact_support">Contato com o Suporte</string>
     <string name="about_fork_disclaimer">Este é um aplicativo de código aberto bifurcado da Bitcoin Wallet</string>
-    <string name="about_copyright">Copyright © 2025 Dash Core Group</string>
+    <string name="about_copyright">Copyright © %1$d Dash Core Group</string>
     <string name="about_license">GNU General Public License v3.0</string>
     <string name="about_version_name">Carteira DashPay %s</string>
     <string name="about_last_explore_device_sync">Última sincronização do dispositivo Explore</string>
     <string name="about_last_explore_server_update">Última atualização do servidor Explore</string>
+    <string name="about_app_version_label">Versão do aplicativo</string>
+    <string name="about_platform_label">Plataforma</string>
+    <string name="about_explore_section">Explorar Dash</string>
+    <string name="about_explore_update">Atualização</string>
+    <string name="about_last_device_sync">Última sincronização do dispositivo</string>
+    <string name="about_last_server_update">Última atualização do servidor</string>
+    <string name="about_value_not_available">Não disponível</string>
     <string name="about_firebase_installation_id">ID de instalação do Firebase</string>
     <string name="about_fcm_token">Token de mensagens na nuvem do Firebase</string>
     <string name="about_last_explore_dash_update_error">não foi possível buscar</string>
@@ -337,13 +354,9 @@
 
     <string name="skip">pular</string>
     <string name="get_started">Começar</string>
-    <string name="welcome_screen_title_1_new_install">Bem-vindo</string>
-    <string name="welcome_screen_title_1_upgrade">Nós Atualizamos</string>
-    <string name="welcome_screen_subtitle_1">Uma experiência familiar e através de todos os seus dispositivos</string>
-    <string name="welcome_screen_title_2">Pague com Facilidade</string>
-    <string name="welcome_screen_subtitle_2">Pague e receba imediatamente com fluxos de pagamento fáceis de usar</string>
-    <string name="welcome_screen_title_3">Mais Controle</string>
-    <string name="welcome_screen_subtitle_3">Tenha controle completo e customize sua carteira de acordo com suas necessidades</string>
+    <string name="welcome_screen_title_1">Enviar e receber Dash via nomes de usuário</string>
+    <string name="welcome_screen_title_2">Gastar Dash em milhares de lojas</string>
+    <string name="welcome_screen_title_3">Forma mais segura de armazenar seu Dash</string>
 
     <string-array name="history_filter">
         <item>Todos</item>
@@ -425,7 +438,7 @@
     <string name="launch_reset_wallet_extra_message">Faça backup da sua frase de recuperação</string>
     <string name="start_reset_wallet_title">Você pode perder %s</string>
     <string name="reset_wallet_text">Redefinir Carteira</string>
-
+    <string name="reset_wallet_button">Resetar carteira</string>
 
 
     <!-- Tax category -->
@@ -440,11 +453,11 @@
     <string name="reclassify_transactions_linked_accounts_message">por padrão, todas as transações de ou para suas contas vinculadas (trocas, staking, etc.) serão marcadas como transferências.</string>
     <string name="reclassify_transactions_change_explanation">Escolha qualquer transação na página inicial e altere a categoria na página de detalhes da transação.</string>
 
-    <string name="masternode_keys_title">Chaves do Masternode</string>
-    <string name="masternode_key_type_owner">Chaves do Proprietário</string>
-    <string name="masternode_key_type_voting">Chaves de Votação</string>
-    <string name="masternode_key_type_operator">Chaves do Operador</string>
-    <string name="masternode_key_type_platform">Chaves de Identificação de Nós Evolution </string>
+    <string name="masternode_keys_title">Chaves do masternode</string>
+    <string name="masternode_key_type_owner">Chaves do proprietário</string>
+    <string name="masternode_key_type_voting">Chaves de votação</string>
+    <string name="masternode_key_type_operator">Chaves do operador</string>
+    <string name="masternode_key_type_platform">Chaves do operador HPMN</string>
     <string name="masternode_key_type_total">%d chaves</string>
     <string name="masternode_key_type_used">%d utilizado</string>
     <string name="masternode_key_pair_index">Par de chaves %d</string>

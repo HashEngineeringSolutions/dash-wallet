@@ -61,7 +61,6 @@
     <string name="send_coins_fragment_hint_fee_economic">Netwerkkosten %s worden betaald.</string>
     <string name="send_coins_fragment_hint_fee_priority">Een prioriteitstoeslag van %s wordt betaald. Als je een lage toeslag belangrijk vindt, gebruik \'prioriteit\' alleen als je zo spoedig mogelijk bevestiging nodig hebt.</string>
     <string name="send_coins_fragment_hint_empty_wallet_failed">Het saldo van kleine betalingen in je Dashportemonnee is bij elkaar niet hoog genoeg om te kunnen versturen.</string>
-    <string name="send_coins_fragment_hint_replaying">Momenteel zijn betalingen niet mogelijk omdat de portemonnee niet volledig is gesynchroniseerd met het netwerk</string>
     <string name="send_coins_fragment_direct_payment_enable">Betaling direct versturen aan de begunstigde.</string>
     <string name="send_coins_fragment_direct_payment_ack">Je betaling is succesvol direct verstuurd.</string>
     <string name="send_coins_fragment_direct_payment_nack">Je betaling is afgewezen via directe verbinding.</string>
@@ -204,6 +203,13 @@
     <string name="restore_wallet_dialog_success_replay">Je portemonnee is met succes hersteld. Nu zal het saldo worden vastgesteld. Dit kan enige tijd duren.</string>
     <string name="restore_wallet_dialog_success_encrypted">Waarschuwing: je portemonnee is beveiligd met een pincode. Zorg ervoor dat je deze onthoudt voordat je met deze portemonnee geld ontvangt.</string>
     <string name="import_keys_dialog_failure">Portemonnee kon niet hersteld worden:\n\n%s\n\nVerkeerd wachtwoord?</string>
+    <string name="restore_wallet_creation_date_label">Aanmaakdatum van de portemonnee (optioneel)</string>
+    <string name="restore_wallet_creation_date_info">Door te selecteren wanneer je portemonnee is aangemaakt, kan de synchronisatie sneller verlopen doordat alleen vanaf die datum wordt gescand.</string>
+    <string name="restore_wallet_select_date">Selecteer aanmaakdatum</string>
+    <string name="restore_wallet_selected_date">Geselecteerd: %s</string>
+    <string name="restore_wallet_date_picker_title">Wanneer is je portemonnee aangemaakt?</string>
+    <string name="wallet_creation_date_info_title">Hoe kan de aanmaakdatum van de portemonnee het proces versnellen?</string>
+    <string name="wallet_creation_date_info_description">Als je de geschatte datum weet waarop je portemonnee is aangemaakt, kun je deze invoeren en worden transacties vanaf die datum opgehaald, wat de synchronisatie versnelt. Let op: als je een datum invoert die later is dan de daadwerkelijke aanmaakdatum van de portemonnee, worden oudere transacties niet gedownload.</string>
     <string name="export_keys_dialog_title">Back-upportemonnee</string>
     <string name="backup_wallet_dialog_message">Je back-up zal versleuteld worden met het gekozen wachtwoord en weggeschreven naar een externe opslaglocatie.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Je portemonnee is beveiligd met een pincode om te kunnen betalen. Onthoud deze pincode net als je back-upwachtwoord! </string>
@@ -233,17 +239,6 @@
     <string name="encrypt_keys_dialog_state_encrypting">Versleutelen...</string>
     <string name="encrypt_keys_dialog_state_decrypting">Versleuteling opheffen...</string>
     <string name="encrypt_keys_dialog_state_done">Klaar</string>
-    <string name="scan_camera_problem_dialog_title">Sorry</string>
-    <string name="scan_camera_problem_dialog_message">Er is een probleem met de camera. Waarschijnlijk moet je het apparaat herstarten.</string>
-    <string name="scan_camera_permission_dialog_title">Toegang tot de camera</string>
-    <string name="scan_camera_permission_dialog_message">Om QR-codes te scannen moet u toestemming geven om de camera te gebruiken.</string>
-    <string name="input_parser_io_error">Kan gegevens niet lezen:\n%s</string>
-    <string name="input_parser_cannot_classify">Invoer niet herkend:\n%s</string>
-    <string name="input_parser_invalid_bitcoin_uri">Ongeldige Dash URI:\n%s</string>
-    <string name="input_parser_invalid_address">Ongeldig Dashadres ontvangen!\n(Haal je mainnet/testnet door elkaar?)</string>
-    <string name="input_parser_unverifyable_paymentrequest">Je betalingsverzoek:\n%s kan niet geverifieerd worden</string>
-    <string name="input_parser_invalid_paymentrequest">Ongeldig betalingsverzoek:\n%s</string>
-    <string name="input_parser_invalid_transaction">Ongeldige transactie:\n%s</string>
     <string name="preferences_activity_title">Instellingen</string>
     <string name="preferences_category_diagnostics">Diagnostiek</string>
     <string name="preferences_category_labs">Labs</string>
@@ -279,11 +274,18 @@
     <string name="preferences_initiate_reset_summary">Scan de blockchain, transacties en portemonnee saldo opnieuw. Dit duurt even, dus doe dit alleen als je weet waarom.</string>
     <string name="preferences_initiate_reset_dialog_message">Wil je de blockchain opnieuw scannen?\n\nHierdoor wordt uw portemonnee saldo tijdelijk verborgen en worden transacties verwijderd. Beide zullen herstellen naarmate de synchronisatie vordert. Zorg voor een betrouwbare internetverbinding.</string>
     <string name="preferences_initiate_reset_dialog_positive">Scan opnieuw</string>
+    <string name="rescan_blockchain_dialog_title">Weet je zeker dat je de blockchain opnieuw wilt scannen?</string>
+    <string name="rescan_blockchain_dialog_message">Dit zal tijdelijk het saldo van je portemonnee verbergen en transacties verwijderen. Beide worden hersteld naarmate de blockchain synchronisatie vordert. Zorg ervoor dat je een betrouwbare internetverbinding hebt.</string>
+    <string name="rescan_blockchain_select_date_label">Selecteer aanmaakdatum van de portemonnee (optioneel)</string>
+    <string name="rescan_blockchain_date_info_description">Informatie over de aanmaakdatum van de portemonnee</string>
+    <string name="rescan_blockchain_select_date_placeholder">Selecteer</string>
+    <string name="rescan_blockchain_confirm_button">Scan opnieuw</string>
     <string name="preferences_extended_public_key_title">Toon xpub</string>
     <string name="preferences_extended_public_key_summary">Weergeef de uitgebreide publieke sleutel van je portemonnee zodat deze geïmporteerd kan worden in andere apps en diensten. Let op: door deze actie zal je je privacy vrijgeven aan de app in kwestie.</string>
     <string name="bitmap_fragment_share">Deel...</string>
-    <string name="extended_public_key_fragment_title">Uitgebreide publieke sleutel</string>
+    <string name="extended_public_key_fragment_title">Uitgebreide publieke sleutels (BIP44)</string>
     <string name="extended_public_key_fragment_share">Deel xpub...</string>
+    <string name="extended_public_key_share_key">Deel sleutel</string>
     <string name="report_issue_dialog_title_issue">Meld probleem</string>
     <string name="report_issue_dialog_title_crash">Vorige crash gedetecteerd</string>
     <string name="report_issue_dialog_title_transaction">Rapporteer incident voor geselecteerde betaling</string>
@@ -297,13 +299,26 @@
     <string name="report_issue_dialog_collect_wallet_dump">Voeg portemonnee dump toe</string>
     <string name="report_issue_dialog_mail_intent_failed">Versturen van rapport is mislukt.</string>
     <string name="report_issue_dialog_generating_report">Rapport wordt gegenereerd.</string>
-    <string name="report_transaction_history_export">Exporteer</string>
-    <string name="report_transaction_history_title">CSV exporteren</string>
-    <string name="report_transaction_history_not_synced_title">CSV exporteren</string>
+    <string name="report_issue_dialog_status_device_info">apparaat informatie</string>
+    <string name="report_issue_dialog_status_installed_packages">lijst van geïnstalleerde pakketten</string>
+    <string name="report_issue_dialog_status_application_log">applicatie logboek</string>
+    <string name="report_issue_dialog_status_application_info">applicatie informatie</string>
+    <string name="report_issue_dialog_status_wallet_dump">portemonnee dump (traag)</string>
+    <string name="report_issue_dialog_status_contextual_info">contextuele informatie</string>
+    <string name="report_issue_dialog_status_background_traces">achtergrond traceringen</string>
+    <string name="report_issue_dialog_status_stack_trace">stack traceringen</string>
+    <string name="report_issue_dialog_status_finishing">bezig met afronden</string>
+    <string name="report_transaction_history_export">Transacties exporteren</string>
+    <string name="report_transaction_history_title">CSV-export</string>
+    <string name="report_transaction_history_dialog_title">De volledige transactiegeschiedenis wordt geëxporteerd als een CSV-bestand</string>
+    <string name="report_transaction_history_not_synced_title">CSV-export</string>
     <string name="report_transaction_history_not_synced_message">Wacht tot de portemonnee volledig is gesynchroniseerd alvorens je transactiegeschiedenis je exporteren.</string>
     <string name="report_transaction_history_message">De volledige transactiegeschiedenis wordt geëxporteerd.\n\nAlle betalingen worden beschouwd als uitgaven en alle inkomende transacties als inkomsten. De eigenaar van deze portemonnee is verantwoordelijk voor het doorvoeren van eventuele aanpassingen in het geval van belastingaangifte.</string>
+    <string name="report_transaction_history_body_1">Alle betalingen worden beschouwd als een uitgave en alle inkomende transacties als inkomsten.</string>
+    <string name="report_transaction_history_body_2">De eigenaar van deze portemonnee is verantwoordelijk voor het doorvoeren van eventuele kostenbasisaanpassingen in het door hem/haar gekozen belastingrapportagesysteem.</string>
     <string name="report_transaction_history_mail_intent_chooser">Transactiegeschiedenis verzenden door gebruikmaking van …</string>
     <string name="report_transaction_history_dialog_mail_intent_failed">Transactiegeschiedenis verzenden is mislukt.</string>
+    <string name="report_transaction_history_dialog_export_csv_failed">Exporteren van transactiegeschiedenis mislukt.</string>
 
     <!-- ZenLedger -->
     <string name="zenledger_export_title">ZenLedger</string>
@@ -316,6 +331,7 @@
 
 
     <string name="about_title">Over</string>
+    <string name="about_dash_title">Over Dash</string>
     <string name="about_version_title">Versie</string>
     <string name="about_copyright_title">Auteursrecht</string>
     <string name="about_license_title">Licentie</string>
@@ -338,6 +354,9 @@
     <string name="notification_inactivity_action_dismiss">Herinner me later</string>
     <string name="notification_inactivity_action_dismiss_forever">Herinner me niet</string>
     <string name="notification_bluetooth_service_listening">Klaar om betalingen via Bluetooth te ontvangen</string>
+    <string name="notification_sync_paused">Blockchain synchronisatie gepauzeerd</string>
+    <string name="notification_background_processes_paused">Achtergrond verwerking gepauzeerd</string>
+    <string name="notification_background_processes_paused_text">Je hebt het Android limiet van 6 uur bereikt voor voorgrondservices. Dit betreft blockchain synchronisatie of mixen. Tik om te resetten…</string>
     <string name="appwidget_wallet_balance_title">Dashsaldo</string>
 
     <!-- generic buttons -->
@@ -396,10 +415,9 @@
     <string name="reason">Reden</string>
     <string name="link_account">Koppel je rekening</string>
     <string name="buy_no_account_needed">Koop Dash · Geen rekening nodig</string>
+    <string name="convert_no_account_needed">Dash wisselen · Geen account nodig</string>
 
     <string name="recipient_address">Adres van ontvanger</string>
-    <string name="show_clipboard">Toon inhoud op het klembord</string>
-    <string name="tap_to_paste">Tik op het adres van het klembord om het te plakken</string>
     <string name="not_dash_address">Geen geldig Dash adres of URL verzoek</string>
     <string name="send_to_address">Versturen naar adres</string>
 
@@ -421,4 +439,14 @@
     <string name="select_option">Selecteer optie</string>
     <string name="customize_shortcuts">Werkbalk voor snelkoppelingen aanpassen</string>
     <string name="customize_shortcuts_description">Houd hier boven een willekeurige knop ingedrukt om deze te vervangen door de functie die je nodig hebt.</string>
+
+    <!-- PIN Upgrade Dialog -->
+    <string name="upgrade_pin_title">Je moet je pincode upgraden</string>
+    <string name="upgrade_pin_description">Stel een nieuwe pin in</string>
+    <string name="upgrade_pin_continue">Doorgaan</string>
+
+    <!-- CrowdNode withdrawal reminder -->
+    <string name="crowdnode_withdrawal_reminder_title">Je hebt een saldo op CrowdNode</string>
+    <string name="crowdnode_withdrawal_reminder_message">Dit saldo moeten worden opgenomen van CrowdNode. Je kunt dit saldo overmaken naar deze portemonnee of via je online account op een ander apparaat.</string>
+    <string name="crowdnode_withdraw_funds">Neem saldo op</string>
 </resources>

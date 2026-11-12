@@ -25,13 +25,17 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import de.schildbach.wallet.WalletApplication
+import de.schildbach.wallet.data.PendingDirectPaymentConfig
 import org.dash.wallet.common.WalletDataProvider
 import de.schildbach.wallet.rates.ExchangeRatesRepository
 import de.schildbach.wallet.service.WalletTransactionMetadataProvider
 import de.schildbach.wallet.service.BlockchainStateDataProvider
+import de.schildbach.wallet.service.ExchangeIntegrationListProvider
+import org.dash.wallet.common.integrations.ExchangeIntegrationProvider
 import org.dash.wallet.common.services.BlockchainStateProvider
 import org.dash.wallet.common.services.ExchangeRatesProvider
 import org.dash.wallet.common.services.TransactionMetadataProvider
+import org.dash.wallet.common.services.UnresolvedPaymentsProvider
 import javax.inject.Singleton
 
 @Module
@@ -60,4 +64,18 @@ abstract class DataProviderModule {
     abstract fun bindExchangeRateRepository(
         exchangeRatesRepository: ExchangeRatesRepository
     ): ExchangeRatesProvider
+
+    @Singleton
+    @Binds
+    abstract fun bindExchangeIntegrationProvider(
+        exchangeIntegrationProvider: ExchangeIntegrationListProvider
+    ): ExchangeIntegrationProvider
+
+    // Lets the gift card screens, which live in a module that cannot see the wallet's payment
+    // machinery, ask the one question they need answered about payments that outlived them.
+    @Singleton
+    @Binds
+    abstract fun bindUnresolvedPaymentsProvider(
+        pendingDirectPaymentConfig: PendingDirectPaymentConfig
+    ): UnresolvedPaymentsProvider
 }

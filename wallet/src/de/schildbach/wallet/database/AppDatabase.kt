@@ -21,6 +21,8 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import de.schildbach.wallet.database.dao.*
+import de.schildbach.wallet.database.dao.TransactionRecordsDao
+import de.schildbach.wallet.database.dao.TxGroupCacheDao
 import de.schildbach.wallet.database.entity.DashPayContactRequest
 import de.schildbach.wallet.database.entity.DashPayProfile
 import de.schildbach.wallet.database.entity.ImportedMasternodeKey
@@ -28,6 +30,8 @@ import de.schildbach.wallet.database.entity.Invitation
 import de.schildbach.wallet.database.entity.TopUp
 import de.schildbach.wallet.database.entity.TransactionMetadataCacheItem
 import de.schildbach.wallet.database.entity.TransactionMetadataDocument
+import de.schildbach.wallet.database.entity.TxDisplayCacheEntry
+import de.schildbach.wallet.database.entity.TxGroupCacheEntry
 import de.schildbach.wallet.database.entity.UsernameRequest
 import de.schildbach.wallet.database.entity.UsernameVote
 import de.schildbach.wallet.ui.dashpay.UserAlert
@@ -35,14 +39,15 @@ import org.dash.wallet.common.data.entity.AddressMetadata
 import org.dash.wallet.common.data.entity.BlockchainState
 import org.dash.wallet.common.data.entity.ExchangeRate
 import org.dash.wallet.common.data.entity.IconBitmap
+import org.dash.wallet.common.data.entity.SwapOrder
 import org.dash.wallet.common.data.entity.TransactionMetadata
 import org.dash.wallet.features.exploredash.data.explore.GiftCardDao
 import org.dash.wallet.common.data.entity.GiftCard
 import org.dash.wallet.features.exploredash.utils.RoomConverters
+import org.dash.wallet.integrations.maya.data.SwapOrderDao
 
 @Database(
-    entities =
-    [
+    entities = [
         ExchangeRate::class,
         BlockchainState::class,
         TransactionMetadata::class,
@@ -58,9 +63,12 @@ import org.dash.wallet.features.exploredash.utils.RoomConverters
         UsernameRequest::class,
         UsernameVote::class,
         ImportedMasternodeKey::class,
-        TopUp::class
+        TopUp::class,
+        TxDisplayCacheEntry::class,
+        TxGroupCacheEntry::class,
+        SwapOrder::class
     ],
-    version = 15, // if increasing version, we need migrations to preserve tx/addr metadata,
+    version = 21, // if increasing version, we need migrations to preserve tx/addr metadata,
     exportSchema = true
 )
 @TypeConverters(RoomConverters::class, BlockchainStateRoomConverters::class)
@@ -81,4 +89,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun usernameVoteDao(): UsernameVoteDao
     abstract fun importedMasternodeKeyDao(): ImportedMasternodeKeyDao
     abstract fun topUpsDao(): TopUpsDao
+    abstract fun txDisplayCacheDao(): TxDisplayCacheDao
+    abstract fun txGroupCacheDao(): TxGroupCacheDao
+    abstract fun swapOrderDao(): SwapOrderDao
+    abstract fun transactionRecordsDao(): TransactionRecordsDao
 }

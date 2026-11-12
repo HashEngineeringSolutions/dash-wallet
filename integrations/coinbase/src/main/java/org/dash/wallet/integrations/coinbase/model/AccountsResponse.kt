@@ -32,8 +32,13 @@ import java.util.UUID
 
 @Parcelize
 data class AccountsResponse(
-    val accounts: List<CoinbaseAccount>
-): Parcelable
+    val accounts: List<CoinbaseAccount>,
+    /** True when the response is one page of a larger set; fetch the next page with [cursor]. */
+    @SerializedName("has_next")
+    val hasNext: Boolean = false,
+    /** Opaque cursor for the next page; only meaningful while [hasNext] is true. */
+    val cursor: String? = null
+):  Parcelable
 
 @Parcelize
 data class CoinbaseAccount(

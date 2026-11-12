@@ -1,0 +1,160 @@
+/*
+ * Copyright 2025 Dash Core Group.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package org.dash.wallet.common.ui.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import android.content.res.Configuration
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+
+//@Composable
+//fun TopIntro(
+//    heading: String,
+//    text: String? = null,
+//    modifier: Modifier = Modifier.padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 20.dp)
+//) {
+//    Column(
+//        modifier = modifier.fillMaxWidth(),
+//        verticalArrangement = Arrangement.spacedBy(2.dp),
+//        horizontalAlignment = Alignment.Start
+//    ) {
+//        // Heading
+//        Text(
+//            text = heading,
+//            style = MyTheme.Typography.HeadlineMediumBold,
+//            color = colors.textPrimary,
+//            modifier = Modifier.fillMaxWidth()
+//        )
+//
+//        // Optional text
+//        text?.let {
+//            Text(
+//                text = it,
+//                style = MyTheme.Typography.BodyMedium,
+//                color = colors.textPrimary,
+//                modifier = Modifier.fillMaxWidth()
+//            )
+//        }
+//    }
+//}
+
+@Composable
+fun TopIntro(
+    heading: String,
+    text: String? = null,
+    textTwo: String? = null,
+    textThree: String? = null,
+//    modifier: Modifier = Modifier.padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 20.dp),
+    icon: @Composable () -> Unit = {}
+) {
+    val colors = LocalDashColors.current
+    Column(
+        modifier = Modifier
+            .padding(top = 10.dp, start = 20.dp, end = 20.dp, bottom = 20.dp)
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
+        icon()
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = heading,
+                style = MyTheme.Typography.HeadlineMediumBold,
+                color = colors.textPrimary,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            text?.let {
+                Text(
+                    text = it,
+                    style = MyTheme.Typography.BodyMedium,
+                    color = colors.textSecondary,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            textTwo?.let {
+                Text(
+                    text = it,
+                    style = MyTheme.Typography.BodyMedium,
+                    color = colors.textSecondary,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            textThree?.let {
+                Text(
+                    text = it,
+                    style = MyTheme.Typography.BodyMedium,
+                    color = colors.textSecondary,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+@Preview(name = "Top Intro Light", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Top Intro Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun TopIntroPreview() {
+    DashWalletTheme {
+        val colors = LocalDashColors.current
+        Column(
+        modifier = Modifier
+            .padding(16.dp)
+            .background(colors.backgroundPrimary),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // With heading and text
+            TopIntro(
+                heading = "Heading",
+                text = "Text"
+            )
+
+            // Heading only
+            TopIntro(
+                heading = "Heading Only"
+            )
+
+            // Longer examples
+            TopIntro(
+                heading = "Welcome to Dash",
+                text = "Your digital cash for everyday payments"
+            )
+        }
+    }
+}

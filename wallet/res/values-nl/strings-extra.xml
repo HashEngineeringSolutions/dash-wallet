@@ -2,7 +2,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <string name="onboarding_create_wallet">Maak een nieuwe portemonnee aan</string>
-    <string name="onboarding_recover_wallet">Herstellen met herstelzin</string>
+    <string name="onboarding_recover_wallet">Herstel portemonnee</string>
     <string name="onboarding_restore_wallet">Herstel portemonnee uit bestand</string>
     <string name="onboarding_load_wallet_error">Kan portemonnee niet laden!</string>
 
@@ -23,6 +23,7 @@
     <string name="dialog_confirm_confirm">Bevestig</string>
     <string name="dialog_confirm_pay_to">Verstuur naar</string>
     <string name="dialog_confirm_secured_by">Beveiligd door</string>
+    <string name="dialog_confirm_connected_to_unsecured">Verbonden met (onbeveiligd)</string>
     <string name="dialog_confirm_fee">Netwerk transactiekosten</string>
     <string name="dialog_confirm_total">Totaal</string>
     <string name="dialog_confirm_accept_contact_request">Contactverzoek accepteren</string>
@@ -38,6 +39,8 @@
     <string name="shortcut_pay_to_contact">Stuur naar contact</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_buy_sell">Koop &amp; verkoop</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_dash_dex">Dash DEX</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_receive">Ontvang</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
@@ -68,6 +71,11 @@
 
     <string name="pay_title">Verzenden</string>
     <string name="history_title">Geschiedenis</string>
+    <string name="wallet_transactions_building_cache">Transactiegeschiedenis bepalen…</string>
+    <string name="history_refresh_dialog_title">Transactielijst vernieuwen</string>
+    <string name="history_refresh_dialog_message">Dit wist de weergavecache van transacties en bouwt deze opnieuw op vanaf nul. De lijst is tijdelijk niet beschikbaar terwijl deze opnieuw wordt opgebouwd.</string>
+    <string name="history_refresh_dialog_confirm">Vernieuwen</string>
+    <string name="history_refresh_complete">Transactielijst vernieuwd</string>
     <string name="more_title">Meer</string>
     <string name="settings_title">Instellingen</string>
     <string name="security_title">Beveiliging</string>
@@ -86,6 +94,7 @@
     <string name="payments_pay_to_clipboard_sub_title">Geen adres gekopieerd</string>
 
     <string name="forgot_pin_title">PIN vergeten?</string>
+    <string name="forgot_pin_setup_new_pin_title">Stel een nieuwe pin in</string>
     <string name="forgot_pin_message">Je kan een nieuwe pin instellen met behulp van je herstelzin</string>
     <string name="forgot_pin_instruction_1">Voer herstelzin in om je wallet te herstellen</string>
     <string name="forgot_pin_instruction_2">Stel een nieuwe pin in</string>
@@ -261,7 +270,7 @@
     <string name="authenticate_switch_to_fingerprint">Vingerafdruk gebruiken</string>
     <string name="authenticate_switch_to_pin">gebruik PIN</string>
 
-    <string name="menu_invite_title">Nodig uit</string>
+    <string name="menu_invite_title">Uitnodigingen</string>
     <string name="menu_invite_subtitle">Help je vrienden en familie lid te worden van Dash</string>
     <string name="menu_buy_and_sell_title">Koop &amp; verkoop Dash</string>
     <string name="menu_buy_and_sell_subtitle">Verbind met beurzen van derden</string>
@@ -273,7 +282,7 @@
     <string name="menu_settings_subtitle">Standaard valuta, snelkoppelingen, over... </string>
     <string name="menu_tools_title">Gereedschap</string>
     <string name="menu_tools_subtitle">Importeer persoonlijke sleutel…</string>
-    <string name="menu_local_currency">Lokale valuta</string>
+    <string name="menu_local_currency">lokale valuta</string>
     <string name="menu_rescan_blockchain">Blockchain opnieuw scannen</string>
     <string name="menu_contact_support_title">Neem contact op</string>
     <string name="menu_contact_support_subtitle">Meld een probleem</string>
@@ -281,19 +290,27 @@
     <string name="menu_explore_subtitle">Vind winkeliers die Dash accepteren</string>
 
     <string name="tools_address_book">Adresboek</string>
-    <string name="tools_import_private_key">Importeer persoonlijke sleutel</string>
-    <string name="tools_network_monitor">Netwerk monitor</string>
-    <string name="tools_show_xpub">Uitgebreide publieke sleutel</string>
+    <string name="tools_import_private_key">importeer persoonlijke sleutel</string>
+    <string name="import_private_key_description">Met deze actie worden het saldo van de papieren portemonnee overgezet naar je DashPay app op dit apparaat.</string>
+    <string name="tools_network_monitor">Netwerkmonitor</string>
+    <string name="tools_show_xpub">Uitgebreide publieke sleutels (BIP44)</string>
 
     <string name="about_help_us_improve">Help ons je ervaring te verbeteren</string>
     <string name="about_review_and_rate">Schrijf een recensie en beoordeel de app</string>
     <string name="about_contact_support">Neem contact op</string>
     <string name="about_fork_disclaimer">Dit is een open source app afgesplitst van de Bitcoin portemonnee</string>
-    <string name="about_copyright">Copyright © 2025 Dash Core Group</string>
+    <string name="about_copyright">Copyright © %1$d Dash Core Group</string>
     <string name="about_license">GNU General Public License v3.0</string>
     <string name="about_version_name">DashPay Portemonnee %s</string>
     <string name="about_last_explore_device_sync">Laatste Explore-apparaatsynchronisatie</string>
     <string name="about_last_explore_server_update">Laatste Explore-serverupdate</string>
+    <string name="about_app_version_label">App versie</string>
+    <string name="about_platform_label">Platform</string>
+    <string name="about_explore_section">Verken Dash</string>
+    <string name="about_explore_update">Update</string>
+    <string name="about_last_device_sync">Laatste apparaatsynchronisatie</string>
+    <string name="about_last_server_update">Laatste server update</string>
+    <string name="about_value_not_available">Niet beschikbaar</string>
     <string name="about_firebase_installation_id">Firebase-installatie-ID</string>
     <string name="about_fcm_token">Firebase-cloudmessagingtoken</string>
     <string name="about_last_explore_dash_update_error">kan niet ophalen</string>
@@ -334,13 +351,9 @@
 
     <string name="skip">Overslaan</string>
     <string name="get_started">Ga aan de slag</string>
-    <string name="welcome_screen_title_1_new_install">Welkom</string>
-    <string name="welcome_screen_title_1_upgrade">We hebben een upgrade uitgevoerd</string>
-    <string name="welcome_screen_subtitle_1">Een intuïtieve en vertrouwde ervaring op al je apparaten</string>
-    <string name="welcome_screen_title_2">Betaal met gemak</string>
-    <string name="welcome_screen_subtitle_2">Betaal en word betaald met eenvoudig te gebruiken betaalverkeer</string>
-    <string name="welcome_screen_title_3">Meer controle</string>
-    <string name="welcome_screen_subtitle_3">Heb volledige controle en pas je portemonnee aan op basis van je behoeften</string>
+    <string name="welcome_screen_title_1">Dash verzenden en ontvangen via gebruikersnamen</string>
+    <string name="welcome_screen_title_2">Geef Dash uit bij duizenden winkels</string>
+    <string name="welcome_screen_title_3">De veiligste manier om je Dash op te slaan</string>
 
     <string-array name="history_filter">
         <item>Alles</item>
@@ -422,7 +435,7 @@
     <string name="launch_reset_wallet_extra_message">Back-up je herstelzin</string>
     <string name="start_reset_wallet_title">Je kan %s kwijtraken</string>
     <string name="reset_wallet_text">Portemonnee resetten</string>
-
+    <string name="reset_wallet_button">Reset portemonnee</string>
 
 
     <!-- Tax category -->
@@ -440,8 +453,8 @@
     <string name="masternode_keys_title">Masternode sleutels</string>
     <string name="masternode_key_type_owner">Eigenaar sleutels</string>
     <string name="masternode_key_type_voting">Stem sleutels</string>
-    <string name="masternode_key_type_operator">Operator sleutels</string>
-    <string name="masternode_key_type_platform">Evolution Node ID sleutels</string>
+    <string name="masternode_key_type_operator">Operateur sleutels</string>
+    <string name="masternode_key_type_platform">HPMN operateur sleutels</string>
     <string name="masternode_key_type_total">%d sleutels</string>
     <string name="masternode_key_type_used">%dgebruikt</string>
     <string name="masternode_key_pair_index">Sleutelpaar %d</string>

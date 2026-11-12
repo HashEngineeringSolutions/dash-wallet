@@ -17,6 +17,7 @@
 
 package org.dash.wallet.common.ui.segmented_picker
 
+import android.content.res.Configuration
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -41,9 +42,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import org.dash.wallet.common.R
+import org.dash.wallet.common.ui.components.DashWalletTheme
+import org.dash.wallet.common.ui.components.LocalDashColors
 import org.dash.wallet.common.ui.components.MyTheme
 
 data class SegmentedOption(
@@ -58,11 +62,18 @@ enum class PickerDisplayMode {
 
 data class SegmentedPickerStyle(
     val displayMode: PickerDisplayMode = PickerDisplayMode.Horizontal,
-    val backgroundColor: Color = MyTheme.Colors.gray400.copy(alpha = 0.1f),
-    val thumbColor: Color = MyTheme.Colors.backgroundSecondary,
+    // Null means "resolve from the active theme" — see SegmentedPicker. Hardcoding a color here
+    // would freeze it to the light scheme (data-class defaults can't read LocalDashColors).
+    val backgroundColor: Color? = null,
+    val thumbColor: Color? = null,
     val cornerRadius: Float = 12f,
-    val textStyle: TextStyle = MyTheme.CaptionMedium,
-    val shadowElevation: Int = 2
+    val textStyle: TextStyle = MyTheme.Typography.FootnoteMedium,
+    val shadowElevation: Int = 2,
+    // Extra inset drawn around each option's text/icon, on top of the option's own weighted
+    // slot. Zero by default so existing fixed-height horizontal/vertical toggles are unaffected;
+    // set this for pickers whose options should have visible breathing room between them.
+    val optionPaddingHorizontal: Float = 0f,
+    val optionPaddingVertical: Float = 0f
 )
 
 @Composable
@@ -70,6 +81,9 @@ fun SegmentedPicker(
     options: List<SegmentedOption>,
     modifier: Modifier = Modifier,
     selectedIndex: Int = 0,
+    // When false, no option is rendered as current: no thumb, uniform text color. For pickers
+    // whose options are alternatives to switch to rather than a persistent selection.
+    showSelection: Boolean = true,
     style: SegmentedPickerStyle = SegmentedPickerStyle(),
     onOptionSelected: (SegmentedOption, Int) -> Unit = { _, _ -> },
 ) {
@@ -84,13 +98,18 @@ fun SegmentedPicker(
     val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
 
+    // Resolve theme-aware defaults so the picker tracks light/dark; explicit style colors win.
+    val colors = LocalDashColors.current
+    val backgroundColor = style.backgroundColor ?: colors.gray400.copy(alpha = 0.1f)
+    val thumbColor = style.thumbColor ?: colors.backgroundSecondary
+
     var containerWidth by remember { mutableIntStateOf(0) }
     var containerHeight by remember { mutableIntStateOf(0) }
 
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(style.cornerRadius.dp))
-            .background(style.backgroundColor)
+            .background(backgroundColor)
             .padding(1.dp)
             .onGloballyPositioned { coordinates ->
                 containerWidth = coordinates.size.width
@@ -132,7 +151,6 @@ fun SegmentedPicker(
                 }
             }
         )
-        
         // Draw dividers between options
         if (isHorizontal) {
             Row(
@@ -146,7 +164,7 @@ fun SegmentedPicker(
                                 .fillMaxHeight()
                                 .width(0.6.dp)
                                 .padding(vertical = 12.dp)
-                                .background(MyTheme.Colors.divider)
+                                .background(colors.divider)
                                 .align(Alignment.CenterVertically)
                         )
                     }
@@ -155,10 +173,10 @@ fun SegmentedPicker(
         }
 
         // Draw the animated selection indicator
-        if (containerSize > 0) {
+        if (containerSize > 0 && showSelection) {
             Surface(
                 shape = RoundedCornerShape((style.cornerRadius - 2).dp),
-                color = style.thumbColor,
+                color = thumbColor,
                 shadowElevation = style.shadowElevation.dp,
                 modifier = Modifier
                     .then(
@@ -186,14 +204,16 @@ fun SegmentedPicker(
                 options.forEachIndexed { index, option ->
                     OptionContent(
                         option = option,
-                        isSelected = index == internalSelectedIndex,
+                        isSelected = showSelection && index == internalSelectedIndex,
                         textStyle = style.textStyle,
                         onSelect = {
                             isInitialPosition = false
                             internalSelectedIndex = index
                             onOptionSelected(option, index)
                         },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        paddingHorizontal = style.optionPaddingHorizontal.dp,
+                        paddingVertical = style.optionPaddingVertical.dp
                     )
                 }
             }
@@ -205,7 +225,7 @@ fun SegmentedPicker(
                 options.forEachIndexed { index, option ->
                     OptionContent(
                         option = option,
-                        isSelected = index == internalSelectedIndex,
+                        isSelected = showSelection && index == internalSelectedIndex,
                         textStyle = style.textStyle,
                         onSelect = {
                             isInitialPosition = false
@@ -213,7 +233,9 @@ fun SegmentedPicker(
                             onOptionSelected(option, index)
                         },
                         modifier = Modifier.weight(1f),
-                        isHorizontal = false
+                        isHorizontal = false,
+                        paddingHorizontal = style.optionPaddingHorizontal.dp,
+                        paddingVertical = style.optionPaddingVertical.dp
                     )
                 }
             }
@@ -228,7 +250,9 @@ private fun OptionContent(
     textStyle: TextStyle,
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
-    isHorizontal: Boolean = true
+    isHorizontal: Boolean = true,
+    paddingHorizontal: Dp = 0.dp,
+    paddingVertical: Dp = 0.dp
 ) {
     Box(
         modifier = modifier
@@ -242,22 +266,23 @@ private fun OptionContent(
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.then(
-                if (isHorizontal) Modifier.fillMaxHeight() else Modifier.fillMaxWidth()
-            )
+            modifier = Modifier
+                .then(if (isHorizontal) Modifier.fillMaxHeight() else Modifier.fillMaxWidth())
+                .padding(horizontal = paddingHorizontal, vertical = paddingVertical)
         ) {
+            val colors = LocalDashColors.current
             option.icon?.let {
                 Icon(
                     painter = painterResource(id = it),
                     contentDescription = null,
-                    tint = if (isSelected) Color.Unspecified else MyTheme.Colors.textPrimary.copy(alpha = 0.4f),
+                    tint = if (isSelected) Color.Unspecified else colors.textPrimary.copy(alpha = 0.4f),
                     modifier = Modifier.padding(end = 6.dp)
                 )
             }
 
             Text(
                 text = option.title,
-                color = if (isSelected) MyTheme.Colors.textPrimary else MyTheme.Colors.textPrimary.copy(alpha = 0.4f),
+                color = if (isSelected) colors.textPrimary else colors.textPrimary.copy(alpha = 0.4f),
                 style = textStyle,
                 textAlign = TextAlign.Center
             )
@@ -265,10 +290,19 @@ private fun OptionContent(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Light", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun SegmentedPickerPreview() {
-    Surface(color = colorResource(id = R.color.background_primary)) {
+    DashWalletTheme {
+        SegmentedPickerPreviewContent()
+    }
+}
+
+@Composable
+private fun SegmentedPickerPreviewContent() {
+    val colors = LocalDashColors.current
+    Surface(color = colors.backgroundPrimary) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
@@ -332,14 +366,14 @@ fun SegmentedPickerPreview() {
             
             Text(
                 text = "Vertical Picker",
-                style = MyTheme.OverlineMedium,
+                style = MyTheme.OverlineMedium.copy(textAlign = TextAlign.Center),
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
             val customStyle = SegmentedPickerStyle(
                 displayMode = PickerDisplayMode.Vertical,
-                backgroundColor = MyTheme.Colors.gray400.copy(alpha = 0.15f),
-                thumbColor = MyTheme.Colors.dashBlue,
+                backgroundColor = colors.gray400.copy(alpha = 0.15f),
+                thumbColor = colors.dashBlue,
                 cornerRadius = 16f
             )
             

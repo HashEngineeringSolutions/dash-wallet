@@ -31,7 +31,7 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.params.DevNetParams;
 import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.params.OuzoDevNetParams;
+import de.schildbach.wallet.network.SakuraDevNetParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.utils.MonetaryFormat;
 import org.bitcoinj.wallet.DeterministicKeyChain;
@@ -60,11 +60,15 @@ public final class Constants {
 
     public static final boolean IS_PROD_BUILD;
 
+    // 32-bit devices do not support platform
     public static boolean SUPPORTS_PLATFORM;
     // TODO: remove all references to this when invites are enabled and functional
     public static boolean SUPPORTS_INVITES;
     // TODO: remove all references to this when transaction metadata is saved on platform
     public static final boolean SUPPORTS_TXMETADATA;
+    public static final boolean SUPPORTS_MAYA_NATIVE = false;
+    public static final boolean SUPPORTS_SWAPKIT = true;
+    public static boolean SUPPORTS_CONNECT = false;
 
     public static final EnumSet<MasternodeSync.SYNC_FLAGS> SYNC_FLAGS = MasternodeSync.SYNC_DEFAULT_SPV;
     public static final EnumSet<MasternodeSync.VERIFY_FLAGS> VERIFY_FLAGS = MasternodeSync.VERIFY_DEFAULT_SPV;
@@ -94,10 +98,11 @@ public final class Constants {
                 FILENAME_NETWORK_SUFFIX = "";
                 FEE_NETWORK_SUFFIX = FILENAME_NETWORK_SUFFIX;
                 WALLET_NAME_CURRENCY_CODE = "dash";
-                org.dash.wallet.common.util.Constants.INSTANCE.setEXPLORE_GC_FILE_PATH("explore/explore-v3.db");
+                org.dash.wallet.common.util.Constants.INSTANCE.setEXPLORE_GC_FILE_PATH("explore/explore-v4.db");
                 SUPPORTS_PLATFORM = !is32Bit;
-                SUPPORTS_INVITES = false;
-                SUPPORTS_TXMETADATA = false;
+                SUPPORTS_INVITES = true;
+                SUPPORTS_TXMETADATA = true;
+                SUPPORTS_CONNECT = true;
                 SYNC_FLAGS.add(MasternodeSync.SYNC_FLAGS.SYNC_HEADERS_MN_LIST_FIRST);
                 if (SUPPORTS_PLATFORM) {
                     SYNC_FLAGS.add(MasternodeSync.SYNC_FLAGS.SYNC_BLOCKS_AFTER_PREPROCESSING);
@@ -115,19 +120,21 @@ public final class Constants {
                 FEE_NETWORK_SUFFIX = FILENAME_NETWORK_SUFFIX;
                 WALLET_NAME_CURRENCY_CODE = "tdash";
                 SUPPORTS_PLATFORM = !is32Bit;
-                SUPPORTS_INVITES = false;
-                SUPPORTS_TXMETADATA = false;
+                SUPPORTS_INVITES = true;
+                SUPPORTS_TXMETADATA = true;
+                SUPPORTS_CONNECT = true;
                 SYNC_FLAGS.add(MasternodeSync.SYNC_FLAGS.SYNC_HEADERS_MN_LIST_FIRST);
                 if (SUPPORTS_PLATFORM) {
                     SYNC_FLAGS.add(MasternodeSync.SYNC_FLAGS.SYNC_BLOCKS_AFTER_PREPROCESSING);
                 }
                 org.dash.wallet.common.util.Constants.FAUCET_URL = "http://faucet.testnet.networks.dash.org/";
-                org.dash.wallet.common.util.Constants.INSTANCE.setEXPLORE_GC_FILE_PATH("explore/explore-v3-testnet.db");
+                org.dash.wallet.common.util.Constants.INSTANCE.setEXPLORE_GC_FILE_PATH("explore/explore-v4-testnet.db");
                 break;
             }
             case "devnet": {
                 BIP44_PATH = DeterministicKeyChain.BIP44_ACCOUNT_ZERO_PATH_TESTNET;
-                NETWORK_PARAMETERS = OuzoDevNetParams.get();
+                NETWORK_PARAMETERS = SakuraDevNetParams.create(
+                        BuildConfig.SAKURA_SPORK_ADDRESS, BuildConfig.SAKURA_CORE_PORT);
                 String devNetName = ((DevNetParams)NETWORK_PARAMETERS).getDevNetName();
                 devNetName = devNetName.substring(devNetName.indexOf("-") + 1);
                 DNS_SEED = NETWORK_PARAMETERS.getDnsSeeds();
@@ -136,11 +143,12 @@ public final class Constants {
                 FEE_NETWORK_SUFFIX = "-testnet"; // use the same fee file as testnet
                 WALLET_NAME_CURRENCY_CODE = "tdash";
                 SUPPORTS_PLATFORM = !is32Bit;
-                SUPPORTS_INVITES = false;
-                SUPPORTS_TXMETADATA = false;
+                SUPPORTS_INVITES = true;
+                SUPPORTS_TXMETADATA = true;
+                SUPPORTS_CONNECT = true;
                 SYNC_FLAGS.add(MasternodeSync.SYNC_FLAGS.SYNC_HEADERS_MN_LIST_FIRST);
                 SYNC_FLAGS.add(MasternodeSync.SYNC_FLAGS.SYNC_BLOCKS_AFTER_PREPROCESSING);
-                org.dash.wallet.common.util.Constants.FAUCET_URL = String.format("http://faucet.%s.networks.dash.org/", devNetName);
+                org.dash.wallet.common.util.Constants.FAUCET_URL = String.format("https://faucet.%s.networks.dash.org/", devNetName);
                 org.dash.wallet.common.util.Constants.INSTANCE.setEXPLORE_GC_FILE_PATH("explore/explore-v3-devnet.db");
                 break;
             }
@@ -280,6 +288,7 @@ public final class Constants {
     public static String NOTIFICATION_CHANNEL_ID_DASHPAY = "dash.notifications.dashpay";
 
     public static int USERNAME_MIN_LENGTH = 3;
+    public static int USERNAME_NON_CONTESTED_MIN_LENGTH = 20;
     public static int USERNAME_MAX_LENGTH = 23;
     public static int DISPLAY_NAME_MAX_LENGTH = 25;
     public static int ABOUT_ME_MAX_LENGTH = 140;
@@ -298,8 +307,6 @@ public final class Constants {
     public static long EARLIEST_HD_SEED_CREATION_TIME = 1427610960L;
 
     public static String WALLET_URI_SCHEME = "dashwallet";
-    public static String ANYPAY_SCHEME = "pay";
-    public static String DASH_SCHEME = "dash";
 
     public static boolean ENABLE_ZERO_FEES = false; //Enable Zero Fee's on TestNet only.
 
@@ -312,9 +319,6 @@ public final class Constants {
     //Backup Warnings (true = both seed and backup file, false = seed only)
     public static final boolean SUPPORT_BOTH_BACKUP_WARNINGS = false;
 
-    // 2,500,000,000 credits
-    public static final Coin DASH_PAY_FEE_CONTESTED = Coin.parseCoin("0.25");
-    public static final Coin DASH_PAY_FEE_CONTESTED_NAME = Coin.parseCoin("0.20");
     public static final Coin DASH_PAY_FEE = Coin.parseCoin("0.03");
 
     // 150,000,000

@@ -24,6 +24,7 @@ import de.schildbach.wallet.database.dao.DashPayProfileDao
 import de.schildbach.wallet.database.dao.UserAlertDao
 import de.schildbach.wallet.database.entity.BlockchainIdentityConfig
 import de.schildbach.wallet.service.DashSystemService
+import de.schildbach.wallet.service.platform.IdentityRepository
 import de.schildbach.wallet.service.platform.PlatformSyncService
 import de.schildbach.wallet.ui.dashpay.BaseProfileViewModel
 import de.schildbach.wallet.ui.dashpay.NotificationsLiveData
@@ -36,24 +37,24 @@ import kotlin.math.max
 
 @HiltViewModel
 class NotificationsViewModel @Inject constructor(
+    identityRepository: IdentityRepository,
     platformRepo: PlatformRepo,
     dashPayProfileDao: DashPayProfileDao,
     blockchainIdentityDataDao: BlockchainIdentityConfig,
-    private val userAlert: UserAlertDao,
     platformSyncService: PlatformSyncService,
     private val userAlertDao: UserAlertDao,
     private val dashPayConfig: DashPayConfig,
     private val dashSystemService: DashSystemService,
 ) : BaseProfileViewModel(blockchainIdentityDataDao, dashPayProfileDao) {
 
-    val notificationsLiveData = NotificationsLiveData(platformRepo, platformSyncService, viewModelScope, userAlertDao)
+    val notificationsLiveData = NotificationsLiveData(identityRepository, platformRepo, platformSyncService, viewModelScope, userAlertDao)
 
     fun searchNotifications(text: String) {
         notificationsLiveData.query = text
     }
     fun dismissUserAlert(alertId: Int) {
         viewModelScope.launch(Dispatchers.IO) {
-            userAlert.dismiss(alertId)
+            userAlertDao.dismiss(alertId)
             notificationsLiveData.onContactsUpdated()
         }
     }

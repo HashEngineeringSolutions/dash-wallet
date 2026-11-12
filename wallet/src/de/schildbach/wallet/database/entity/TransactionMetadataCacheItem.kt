@@ -41,7 +41,10 @@ data class TransactionMetadataCacheItem(
     var originalPrice: Double? = null,
     var barcodeValue: String? = null,
     var barcodeFormat: String? = null,
-    var merchantUrl: String? = null
+    var merchantUrl: String? = null,
+    var order: String? = null,
+    var giftCardChallenge: String? = null,
+    var index: Int? = null
 ) {
     @PrimaryKey(autoGenerate = true)
     var id: Long = 0
@@ -66,13 +69,69 @@ data class TransactionMetadataCacheItem(
         giftCard?.price,
         giftCard?.barcodeValue,
         giftCard?.barcodeFormat?.toString(),
-        giftCard?.merchantUrl
+        giftCard?.merchantUrl,
+        giftCard?.note,
+        giftCard?.redeemUrlChallenge,
+        giftCard?.index
     )
 
     fun isNotEmpty(): Boolean {
-        return sentTimestamp != null || taxCategory != null || !memo.isNullOrEmpty() ||
+        return taxCategory != null || !memo.isNullOrEmpty() ||
             currencyCode != null || rate != null || service != null || customIconUrl != null ||
             giftCardNumber != null || giftCardPin != null || merchantName != null || originalPrice != null ||
-            barcodeValue != null || barcodeFormat != null || merchantUrl != null
+            barcodeValue != null || barcodeFormat != null || merchantUrl != null ||
+            order != null || giftCardChallenge != null || index != null
+    }
+
+    fun isEmpty(): Boolean = !isNotEmpty()
+
+    /** only store changes (this - other) */
+    operator fun minus(other: TransactionMetadataCacheItem): TransactionMetadataCacheItem {
+        if (other.txId != txId) {
+            throw IllegalArgumentException("other has a different txId ${other.txId} (other) != $txId (this)")
+        }
+        return TransactionMetadataCacheItem(
+            System.currentTimeMillis(),
+            txId,
+            sentTimestamp = if (sentTimestamp == other.sentTimestamp) null else sentTimestamp,
+            taxCategory = if (taxCategory == other.taxCategory) null else taxCategory,
+            currencyCode = if (currencyCode == other.currencyCode) null else currencyCode,
+            rate = if (rate == other.rate) null else rate,
+            memo = if (memo == other.memo) null else memo,
+            service = if (service == other.service) null else service,
+            customIconUrl = if (customIconUrl == other.customIconUrl) null else customIconUrl,
+            giftCardNumber = if (giftCardNumber == other.giftCardNumber) null else giftCardNumber,
+            giftCardPin = if (giftCardPin == other.giftCardPin) null else giftCardPin,
+            merchantName = if (merchantName == other.merchantName) null else merchantName,
+            originalPrice = if (originalPrice == other.originalPrice) null else originalPrice,
+            barcodeValue = if (barcodeValue == other.barcodeValue) null else barcodeValue,
+            barcodeFormat = if (barcodeFormat == other.barcodeFormat) null else barcodeFormat,
+            merchantUrl = if (merchantUrl == other.merchantUrl) null else merchantUrl,
+            order = if (order == other.order) null else order,
+            giftCardChallenge = if (giftCardChallenge == other.giftCardChallenge) null else giftCardChallenge,
+            index = if (index == other.index) null else index
+        )
+    }
+
+    fun compare(currentItem: TransactionMetadata, giftCard: GiftCard?): Boolean {
+        val txData =  txId == currentItem.txId &&
+                (this.memo ?: "") == currentItem.memo &&
+                this.taxCategory == currentItem.taxCategory &&
+                this.service == currentItem.service &&
+                this.currencyCode == currentItem.currencyCode &&
+                this.rate == currentItem.rate
+        val giftCardEquals = giftCard?.let {
+            this.giftCardNumber == giftCard.number &&
+                    this.giftCardPin == giftCard.pin &&
+                    this.barcodeValue == giftCard.barcodeValue &&
+                    this.barcodeFormat == giftCard.barcodeFormat.toString() &&
+                    this.merchantName == giftCard.merchantName &&
+                    this.merchantUrl == giftCard.merchantUrl &&
+                    this.originalPrice == giftCard.price &&
+                    this.order == giftCard.note &&
+                    this.giftCardChallenge == giftCard.redeemUrlChallenge &&
+                    this.index == giftCard.index
+        }
+        return txData && (giftCard == null || giftCardEquals == true)
     }
 }

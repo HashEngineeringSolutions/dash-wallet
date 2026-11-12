@@ -1,0 +1,250 @@
+/*
+ * Copyright 2025 Dash Core Group.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package de.schildbach.wallet.ui.more
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
+import android.content.res.Configuration
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.flow.StateFlow
+import de.schildbach.wallet_test.R
+import org.dash.wallet.common.ui.components.DashWalletTheme
+import org.dash.wallet.common.ui.components.LocalDashColors
+import org.dash.wallet.common.ui.components.Menu
+import org.dash.wallet.common.ui.components.MenuItem
+import org.dash.wallet.common.ui.components.MyTheme
+import org.dash.wallet.common.ui.components.NavBarBack
+import org.dash.wallet.common.ui.components.Style
+import org.dash.wallet.common.ui.components.TopIntro
+import org.dash.wallet.common.ui.components.TopNavBase
+
+@Composable
+fun ToolsScreen(
+    onBackClick: () -> Unit = {},
+    onAddressBookClick: () -> Unit = {},
+    onImportPrivateKeyClick: () -> Unit = {},
+    onNetworkMonitorClick: () -> Unit = {},
+    onExtendPublicKeyClick: () -> Unit = {},
+    onMasternodeKeysClick: () -> Unit = {},
+    onCsvExportClick: () -> Unit = {},
+    onConnectionsClick: () -> Unit = {},
+    onZenLedgerExport: () -> Unit = {},
+    // ZenLedger is disabled in this build
+    showZenLedger: Boolean = false,
+    onCreditsInfoClick: () -> Unit = {},
+    onBuyCredits: () -> Unit = {}
+) {
+    val viewModel: ToolsViewModel = hiltViewModel()
+
+    ToolsScreen(
+        uiStateFlow = viewModel.uiState,
+        onBackClick = onBackClick,
+        onAddressBookClick = onAddressBookClick,
+        onImportPrivateKeyClick = onImportPrivateKeyClick,
+        onNetworkMonitorClick = onNetworkMonitorClick,
+        onExtendPublicKeyClick = onExtendPublicKeyClick,
+        onMasternodeKeysClick = onMasternodeKeysClick,
+        onCsvExportClick = onCsvExportClick,
+        onConnectionsClick = onConnectionsClick,
+        onZenLedgerExport = onZenLedgerExport,
+        showZenLedger = showZenLedger,
+        onCreditsInfoClick = onCreditsInfoClick,
+        onBuyCredits = onBuyCredits
+    )
+}
+
+@Composable
+fun ToolsScreen(
+    uiStateFlow: StateFlow<ToolsUIState>,
+    onBackClick: () -> Unit = {},
+    onAddressBookClick: () -> Unit = {},
+    onImportPrivateKeyClick: () -> Unit = {},
+    onNetworkMonitorClick: () -> Unit = {},
+    onExtendPublicKeyClick: () -> Unit = {},
+    onMasternodeKeysClick: () -> Unit = {},
+    onCsvExportClick: () -> Unit = {},
+    onConnectionsClick: () -> Unit = {},
+    onZenLedgerExport: () -> Unit = {},
+    // ZenLedger is disabled in this build
+    showZenLedger: Boolean = false,
+    onCreditsInfoClick: () -> Unit = {},
+    onBuyCredits: () -> Unit = {}
+) {
+    val uiState by uiStateFlow.collectAsState()
+
+    ToolsScreenContent(
+        uiState = uiState,
+        onBackClick = onBackClick,
+        onAddressBookClick = onAddressBookClick,
+        onImportPrivateKeyClick = onImportPrivateKeyClick,
+        onNetworkMonitorClick = onNetworkMonitorClick,
+        onExtendPublicKeyClick = onExtendPublicKeyClick,
+        onMasternodeKeysClick = onMasternodeKeysClick,
+        onCsvExportClick = onCsvExportClick,
+        onConnectionsClick = onConnectionsClick,
+        onZenLedgerExport = onZenLedgerExport,
+        showZenLedger = showZenLedger,
+        onCreditsInfoClick = onCreditsInfoClick,
+        onBuyCredits = onBuyCredits
+    )
+}
+
+@Composable
+private fun ToolsScreenContent(
+    uiState: ToolsUIState,
+    onBackClick: () -> Unit = {},
+    onAddressBookClick: () -> Unit = {},
+    onImportPrivateKeyClick: () -> Unit = {},
+    onNetworkMonitorClick: () -> Unit = {},
+    onExtendPublicKeyClick: () -> Unit = {},
+    onMasternodeKeysClick: () -> Unit = {},
+    onCsvExportClick: () -> Unit = {},
+    onConnectionsClick: () -> Unit = {},
+    onZenLedgerExport: () -> Unit = {},
+    // ZenLedger is disabled in this build
+    showZenLedger: Boolean = false,
+    onCreditsInfoClick: () -> Unit = {},
+    onBuyCredits: () -> Unit = {}
+) {
+    val colors = LocalDashColors.current
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(colors.backgroundPrimary)
+    ) {
+        // Top Navigation
+        NavBarBack(onBackClick = onBackClick)
+
+        // Tools Header
+        TopIntro(
+            heading = stringResource(R.string.tools_title),
+        )
+
+        // Scrollable Content
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Menu {
+                // Address Book
+                MenuItem(
+                    title = stringResource(R.string.tools_address_book),
+                    icon = R.drawable.ic_menu_address_book,
+                    action = onAddressBookClick
+                )
+
+                // Import Private Key
+                MenuItem(
+                    title = stringResource(R.string.tools_import_private_key),
+                    icon = R.drawable.ic_menu_import_private_key,
+                    action = onImportPrivateKeyClick
+                )
+
+                // Network Monitor
+                MenuItem(
+                    title = stringResource(R.string.tools_network_monitor),
+                    icon = R.drawable.ic_menu_network_monitor,
+                    action = onNetworkMonitorClick
+                )
+
+                // Extend Public Key
+                MenuItem(
+                    title = stringResource(R.string.tools_show_xpub),
+                    icon = R.drawable.ic_menu_extended_public_key,
+                    action = onExtendPublicKeyClick
+                )
+
+                // Masternode Keys
+                MenuItem(
+                    title = stringResource(R.string.masternode_keys_title),
+                    icon = R.drawable.ic_menu_masternode_keys,
+                    action = onMasternodeKeysClick
+                )
+
+                // CSV Export
+                MenuItem(
+                    title = stringResource(R.string.report_transaction_history_title),
+                    icon = R.drawable.ic_menu_csv_export,
+                    action = onCsvExportClick
+                )
+
+                if (uiState.connectionsAvailable) {
+                    // Connections (DashConnect), also without a username: it offers to create one
+                    MenuItem(
+                        title = stringResource(R.string.dash_connect_connections_title),
+                        icon = R.drawable.ic_menu_connections,
+                        action = onConnectionsClick
+                    )
+                }
+            }
+
+            if (uiState.hasUsername) {
+                Menu {
+                    // Credits (only shown when user has a username)
+                    MenuItem(
+                        title = stringResource(R.string.tools_credits_title),
+                        icon = R.drawable.ic_menu_credits,
+                        showInfo = true,
+                        onInfoClick = onCreditsInfoClick,
+                        trailingButtonText = stringResource(R.string.tools_credits_buy_button),
+                        trailingButtonStyle = Style.PlainBlue,
+                        onTrailingButtonClick = onBuyCredits,
+                        action = onBuyCredits
+                    )
+                }
+            }
+
+            if (showZenLedger) {
+                Menu {
+                    // ZenLedger Export
+                    MenuItem(
+                        title = stringResource(R.string.zenledger_export_title),
+                        subtitle = stringResource(R.string.zenledger_export_subtitle),
+                        icon = R.drawable.ic_zenledger,
+                        action = onZenLedgerExport
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+@Preview(name = "Light", uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
+fun ToolsScreenPreview() {
+    DashWalletTheme {
+        ToolsScreenContent(uiState = ToolsUIState(false, false, true, connectionsAvailable = true))
+    }
+}

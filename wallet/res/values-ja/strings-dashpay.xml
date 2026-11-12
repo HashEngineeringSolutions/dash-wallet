@@ -16,9 +16,10 @@
     <string name="new_account_confirm_accept">承認しました</string>
     <string name="new_account_confirm_upgrade_fee">アップグレード料金</string>
     <string name="new_account_confirm_message">ユーザー名に%sを選択しました。一度登録したユーザー名は変更できませんのでご注意ください。</string>
+    <string name="new_account_secondary_confirm_message">%sをインスタントユーザー名に選びました。このユーザー名は一度登録すると変更できませんのでご留意ください。</string>
     <string name="invitation_confirm_title">招待料</string>
     <string name="invitation_confirm_message">招待状はこの金額で提供され、受取人はDashネットワーク上で速やかにユーザー名を作成できます。</string>
-    <string name="invitation_init_title">招待する</string>
+    <string name="invitation_title">招待状</string>
     <string name="invitation_init_header">友達や家族を招待する</string>
     <string name="invitation_init_message">ご友人やご家族をDashネットワークにお誘いください。ソーシャルバンキングの世界にご招待しましょう。</string>
     <string name="invitation_init_button_text">新しい招待状を作成</string>
@@ -52,8 +53,12 @@
     <string name="invitation_invalid_invite_message">%sからの招待状は無効です</string>
     <string name="invitation_username_already_found_title">ユーザー名はすでに登録済みです</string>
     <string name="invitation_username_already_found_message">すでにDashのユーザー名を持っているため、この招待状を請求できません。</string>
+    <string name="invitation_username_already_found_voting_title">ユーザー名はすでにリクエスト済みです</string>
+    <string name="invitation_username_already_found_voting_message">この招待状は既にDashのユーザー名をリクエストしているため、申請できません</string>
     <string name="invitation_onboarding_has_began_error_title">オンボーディングエラー</string>
+    <string name="invitation_error_title">招待状エラー</string>
     <string name="invitation_onboarding_has_began_error">オンボーディング中です。ウォレットを作成後、招待状を申請してください。</string>
+    <string name="invitation_accept_invite_has_began_error">現在、DashPayは招待状の処理中です。</string>
     <string name="invitation_accept_title_1">ユーザー名を取得する</string>
     <string name="invitation_accept_title_2">友達・家族を追加する</string>
     <string name="invitation_accept_message_2">家族を招待したり、ユーザー名を検索して友人を見つけることができます。</string>
@@ -99,8 +104,10 @@
     <string name="search_user_no_results">該当するユーザーがいません</string>
     <string name="search_user_loading">Dashネットワークで<b>"%"</b>というユーザー名を検索中</string>
     <string name="contact_request_pending">連絡先リクエストを保留中</string>
+    <string name="send_button_label">送金する</string>
     <string name="pay">支払う</string>
     <string name="contact_request_received_title">%sさんが友達リクエストを送信しました</string>
+    <string name="contact_request_received_card_title">%sはあなたに連絡先リクエストを送信しました</string>
     <string name="contact_request_accept">承認</string>
     <string name="contact_request_ignore">無視する</string>
 
@@ -146,7 +153,7 @@
     <string name="about_me">プロフィール</string>
     <string name="char_count">%1$d〜%2$d文字</string>
     <!-- overrides default TextInputLayout value. Do not change the name -->
-    <string name="save">保存</string>
+    <string name="save">保存する</string>
     <string name="edit_profile_take_picture">カメラで写真を撮影する</string>
     <string name="edit_profile_choose_picture">ギャラリーから選択する</string>
     <string name="upgrade_to_evolution_title">DashPayに参加する</string>
@@ -210,6 +217,8 @@
 
     <string name="join_dashpay_subtitle">ユーザー名を作成して、友達を追加します...</string>
     <string name="join_dashpay_more_subtitle">ユーザー名を作成し、友達を見つけ、連絡先に追加する</string>
+    <string name="join_dashpay_more_subtitle_two">ユーザー名を作成し、数字のアドレスとおさらばしましょう</string>
+    <string name="join_dashpay_wait">同期が完了するまでお待ちになってからユーザー名を作成してください</string>
     <string name="join">参加する</string>
 
     <string name="more_suggestions">提案の追加</string>
@@ -306,6 +315,7 @@
         <item>投票をブロックしました</item>
     </string-array>
     <string name="request_your_username">ユーザー名の作成</string>
+    <string name="request_instant_username">インスタントユーザー名を作成する</string>
     <string name="request_your_hint">一度決めたユーザー名は、今後変更することはできませんのでご注意ください</string>
     <string name="request_username">ユーザー名の申請</string>
     <string name="request_voting_range">Dashネットワークはこのユーザー名に投票することになります。投票結果は%sに通知されます。</string>
@@ -381,6 +391,8 @@
     <string name="requested_voting_duration">%sの結果。</string>
     <string name="cancel_request">キャンセルの申請</string>
     <string name="after_the_voting">投票終了後、投票結果をお知らせします</string>
+    <string name="after_the_voting_result">投票は終了しました</string>
+    <string name="voting_period_error">投票期間が見つかりませんでした</string>
     <string name="none">無し</string>
     <string name="verify_now">今すぐ検証する</string>
     <string name="if_you_tap_cancel">「キャンセルの申請」をタップしても、再度支払わずに別のユーザー名を申請できます。</string>
@@ -403,6 +415,7 @@
     <string name="coinjoin_mixing_level_subtitle">ミキシングレベルはいつでも変更や停止ができます</string>
     <string name="coinjoin_mixing_transactions">ミキシングの取引</string>
     <string name="coinjoin_transaction_group">ミキシングに関する取引があります。</string>
+    <string name="coinjoin_transaction_group_title">なぜこのような取引があるのですか。</string>
     <string name="intermediate">通常のもの</string>
     <string name="advanced">高度なもの</string>
     <string name="intermediate_level_card_decs">非常に高いレベルの技術的な専門知識を持つ上級ユーザーは、取引履歴を判別することができます</string>
@@ -412,8 +425,8 @@
     <string name="coinjoin_start">ミキシングを開始する</string>
     <string name="coinjoin_stop">ミキシングを停止する</string>
     <string name="coinjoin_mixing">ミキシング中</string>
-    <string name="coinjoin_mixing_finishing">ミキシングを完了中</string>
-    <string name="coinjoin_paused">ミキシングを一時停止しました</string>
+    <string name="coinjoin_mixing_finishing">完了中</string>
+    <string name="coinjoin_paused">一時停止しました</string>
     <string name="coinjoin_not_started">開始していません</string>
     <string name="coinjoin_progress_balance">%2$sの%1$s</string>
     <string name="coinjoin_progress_finished">ミキシング完了しました</string>
@@ -434,8 +447,12 @@
 
     <string name="request_username_username_voting_message">＋ユーザー名投票とは\?</string>
     <string name="request_username_character_requirement">英字、数字、ハイフンのみ</string>
-    <string name="request_username_balance_requirement">このユーザー名を作成するには、0.25DASHが必要です</string>
+    <string name="request_username_character_requirement_invite_noncontested">2〜9の数字</string>
+    <string name="request_username_balance_requirement">このユーザー名を作成するには、%sDASHが必要です</string>
+    <string name="request_username_requirements_message_invite_noncontested">ユーザー名は、このいずれかの要件を満たす必要があります</string>
+    <string name="request_username_requirements_message">ユーザー名は、これらの要件を全て満たす必要があります</string>
     <string name="request_username_length_requirement">3〜23文字以内</string>
+    <string name="request_username_length_requirement_noncontested">20〜23文字以内</string>
     <string name="request_username_confirm">承認します</string>
     <string name="username_vote_one_left_message">このユーザー名にはすでに%d回投票しています。このユーザー名にはあと1回しか投票できません。</string>
     <string name="username_vote_one_left">あと1票</string>
@@ -462,4 +479,79 @@
     <string name="voting_period_ends_tomorrow">投票は明日で締め切ります</string>
     <string name="link_included">リンクは含まれています</string>
     <string name="group_by">グループ</string>
-</resources>
+    <string name="transaction_metadata_title">取引のメタデータ</string>
+    <string name="transaction_metadata_data_being_saved">スケジュール化済み</string>
+    <string name="transaction_metadata_payment_category_description">取引がCoinbase、Uphold、Topper、またはCrowdNodeと紐づいているかどうかを示します</string>
+    <string name="transaction_metadata_fiat_price_description">取引の時点での取引価格</string>
+    <string name="transaction_metadata_description">データはお客様の端末に保存されますが、ウォレットをリセットしたり復元するとそのデータは失われます。 ネットワーク上に保存する際に保存される情報の例を以下に示します。</string>
+    <string name="transaction_metadata_cost">金額はいくらですか。</string>
+    <string name="transaction_metadata_payment_category">決済カテゴリー</string>
+    <string name="transaction_metadata_save_data">データを保存する</string>
+    <string name="transaction_metadata_tax_category">税金のカテゴリー</string>
+    <string name="transaction_metadata_fiat_prices">フィアット価格</string>
+    <string name="transaction_metadata_private_memos">非公開メモ</string>
+    <string name="transaction_metadata_gift_card_info">ギフトカードのデータ</string>
+    <string name="transaction_metadata_private_memo_description">取引の目的を説明する略式メモ</string>
+    <string name="transaction_metadata_tax_category_description">取引が送金、収入、または支出のいずれかであることを示します</string>
+    <string name="transaction_metadata_gift_card_info_description">カード番号、暗証番号、その他の情報を含みます</string>
+    <string name="transaction_metadata_costs_title">ネットワークへのデータ保存にかかる費用</string>
+    <string name="transaction_metadata_costs_description">ユーザー名の作成の一環として、ネットワーク上の様々な活動で使用するクレジットを入手できます。ネットワーク上に取引メタデータを保存すると、このクレジットの消費が早まります。 全てのクレジットを使い切った場合、追加購入できます。\n\nネットワークにデータをアップロードする度に約%sの費用がかかるため、一度に複数の取引をアップロードすることをお勧めします。</string>
+    <string-array name="transaction_metadata_save_frequency">
+        <item>10件の取引後</item>
+        <item>週1回</item>
+        <item>毎取引後</item>
+    </string-array>
+    <string name="reset_wallet_metadata_title">メタデータをネットワークに保存せずにウォレットをリセットしますか。</string>
+    <string name="reset_wallet_metadata_message">ネットワークにデータを保存せずにウォレットをリセットすると、一部の取引メタデータが失われます。</string>
+    <string name="reset_wallet_metadata_button_without">保存せずにウォレットをリセットする</string>
+    <string name="reset_wallet_metadata_button_with">データを保存してウォレットをリセットする</string>
+    <string name="reset_wallet_metadata_button_saving">保存中</string>
+    <string name="transaction_metadata_save_to_network">ネットワークに保存する</string>
+    <string name="transaction_metadata_save_frequency">保存する頻度はどのくらいですか。</string>
+    <string name="transaction_metadata_what_to_save">何を保存しますか。</string>
+    <string name="transaction_metadata_past_title">過去のもの</string>
+    <string name="transaction_metadata_future_title">今後のもの</string>
+    <string name="transaction_metadata_past_subtitle">%sまでに行った全ての取引を保存する</string>
+    <string name="transaction_metadata_future_subtitle">%s以降に行う全ての取引を自動保存する</string>
+    <string name="transaction_metadata_gift_card_data">ギフトカードのデータ</string>
+    <string name="transaction_metadata_saving_to_network">ネットワークに保存中 - %d%%</string>
+    <string name="transaction_metadata_last_saved_date">前回は%sお得になりました</string>
+    <string name="transaction_metadata_past_already_saved">%sまでに行った全ての取引を保存しました</string>
+    <string name="transaction_metadata_past_already_saved_none">保存した取引はありません</string>
+    <string name="transaction_metadata_past_syncing">%sまでに行った全ての取引を同期しています</string>
+    <string name="transaction_metadata_save_new_tx_title">保存していない取引を保存しますか。</string>
+    <string name="transaction_metadata_you_have_n_tx">%s以降に行った保存していない取引が%d個あります</string>
+    <string name="transaction_metadata_save_transactions">保存していない取引を保存する</string>
+    <string name="transaction_metadata_continue_without_saving">保存せずに続ける</string>
+    <string name="invitation_fee_title">招待料</string>
+    <string name="invitation_fee_message">各招待状は資金調達され、受取人がDashネットワークでユーザー名を迅速に作成できるようになります。</string>
+    <string name="invitation_fee_noncontested">非競合</string>
+    <string name="invitation_fee_contested">競合</string>
+    <string name="invitation_fee_contested_message">この招待状を送る相手は好きなユーザー名をリクエストでき、ネットワークが投票で承認します。</string>
+    <string name="invitation_fee_noncontested_message">この招待状を送る相手は、2〜9の数字を含み、20文字を超えるユーザー名をリクエストできます。</string>
+    <string name="invitation_creating_progress_loading">招待状をロード中...</string>
+    <string name="invitation_creating_progress_wip">招待状を作成中...</string>
+    <string name="invitation_fee_confirm_and_pay_button">確認して支払う</string>
+    <string name="error_sending_invite_transaction">招待状の取引の送信でエラーが発生しました</string>
+    <string name="request_username_invitation_not_mixed_message">招待状をミキシングされていない資金で作成しました</string>
+    <string name="request_username_invitation_only_noncontested_message">この招待状を使用して、非競合のユーザー名を作成できます</string>
+    <string name="username_types_title">競合・非競合のユーザー名とは\?</string>
+    <string name="username_types_message">ユーザー名は、競合と非競合の2種類あります。\n\n非競合のユーザー名は、2～9の数字を1つ以上含むか、20文字を超えるもので、自動的に承認されます。\n\n短いものや数字を含まない競合ユーザー名を作成したい場合は、招待状なしでDashPayに登録し、必要な料金を支払い、投票期間が終了するまで承認を待つ必要があります。</string>
+    <string name="accept_invitation_hide">非表示にする</string>
+    <string name="accept_invitation_create">作成する</string>
+
+    <!-- Create Instant Username Dialog -->
+    <string name="create_instant_username_title">インスタントユーザー名を作成する</string>
+    <string name="create_instant_username_description">お客様が希望されたユーザー名は2週間の投票期間を経て決定されます。即時での連絡や支払いが必要な場合は、類似したインスタントユーザー名を作成できます。\n\n当初に希望されたユーザー名が承認された場合、インスタントユーザー名は置き換えられ、連絡先や履歴は保存されます。承認されなかった場合、インスタントユーザー名を引き続きそのままご利用いただけます。</string>
+    <string name="create_instant_username_button">インスタントユーザー名を作成する</string>
+    <string name="create_instant_username_cancel">キャンセル</string>
+
+    <string name="dash_connect_scan_qr">QRをスキャンする</string>
+    <string name="dash_connect_status_disconnected">切断されました</string>
+    <string name="dash_connect_approve_verify_identity">本人確認を行う</string>
+    <string name="dash_connect_username">ユーザー名</string>
+    <string name="dash_connect_identity">アイデンティティ</string>
+    <string name="dash_connect_approve_no_withdraw_funds">資金を引き出す</string>
+    <string name="dash_connect_deny">拒否する</string>
+    <string name="dash_connect_confirm">確認する</string>
+    </resources>

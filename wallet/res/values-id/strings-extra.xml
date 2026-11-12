@@ -2,8 +2,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <string name="onboarding_create_wallet">Buat Dompet Baru</string>
-    <string name="onboarding_recover_wallet">Pulihkan dari frasa pemulihan</string>
-    <string name="onboarding_restore_wallet">Kembalikan Dompet Dari File</string>
+    <string name="onboarding_recover_wallet">Pulihkan kunci pribadi</string>
+    <string name="onboarding_restore_wallet">Pulihkan dompet dari file</string>
     <string name="onboarding_load_wallet_error">Tidak dapat memuat dompet!</string>
 
     <string name="set_pin_create_new_wallet">Buat Dompet Baru</string>
@@ -23,6 +23,7 @@
     <string name="dialog_confirm_confirm">Memastikan</string>
     <string name="dialog_confirm_pay_to">Kirim ke</string>
     <string name="dialog_confirm_secured_by">Diamankan oleh</string>
+    <string name="dialog_confirm_connected_to_unsecured">Terhubung ke (tidak diamankan)</string>
     <string name="dialog_confirm_fee">Biaya jaringan</string>
     <string name="dialog_confirm_total">Total</string>
     <string name="dialog_confirm_accept_contact_request">Terima permintaan kontak</string>
@@ -38,6 +39,8 @@
     <string name="shortcut_pay_to_contact">Kirim ke Kontak</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_buy_sell">Beli &amp; Jual</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_dash_dex">Dash DEX</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_receive">Terima</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
@@ -68,6 +71,11 @@
 
     <string name="pay_title">Kirim</string>
     <string name="history_title">Riwayat</string>
+    <string name="wallet_transactions_building_cache">Menentukan riwayat transaksi…</string>
+    <string name="history_refresh_dialog_title">Perbarui Daftar Transaksi</string>
+    <string name="history_refresh_dialog_message">Ini akan menghapus cache tampilan transaksi dan membangunnya kembali dari awal. Daftar tersebut akan tidak tersedia untuk sementara waktu selama proses pembangunan kembali.</string>
+    <string name="history_refresh_dialog_confirm">Segarkan</string>
+    <string name="history_refresh_complete">Daftar Transaksi disegarkan</string>
     <string name="more_title">Lebih</string>
     <string name="settings_title">Pengaturan</string>
     <string name="security_title">Keamanan</string>
@@ -86,6 +94,7 @@
     <string name="payments_pay_to_clipboard_sub_title">Tak ada alamat tersalin</string>
 
     <string name="forgot_pin_title">Lupa PIN?</string>
+    <string name="forgot_pin_setup_new_pin_title">Siapkan PIN baru</string>
     <string name="forgot_pin_message">Anda dapat mengatur PIN baru dengan bantuan frasa pemulihan Anda.</string>
     <string name="forgot_pin_instruction_1">Masukkan Frasa pemulihan untuk memulihakan dompet anda</string>
     <string name="forgot_pin_instruction_2">Siapkan PIN baru</string>
@@ -258,7 +267,7 @@
     <string name="authenticate_switch_to_fingerprint">Gunakan sidik jari </string>
     <string name="authenticate_switch_to_pin">Gunakan PIN</string>
 
-    <string name="menu_invite_title">Undang</string>
+    <string name="menu_invite_title">Undangan</string>
     <string name="menu_invite_subtitle">Bantu teman dan keluarga anda bergabung dengam Dash</string>
     <string name="menu_buy_and_sell_title">Beli &amp; Jual Dash</string>
     <string name="menu_buy_and_sell_subtitle">Terhubung dengan pertukaran pihak ketiga</string>
@@ -271,26 +280,34 @@
     <string name="menu_tools_title">Alat</string>
     <string name="menu_tools_subtitle">Impor kunci pribadi…</string>
     <string name="menu_local_currency">Mata uang lokal</string>
-    <string name="menu_rescan_blockchain">Memindai ulang blockchain</string>
+    <string name="menu_rescan_blockchain">memindai ulang blockchain</string>
     <string name="menu_contact_support_title">Hubungi Dukungan</string>
     <string name="menu_contact_support_subtitle">Laporkan masalah</string>
     <string name="menu_explore_title">Jelajahi</string>
     <string name="menu_explore_subtitle">Temukan toko yang menerima Dash</string>
 
-    <string name="tools_address_book">Buku alamat</string>
+    <string name="tools_address_book">Buku Alamat</string>
     <string name="tools_import_private_key">Impor kunci pribadi</string>
-    <string name="tools_network_monitor">Monitor jaringan</string>
-    <string name="tools_show_xpub">Kunci Publik Diperpanjang</string>
+    <string name="import_private_key_description">Tindakan ini akan memindahkan semua koin dari dompet kertas Dash ke aplikasi DashPay Anda di perangkat ini.</string>
+    <string name="tools_network_monitor">Monitor Jaringan</string>
+    <string name="tools_show_xpub">Kunci Publik Diperpanjang (BIP44)</string>
 
     <string name="about_help_us_improve">Bantu kami meningkatkan pengalaman Anda</string>
     <string name="about_review_and_rate">Tinjau dan beri peringkat aplikasi</string>
     <string name="about_contact_support">Hubungi Dukungan</string>
     <string name="about_fork_disclaimer">Ini adalah aplikasi open source yang bercabang dari Bitcoin Wallet</string>
-    <string name="about_copyright">Hak Cipta © 2025 Dash Core Group</string>
+    <string name="about_copyright">Hak Cipta © %1$d Dash Core Group</string>
     <string name="about_license">GNU General Public License v3.0</string>
     <string name="about_version_name">Dompet DashPay %s</string>
     <string name="about_last_explore_device_sync">Sinkronisasi perangkat Explore Terakhir</string>
     <string name="about_last_explore_server_update">Pembaruan server Explore terakhir</string>
+    <string name="about_app_version_label">Versi aplikasi</string>
+    <string name="about_platform_label">Platform</string>
+    <string name="about_explore_section">Jelajahi Dash</string>
+    <string name="about_explore_update">Pembaruan</string>
+    <string name="about_last_device_sync">Sinkronisasi perangkat terakhir</string>
+    <string name="about_last_server_update">Pembaruan server terakhir</string>
+    <string name="about_value_not_available">Tak tersedia</string>
     <string name="about_firebase_installation_id">ID penginstalan Firebase</string>
     <string name="about_fcm_token">Token perpesanan cloud Firebase</string>
     <string name="about_last_explore_dash_update_error">tidak bisa mengambil</string>
@@ -331,13 +348,9 @@
 
     <string name="skip">lewati</string>
     <string name="get_started">Memulai</string>
-    <string name="welcome_screen_title_1_new_install">Selamat Datang</string>
-    <string name="welcome_screen_title_1_upgrade">Kami meningkatkan</string>
-    <string name="welcome_screen_subtitle_1">Pengalaman intuitif dan akrab di semua perangkat Anda</string>
-    <string name="welcome_screen_title_2">Bayar dengan Mudah</string>
-    <string name="welcome_screen_subtitle_2">Bayar dan dapatkan bayaran instan dengan aliran pembayaran yang mudah digunakan</string>
-    <string name="welcome_screen_title_3">Kontrol lebih lanjut</string>
-    <string name="welcome_screen_subtitle_3">Memiliki kendali penuh dan sesuaikan dompet Anda berdasarkan kebutuhan Anda</string>
+    <string name="welcome_screen_title_1">Kirim dan terima Dash melalui nama pengguna</string>
+    <string name="welcome_screen_title_2">Belanjakan Dash di ribuan toko.</string>
+    <string name="welcome_screen_title_3">Cara paling aman untuk menyimpan Dash anda</string>
 
     <string-array name="history_filter">
         <item>Semua</item>
@@ -419,7 +432,7 @@
     <string name="launch_reset_wallet_extra_message">Cadangkan frasa pemulihan Anda</string>
     <string name="start_reset_wallet_title">Anda mungkin kehilangan %s</string>
     <string name="reset_wallet_text">Atur ulang dompet</string>
-
+    <string name="reset_wallet_button">Atur ulang dompet</string>
 
 
     <!-- Tax category -->
@@ -438,7 +451,7 @@
     <string name="masternode_key_type_owner">Kunci Pemilik</string>
     <string name="masternode_key_type_voting">Kunci pemungutan suara</string>
     <string name="masternode_key_type_operator">Kunci Operator</string>
-    <string name="masternode_key_type_platform">Kunci Evolution Node ID</string>
+    <string name="masternode_key_type_platform">Kunci operator HPMN</string>
     <string name="masternode_key_type_total">%d kunci</string>
     <string name="masternode_key_type_used">%d digunakan</string>
     <string name="masternode_key_pair_index">Keypair %d</string>

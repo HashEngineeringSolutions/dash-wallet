@@ -61,7 +61,6 @@
     <string name="send_coins_fragment_hint_fee_economic">Biaya jaringan %s akan dibayarkan.</string>
     <string name="send_coins_fragment_hint_fee_priority">Biaya prioritas %s akan dibayarkan. Jika Anda peduli dengan biaya rendah, gunakan \'prioritas\' hanya jika Anda perlu konfirmasi sesegera mungkin.</string>
     <string name="send_coins_fragment_hint_empty_wallet_failed">Jumlah pembayaran kecil di dompet Anda tidak menambah nilai yang dapat dikirim.</string>
-    <string name="send_coins_fragment_hint_replaying">Saat ini pembayaran tidak dimungkinkan karena dompet tidak sepenuhnya disinkronkan dengan jaringan</string>
     <string name="send_coins_fragment_direct_payment_enable">Kirim pembayaran langsung ke penerima pembayaran.</string>
     <string name="send_coins_fragment_direct_payment_ack">Pembayaran Anda berhasil dikirim langsung.</string>
     <string name="send_coins_fragment_direct_payment_nack">Pembayaran Anda ditolak melalui koneksi langsung.</string>
@@ -204,6 +203,13 @@
     <string name="restore_wallet_dialog_success_replay">Dompet Anda berhasil dipulihkan. Saldonya akan ditentukan selanjutnya. Ini akan memakan waktu.</string>
     <string name="restore_wallet_dialog_success_encrypted">Peringatan: Dompet Anda dilindungi oleh PIN. Pastikan Anda masih mengingatnya sebelum menerima dompet ini.</string>
     <string name="import_keys_dialog_failure">Kunci pribadi tidak dpt dipulihkan:\n\n%s\n\nKata sandi salah?</string>
+    <string name="restore_wallet_creation_date_label">Tanggal Pembuatan Dompet (Opsional)</string>
+    <string name="restore_wallet_creation_date_info">Memilih tanggal pembuatan dompet Anda memungkinkan sinkronisasi yang lebih cepat dengan hanya memindai dari tanggal tersebut dan seterusnya.</string>
+    <string name="restore_wallet_select_date">Pilih Tanggal Pembuatan</string>
+    <string name="restore_wallet_selected_date">Terpilih: %s</string>
+    <string name="restore_wallet_date_picker_title">Kapan dompet anda dibuat?</string>
+    <string name="wallet_creation_date_info_title">Bagaimana tanggal pembuatan dompet dapat mempercepat prosesnya?</string>
+    <string name="wallet_creation_date_info_description">Jika Anda mengetahui perkiraan tanggal pembuatan dompet Anda, Anda dapat memasukkannya dan transaksi dari tanggal tersebut akan diambil sehingga sinkronisasi menjadi lebih cepat. Harap dicatat, jika Anda memasukkan tanggal yang lebih baru dari tanggal pembuatan dompet, transaksi yang lebih lama tidak akan diunduh.</string>
     <string name="export_keys_dialog_title">Cadangkan kunci pribadi</string>
     <string name="backup_wallet_dialog_message">Kunci pribadi Anda akan dienkripsi dgn kata sandi terpilih dan akan disimpan ke penyimpanan eksternal.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Dompet Anda dilindungi oleh PIN pengiriman. Pastikan Anda mengingat PIN sebagai tambahan kata sandi cadangan!</string>
@@ -233,17 +239,6 @@
     <string name="encrypt_keys_dialog_state_encrypting">Mengenkripsi...</string>
     <string name="encrypt_keys_dialog_state_decrypting">Mendekripsi ...</string>
     <string name="encrypt_keys_dialog_state_done">Selesai</string>
-    <string name="scan_camera_problem_dialog_title">Maaf</string>
-    <string name="scan_camera_problem_dialog_message">Kamera mengalami masalah. Anda mungkin harus menyalakan ulang ponsel.</string>
-    <string name="scan_camera_permission_dialog_title">Izin kamera</string>
-    <string name="scan_camera_permission_dialog_message">Untuk memindai kode QR, Anda perlu memberikan izin untuk menggunakan kamera.</string>
-    <string name="input_parser_io_error">Tidak dapat membaca data:\n%s</string>
-    <string name="input_parser_cannot_classify">Tidak dapat mengenali masukan:\n%s</string>
-    <string name="input_parser_invalid_bitcoin_uri">Tautan Dash Salah:\n%s</string>
-    <string name="input_parser_invalid_address">Alamat Dash salah!\n(Keliru dgn Mainet/Testnet?)</string>
-    <string name="input_parser_unverifyable_paymentrequest">Tidak dapat memverifikasi permintaan pembayaran:\n%s</string>
-    <string name="input_parser_invalid_paymentrequest">Permintaan pembayaran tidak valid:\n%s</string>
-    <string name="input_parser_invalid_transaction">Transaksi tidak valid:\n%s</string>
     <string name="preferences_activity_title">Pengaturan</string>
     <string name="preferences_category_diagnostics">Diagnosa</string>
     <string name="preferences_category_labs">Lab</string>
@@ -279,11 +274,18 @@
     <string name="preferences_initiate_reset_summary">Pindai ulang blockchain, transaksi, dan saldo dompet. Pemutaran ulang akan memakan waktu cukup lama, jadi lakukan ini hanya jika Anda tahu alasannya.</string>
     <string name="preferences_initiate_reset_dialog_message">Apakah Anda ingin memindai ulang blockchain?\n\nIni akan menyembunyikan sementara saldo dompet Anda dan menghapus transaksi. Keduanya akan pulih saat sinkronisasi blockchain berlangsung. Pastikan Anda memiliki koneksi internet yang andal.</string>
     <string name="preferences_initiate_reset_dialog_positive">Pindai ulang</string>
+    <string name="rescan_blockchain_dialog_title">Apakah Anda yakin ingin memindai ulang blockchain?</string>
+    <string name="rescan_blockchain_dialog_message">Ini akan menyembunyikan sementara saldo dompet Anda dan menghapus transaksi. Keduanya akan pulih seiring berjalannya sinkronisasi blockchain. Pastikan Anda memiliki koneksi internet yang andal.</string>
+    <string name="rescan_blockchain_select_date_label">Pilih tanggal pembuatan dompet (Opsional)</string>
+    <string name="rescan_blockchain_date_info_description">Informasi tentang tanggal pembuatan dompet</string>
+    <string name="rescan_blockchain_select_date_placeholder">Pilih</string>
+    <string name="rescan_blockchain_confirm_button">Pindai ulang</string>
     <string name="preferences_extended_public_key_title">Tampilkan xpub</string>
     <string name="preferences_extended_public_key_summary">Lihat kunci publik yang diperluas dari dompet Anda, sehingga dapat diimpor ke aplikasi dan layanan lain. Hati-hati: melakukannya akan mengungkapkan moneter pribadi anda di aplikasi tersebut.</string>
     <string name="bitmap_fragment_share">Bagikan...</string>
-    <string name="extended_public_key_fragment_title">Kunci Publik Diperpanjang</string>
+    <string name="extended_public_key_fragment_title">Kunci Publik Diperpanjang (BIP44)</string>
     <string name="extended_public_key_fragment_share">Bagikan xpub...</string>
+    <string name="extended_public_key_share_key">Bagikan kunci</string>
     <string name="report_issue_dialog_title_issue">Laporkan masalah</string>
     <string name="report_issue_dialog_title_crash">Kesalahan terdeteksi</string>
     <string name="report_issue_dialog_title_transaction">Laporkan masalah dengan pembayaran yang dipilih</string>
@@ -297,13 +299,26 @@
     <string name="report_issue_dialog_collect_wallet_dump">Tambahkan dump dompet</string>
     <string name="report_issue_dialog_mail_intent_failed">Gagal mengirim laporan.</string>
     <string name="report_issue_dialog_generating_report">Membuat laporan</string>
-    <string name="report_transaction_history_export">Ekspor</string>
+    <string name="report_issue_dialog_status_device_info">informasi perangkat</string>
+    <string name="report_issue_dialog_status_installed_packages">daftar paket yang di install</string>
+    <string name="report_issue_dialog_status_application_log">log aplikasi</string>
+    <string name="report_issue_dialog_status_application_info">info aplikasi</string>
+    <string name="report_issue_dialog_status_wallet_dump">wallet dump (lambat)</string>
+    <string name="report_issue_dialog_status_contextual_info">informasi kontekstual</string>
+    <string name="report_issue_dialog_status_background_traces">background traces</string>
+    <string name="report_issue_dialog_status_stack_trace">stack traces</string>
+    <string name="report_issue_dialog_status_finishing">penyelesaian</string>
+    <string name="report_transaction_history_export">Ekspor transaksi</string>
     <string name="report_transaction_history_title">Ekspor CSV</string>
+    <string name="report_transaction_history_dialog_title">Riwayat transaksi lengkap akan diekspor sebagai file CSV.</string>
     <string name="report_transaction_history_not_synced_title">Ekspor CSV</string>
     <string name="report_transaction_history_not_synced_message">Harap tunggu hingga dompet disinkronkan sepenuhnya sebelum mengekspor riwayat transaksi Anda.</string>
     <string name="report_transaction_history_message">Riwayat transaksi lengkap akan diekspor.\n\nSemua pembayaran akan dianggap sebagai pengeluaran dan semua transaksi yang masuk akan menjadi pendapatan. Pemilik dompet ini bertanggung jawab untuk membuat penyesuaian dasar biaya dalam sistem pelaporan pajak yang mereka pilih.</string>
+    <string name="report_transaction_history_body_1">Semua pembayaran akan dianggap sebagai pengeluaran dan semua transaksi masuk akan dianggap sebagai pendapatan.</string>
+    <string name="report_transaction_history_body_2">Pemilik dompet ini bertanggung jawab untuk melakukan penyesuaian biaya dasar dalam sistem pelaporan pajak yang mereka pilih.</string>
     <string name="report_transaction_history_mail_intent_chooser">Kirim riwayat transaksi menggunakan…</string>
     <string name="report_transaction_history_dialog_mail_intent_failed">Gagal mengirim riwayat transaksi.</string>
+    <string name="report_transaction_history_dialog_export_csv_failed">Gagal Mengekspor riwayat transaksi.</string>
 
     <!-- ZenLedger -->
     <string name="zenledger_export_title">ZenLedger</string>
@@ -316,6 +331,7 @@
 
 
     <string name="about_title">Mengenai</string>
+    <string name="about_dash_title">Tentang Dash</string>
     <string name="about_version_title">versi</string>
     <string name="about_copyright_title">Hak cipta</string>
     <string name="about_license_title">Lisensi</string>
@@ -338,6 +354,9 @@
     <string name="notification_inactivity_action_dismiss">Ingatkan saya nanti</string>
     <string name="notification_inactivity_action_dismiss_forever">Jangan ingatkan saya</string>
     <string name="notification_bluetooth_service_listening">Siap untuk menerima pembayaran melalui Bluetooth</string>
+    <string name="notification_sync_paused">Sinkronisasi Blockchain dijeda</string>
+    <string name="notification_background_processes_paused">Proses latar belakang dijeda</string>
+    <string name="notification_background_processes_paused_text">Anda telah mencapai batas layanan latar depan Android 6 jam untuk pencampuran atau sinkronisasi blockchain. Ketuk untuk mengatur ulang…</string>
     <string name="appwidget_wallet_balance_title">Saldo Dash</string>
 
     <!-- generic buttons -->
@@ -396,10 +415,9 @@
     <string name="reason">Alasan</string>
     <string name="link_account">Tautkan akun Anda</string>
     <string name="buy_no_account_needed">Beli Dash · Tidak memerlukan akun</string>
+    <string name="convert_no_account_needed">Tukar Dash · Tidak perlu akun</string>
 
     <string name="recipient_address">Alamat penerima</string>
-    <string name="show_clipboard">Tunjukkan konten dalam clipboard</string>
-    <string name="tap_to_paste">Ketuk alamat dari clipboard untuk menempelkannya</string>
     <string name="not_dash_address">Bukan Alamat Dash atau permintaan URL yang valid.</string>
     <string name="send_to_address">Kirim ke alamat</string>
 
@@ -421,4 +439,14 @@
     <string name="select_option">Pilih opsi</string>
     <string name="customize_shortcuts">Sesuaikan bilah pintasan</string>
     <string name="customize_shortcuts_description">Tahan tombol apa pun di atas untuk menggantinya dengan fungsi yang Anda butuhkan</string>
+
+    <!-- PIN Upgrade Dialog -->
+    <string name="upgrade_pin_title">Anda perlu memperbarui PIN Anda.</string>
+    <string name="upgrade_pin_description">Siapkan PIN baru</string>
+    <string name="upgrade_pin_continue">Teruskan</string>
+
+    <!-- CrowdNode withdrawal reminder -->
+    <string name="crowdnode_withdrawal_reminder_title">Anda punya saldo di CrowdNode</string>
+    <string name="crowdnode_withdrawal_reminder_message">Dana ini harus ditarik dari CrowdNode. Anda bisa mentransfernya ke dompet ini atau melalui akun online Anda di perangkat lain.</string>
+    <string name="crowdnode_withdraw_funds">Tarik dana</string>
 </resources>

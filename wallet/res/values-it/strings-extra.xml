@@ -2,8 +2,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <string name="onboarding_create_wallet">Crea un nuovo portafoglio</string>
-    <string name="onboarding_recover_wallet">Ripristina portafoglio dalla frase di recupero</string>
-    <string name="onboarding_restore_wallet">Ripristina portafoglio da file</string>
+    <string name="onboarding_recover_wallet">Ripristina portafoglio</string>
+    <string name="onboarding_restore_wallet">Ripristina il portafoglio dal file</string>
     <string name="onboarding_load_wallet_error">Impossibile caricare il portafoglio!</string>
 
     <string name="set_pin_create_new_wallet">Crea un nuovo portafoglio</string>
@@ -23,6 +23,7 @@
     <string name="dialog_confirm_confirm">Conferma</string>
     <string name="dialog_confirm_pay_to">Manda a</string>
     <string name="dialog_confirm_secured_by">Garantito da</string>
+    <string name="dialog_confirm_connected_to_unsecured">Connesso a (non protetto)</string>
     <string name="dialog_confirm_fee">Commissione di Rete</string>
     <string name="dialog_confirm_total">Totale</string>
     <string name="dialog_confirm_accept_contact_request">Accetta richiesta di contatto</string>
@@ -38,6 +39,8 @@
     <string name="shortcut_pay_to_contact">Invia al Contatto</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_buy_sell">Acquista &amp; Vendi</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_dash_dex">Dash DEX</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_receive">Ricevi</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
@@ -68,6 +71,11 @@
 
     <string name="pay_title">Invia</string>
     <string name="history_title">Storia</string>
+    <string name="wallet_transactions_building_cache">Determinazione della cronologia delle transazioni…</string>
+    <string name="history_refresh_dialog_title">Aggiorna l\'Elenco delle Transazioni</string>
+    <string name="history_refresh_dialog_message">Questa operazione cancellerà la cache di visualizzazione delle transazioni e la ricostruirà da zero. L\'elenco non sarà temporaneamente disponibile durante la ricostruzione.</string>
+    <string name="history_refresh_dialog_confirm">Aggiorna</string>
+    <string name="history_refresh_complete">Elenco delle transazioni aggiornato</string>
     <string name="more_title">Di Più</string>
     <string name="settings_title">Impostazioni</string>
     <string name="security_title">Sicurezza</string>
@@ -86,6 +94,7 @@
     <string name="payments_pay_to_clipboard_sub_title">Nessun indirizzo copiato</string>
 
     <string name="forgot_pin_title">Hai dimenticato il PIN?</string>
+    <string name="forgot_pin_setup_new_pin_title">Imposta un nuovo PIN</string>
     <string name="forgot_pin_message">È possibile impostare un nuovo PIN con l\'aiuto della frase di recupero.</string>
     <string name="forgot_pin_instruction_1">Inserisci la frase di recupero per recuperare il tuo portafoglio</string>
     <string name="forgot_pin_instruction_2">Imposta un nuovo PIN</string>
@@ -264,7 +273,7 @@
     <string name="authenticate_switch_to_fingerprint">Usa impronta digitale</string>
     <string name="authenticate_switch_to_pin">Usa PIN</string>
 
-    <string name="menu_invite_title">Invita</string>
+    <string name="menu_invite_title">Inviti</string>
     <string name="menu_invite_subtitle">Aiuta i tuoi amici e la tua famiglia a unirsi a Dash</string>
     <string name="menu_buy_and_sell_title">Compra &amp; Vendi Dash</string>
     <string name="menu_buy_and_sell_subtitle">Connetti a Exchanges esterni</string>
@@ -283,20 +292,28 @@
     <string name="menu_explore_title">Esplora</string>
     <string name="menu_explore_subtitle">Trova commercianti che accettano DASH</string>
 
-    <string name="tools_address_book">Rubrica degli indirizzi</string>
+    <string name="tools_address_book">Rubrica degli indirizzi </string>
     <string name="tools_import_private_key">Importa chiave privata</string>
+    <string name="import_private_key_description">Questa operazione trasferirà tutte le monete dal portafoglio cartaceo Dash all\'app DashPay su questo dispositivo.</string>
     <string name="tools_network_monitor">Controllo della rete</string>
-    <string name="tools_show_xpub">Chiave pubblica estesa</string>
+    <string name="tools_show_xpub">Chiavi pubbliche estese (BIP44)</string>
 
     <string name="about_help_us_improve">Aiutaci a migliorare raccontaci tua esperienza</string>
     <string name="about_review_and_rate">Recensisci e valuta l\'app</string>
     <string name="about_contact_support">Contatta il Supporto</string>
     <string name="about_fork_disclaimer">Questa è un\'app open source forcata dal Portafoglio Bitcoin</string>
-    <string name="about_copyright">Copyright © 2025 Dash Core Group</string>
+    <string name="about_copyright">Copyright © %1$d Dash Core Group</string>
     <string name="about_license">GNU General Public License v3.0</string>
     <string name="about_version_name">Portafoglio DashPay %s</string>
     <string name="about_last_explore_device_sync">Verifica l\'ultima sincronizzazione del dispositivo</string>
     <string name="about_last_explore_server_update">Verifica l\'ultimo aggiornamento del server</string>
+    <string name="about_app_version_label">Versione dell\'app</string>
+    <string name="about_platform_label">Platform</string>
+    <string name="about_explore_section">Esplora Dash</string>
+    <string name="about_explore_update">Aggiornamento</string>
+    <string name="about_last_device_sync">Ultima sincronizzazione del dispositivo</string>
+    <string name="about_last_server_update">Ultimo aggiornamento del server</string>
+    <string name="about_value_not_available">Non disponibile</string>
     <string name="about_firebase_installation_id">ID di installazione di Firebase</string>
     <string name="about_fcm_token">Token di messaggistica cloud Firebase</string>
     <string name="about_last_explore_dash_update_error">non può recuperare</string>
@@ -337,13 +354,9 @@
 
     <string name="skip">salta</string>
     <string name="get_started">Iniziare</string>
-    <string name="welcome_screen_title_1_new_install">Benvenuto</string>
-    <string name="welcome_screen_title_1_upgrade">Abbiamo aggiornato</string>
-    <string name="welcome_screen_subtitle_1">Un\'esperienza intuitiva e familiare su tutti i tuoi dispositivi</string>
-    <string name="welcome_screen_title_2">Paga con facilità</string>
-    <string name="welcome_screen_subtitle_2">Paga e ricevi pagamenti istantaneamente in modo semplice e facile da usare</string>
-    <string name="welcome_screen_title_3">Più Controllo</string>
-    <string name="welcome_screen_subtitle_3">Controllo completo di personalizzare il portafoglio in base alle proprie esigenze</string>
+    <string name="welcome_screen_title_1">Invia e ricevi Dash tramite nomi utente</string>
+    <string name="welcome_screen_title_2">Spendi Dash in migliaia di negozi</string>
+    <string name="welcome_screen_title_3">Il modo più sicuro per conservare i tuoi Dash</string>
 
     <string-array name="history_filter">
         <item>Tutte</item>
@@ -425,7 +438,7 @@
     <string name="launch_reset_wallet_extra_message">Eseguire il backup della frase di recupero</string>
     <string name="start_reset_wallet_title">Potresti perdere %s</string>
     <string name="reset_wallet_text">Resetta portafoglio</string>
-
+    <string name="reset_wallet_button">Resetta portafoglio</string>
 
 
     <!-- Tax category -->
@@ -442,9 +455,9 @@
 
     <string name="masternode_keys_title">Chiavi Masternode</string>
     <string name="masternode_key_type_owner">Chiavi proprietario</string>
-    <string name="masternode_key_type_voting">Chiavi  di Voto</string>
+    <string name="masternode_key_type_voting">Chiavi di Voto</string>
     <string name="masternode_key_type_operator">Chiavi operatore</string>
-    <string name="masternode_key_type_platform">ID Keys del nodo Evolution</string>
+    <string name="masternode_key_type_platform">Chiavi Operatore HPMN</string>
     <string name="masternode_key_type_total">%d chiavi</string>
     <string name="masternode_key_type_used">%d usata</string>
     <string name="masternode_key_pair_index">Coppia di chiavi%d</string>

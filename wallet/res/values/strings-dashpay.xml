@@ -16,9 +16,10 @@
     <string name="new_account_confirm_accept">I Accept</string>
     <string name="new_account_confirm_upgrade_fee">Upgrade Fee</string>
     <string name="new_account_confirm_message">You have chosen %s as your username. Please note that the username can NOT be changed once it is registered.</string>
+    <string name="new_account_secondary_confirm_message">You chose %s as an instant username. Please note that the username can NOT be changed once it is registered.</string>
     <string name="invitation_confirm_title">Invitation Fee</string>
     <string name="invitation_confirm_message">Each invitation will be funded with this amount so that the receiver can quickly create their username on the Dash Network</string>
-    <string name="invitation_init_title">Invite</string>
+    <string name="invitation_title">Invitation</string>
     <string name="invitation_init_header">Invite your friends &amp; family</string>
     <string name="invitation_init_message">Help your friends and family join the Dash Network. Invite them to the world of social banking.</string>
     <string name="invitation_init_button_text">Create a new Invitation</string>
@@ -52,8 +53,12 @@
     <string name="invitation_invalid_invite_message">Your invitation from %s is not valid</string>
     <string name="invitation_username_already_found_title">Username already found</string>
     <string name="invitation_username_already_found_message">You cannot claim this invite since you already have a Dash username</string>
+    <string name="invitation_username_already_found_voting_title">Username already requested</string>
+    <string name="invitation_username_already_found_voting_message">You cannot claim this invite since you have already requested a Dash username</string>
     <string name="invitation_onboarding_has_began_error_title">Onboarding Error</string>
+    <string name="invitation_error_title">Invitation Error</string>
     <string name="invitation_onboarding_has_began_error">Onboarding is in process, please claim your invite after you have created your wallet.</string>
+    <string name="invitation_accept_invite_has_began_error">DashPay is currently processing an invite.</string>
     <string name="invitation_accept_title_1">Get your Username</string>
     <string name="invitation_accept_title_2">Add your Friends &amp; Family</string>
     <string name="invitation_accept_message_2">Invite your family, find your friends by searching their usernames</string>
@@ -99,8 +104,18 @@
     <string name="search_user_no_results">There are no users that match</string>
     <string name="search_user_loading">Searching for username <b>\"%\"</b> on the Dash Network</string>
     <string name="contact_request_pending">Contact Request Pending</string>
+    <string name="send_contact_request_short">Send request</string>
+    <string name="contact_request_sent_short">Request sent</string>
+    <string name="send_button_label">Send</string>
+    <string name="contact_history_disclaimer_pending_plain">Once %1$s accepts your request you can pay directly to the username</string>
     <string name="pay">Pay</string>
     <string name="contact_request_received_title">%s has requested to be a friend</string>
+    <string name="contact_request_received_card_title">%s has sent you a contact request</string>
+    <string name="contact_request_received_card_message">If you don\'t want %s to be in your contact list you can tap the \"Ignore\" button. They will not be notified about your decision.</string>
+    <string name="contact_request_row_received">%s sent you a contact request</string>
+    <string name="contact_request_row_sent">Contact request sent</string>
+    <string name="contact_request_row_established_incoming">You accepted the request from %s</string>
+    <string name="contact_request_row_established_outgoing">%s has accepted your contact request</string>
     <string name="contact_request_accept">Accept</string>
     <string name="contact_request_ignore">Ignore</string>
 
@@ -210,6 +225,8 @@
 
     <string name="join_dashpay_subtitle">Create Username, add your friends…</string>
     <string name="join_dashpay_more_subtitle">Create your Username, find your friends and add them to your contacts</string>
+    <string name="join_dashpay_more_subtitle_two">Create a username and say goodbye to numerical addresses</string>
+    <string name="join_dashpay_wait">Wait until syncing is finished to create a username</string>
     <string name="join">Join</string>
 
     <string name="more_suggestions">More Suggestions</string>
@@ -306,6 +323,7 @@
         <item>Has Blocked votes</item>
     </string-array>
     <string name="request_your_username">Create your username</string>
+    <string name="request_instant_username">Create instant username</string>
     <string name="request_your_hint">Please note that you will not be able to change it in the future</string>
     <string name="request_username">Request Username</string>
     <string name="request_voting_range">The Dash network will vote on this username. We will notify you of the results on %s.</string>
@@ -382,6 +400,8 @@
     <string name="requested_voting_duration">Results on %s.</string>
     <string name="cancel_request">Cancel Request</string>
     <string name="after_the_voting">After the voting ends we will notify you about its results</string>
+    <string name="after_the_voting_result">Voting has ended</string>
+    <string name="voting_period_error">Voting period not found</string>
     <string name="none">None</string>
     <string name="verify_now">Verify Now</string>
     <string name="if_you_tap_cancel">If you tap “Cancel Request”, you will still have a chance to request another username without paying again</string>
@@ -404,6 +424,7 @@
     <string name="coinjoin_mixing_level_subtitle">You can change or stop the mixing level at any time</string>
     <string name="coinjoin_mixing_transactions">Mixing Transactions</string>
     <string name="coinjoin_transaction_group">These are mixing related transactions.</string>
+    <string name="coinjoin_transaction_group_title">Why do I see all these transactions?</string>
     <string name="intermediate">Intermediate</string>
     <string name="advanced">Advanced</string>
     <string name="intermediate_level_card_decs">Advanced users who have a very high level of technical expertise can determine your transaction history</string>
@@ -413,9 +434,11 @@
     <string name="coinjoin_start">Start Mixing</string>
     <string name="coinjoin_stop">Stop Mixing</string>
     <string name="coinjoin_mixing">Mixing</string>
-    <string name="coinjoin_mixing_finishing">Mixing Finishing</string>
-    <string name="coinjoin_paused">Mixing Paused</string>
+    <string name="coinjoin_mixing_finishing">Finishing</string>
+    <string name="coinjoin_paused">Paused</string>
     <string name="coinjoin_not_started">Not Started</string>
+    <string name="coinjoin_progress_status_percentage" translatable="false">%s · %d%%</string>
+    <string name="coinjoin_progress_amount_hidden" translatable="false">****</string>
     <string name="coinjoin_progress" translatable="false">%s (%.1f%%) %s / %s</string>
     <string name="coinjoin_progress_balance">%1$s of %2$s</string>
     <string name="coinjoin_progress_finished">Fully Mixed</string>
@@ -436,8 +459,12 @@
 
     <string name="request_username_username_voting_message">+ what is username voting?</string>
     <string name="request_username_character_requirement">Letters, numbers and hyphens only</string>
-    <string name="request_username_balance_requirement">You need to have 0.25 DASH to create this username</string>
+    <string name="request_username_character_requirement_invite_noncontested">Numbers 2-9</string>
+    <string name="request_username_balance_requirement">You need to have %s DASH to create this username</string>
+    <string name="request_username_requirements_message_invite_noncontested">The username must meet one of these criteria</string>
+    <string name="request_username_requirements_message">The username must meet these criteria</string>
     <string name="request_username_length_requirement">Between 3 and 23 characters</string>
+    <string name="request_username_length_requirement_noncontested">Between 20 and 23 characters</string>
     <string name="request_username_confirm">I accept</string>
     <string name="username_vote_one_left_message">You have already voted for this username %d times. You can only cast one more vote for this username.</string>
     <string name="username_vote_one_left">One vote left</string>
@@ -466,4 +493,109 @@
     <string name="voting_period_ends_tomorrow">Voting ends tomorrow</string>
     <string name="link_included">link included</string>
     <string name="group_by">Group by</string>
+    <string name="transaction_metadata_title">Transaction metadata</string>
+    <string name="transaction_metadata_data_being_saved">Scheduled</string>
+    <string name="transaction_metadata_payment_category_description">Indicates if a transaction is associated with Coinbase, Uphold, Topper or DashSpend</string>
+    <string name="transaction_metadata_fiat_price_description">The historical price at the time of the transaction</string>
+    <string name="transaction_metadata_description">Your data is stored on your device but will be lost if you reset or restore your wallet. Below are examples of the information that will be saved when saved on the network.</string>
+    <string name="transaction_metadata_cost">How much does it cost?</string>
+    <string name="transaction_metadata_payment_category">Payment Categories</string>
+    <string name="transaction_metadata_save_data">Save data</string>
+    <string name="transaction_metadata_tax_category">Tax Categories</string>
+    <string name="transaction_metadata_fiat_prices">Fiat Prices</string>
+    <string name="transaction_metadata_private_memos">Private Memos</string>
+    <string name="transaction_metadata_gift_card_info">Gift Card data</string>
+    <string name="transaction_metadata_private_memo_description">Short memos that describe the purpose of the transaction</string>
+    <string name="transaction_metadata_tax_category_description">Indicates if a transaction is a transfer, income or expense</string>
+    <string name="transaction_metadata_gift_card_info_description">Includes card number, pin code and other information</string>
+    <string name="transaction_metadata_costs_title">Costs associated with saving data to the network</string>
+    <string name="transaction_metadata_costs_description">As part of creating a username, you receive credits that are used for various activities on the network; saving transaction metadata on the network will consume these credits faster.  Once all credits are used, you can purchase more.\n\nIt costs approximately %s per upload of data to the network so it is recommended to upload multiple transactions at a time.</string>
+    <string-array name="transaction_metadata_save_frequency">
+        <item>After 10 transactions</item>
+        <item>Once a week</item>
+        <item>After every transaction</item>
+    </string-array>
+    <string name="reset_wallet_metadata_title">Do you want to reset wallet without saving your metadata to the network?</string>
+    <string name="reset_wallet_metadata_message">Resetting your wallet without saving data to the network will result in the loss of some transaction metadata.</string>
+    <string name="reset_wallet_metadata_button_without">Reset wallet without saving</string>
+    <string name="reset_wallet_metadata_button_with">Save data and reset wallet</string>
+    <string name="reset_wallet_metadata_button_saving">Saving</string>
+    <string name="transaction_metadata_save_to_network">Save to network</string>
+    <string name="transaction_metadata_save_frequency">How often to save?</string>
+    <string name="transaction_metadata_what_to_save">What to save?</string>
+    <string name="transaction_metadata_past_title">Past</string>
+    <string name="transaction_metadata_future_title">Future</string>
+    <string name="transaction_metadata_past_subtitle">Save all transactions made up to %s</string>
+    <string name="transaction_metadata_future_subtitle">Automatically save all transactions you make after %s</string>
+    <string name="transaction_metadata_gift_card_data">Gift card data</string>
+    <string name="transaction_metadata_saving_to_network">Saving to network - %d%%</string>
+    <string name="transaction_metadata_last_saved_date">Last saved %s</string>
+    <string name="transaction_metadata_past_already_saved">All transactions made up to %s have already been saved</string>
+    <string name="transaction_metadata_past_already_saved_none">No transactions have been saved</string>
+    <string name="transaction_metadata_past_syncing">All transactions made up to %s are syncing</string>
+    <string name="transaction_metadata_save_new_tx_title">Do you want to save unsaved transactions?</string>
+    <string name="transaction_metadata_you_have_n_tx">You have %d unsaved transactions since %s</string>
+    <string name="transaction_metadata_save_transactions">Save unsaved transactions</string>
+    <string name="transaction_metadata_continue_without_saving">Continue without saving</string>
+    <string name="invitation_fee_title">Invitation Fee</string>
+    <string name="invitation_fee_message">Each invitation will be funded so that the receiver can quickly create their username on the Dash Network.</string>
+    <string name="invitation_fee_noncontested">Non-contested</string>
+    <string name="invitation_fee_contested">Contested</string>
+    <string name="invitation_fee_contested_message">The person that you send this invitation to can request any username they want and the network will vote to approve it.</string>
+    <string name="invitation_fee_noncontested_message">The person that you send this invitation to can request a username that has a number 2-9, is more than 20 characters.</string>
+    <string name="invitation_creating_progress_loading">Loading Invite...</string>
+    <string name="invitation_creating_progress_wip">Creating Invitation...</string>
+    <string name="invitation_fee_confirm_and_pay_button">Confirm and pay</string>
+    <string name="error_sending_invite_transaction">Error sending invite transaction</string>
+    <string name="request_username_invitation_not_mixed_message">The invitation was created with unmixed funds</string>
+    <string name="request_username_invitation_only_noncontested_message">You can only create a non-contested username using this invitation</string>
+    <string name="username_types_title">What are contested and non-contested usernames?</string>
+    <string name="username_types_message">There are two types of usernames: contested and non-contested.\n\nNon-contested usernames have at least one number (2-9) or are longer than 20 characters and will be automatically approved.\n\nIf you want to create a contested username which is shorter and without numbers, you need to register with DashPay without an invitation, pay the required fee and wait for approval upon completion of the voting period.</string>
+    <string name="accept_invitation_hide">Hide</string>
+    <string name="accept_invitation_create">Create</string>
+
+    <!-- Create Instant Username Dialog -->
+    <string name="create_instant_username_title">Create an instant username</string>
+    <string name="create_instant_username_description">Your requested username will be voted on for 2 weeks. For immediate contacts and payments, you can create a similar instant username.\n\nIf your original request is approved, it replaces the instant one, preserving contacts and history. If not, continue using the instant one uninterrupted.</string>
+    <string name="create_instant_username_button">Create instant username</string>
+    <string name="create_instant_username_cancel">Cancel</string>
+
+    <!-- DashConnect (Connections) -->
+    <string name="dash_connect_connections_title">Connections</string>
+    <string name="dash_connect_empty_heading">No apps connected yet</string>
+    <string name="dash_connect_empty_message">Connect your DashPay username to apps on the Dash network to sign in without passwords or accounts</string>
+    <string name="dash_connect_scan_qr">Scan QR</string>
+    <string name="dash_connect_status_approved">Approved</string>
+    <string name="dash_connect_status_active">Active</string>
+    <string name="dash_connect_status_disconnected">Disconnected</string>
+    <string name="dash_connect_hint_complete_login">Scan the %1$s QR code to complete your login</string>
+    <string name="dash_connect_scan_to_complete_banner">Scan the QR code to complete the login process</string>
+    <string name="dash_connect_hint_active">Touch to disconnect at any time</string>
+    <string name="dash_connect_hint_log_back_in">Scan the %1$s QR code to log back in</string>
+    <string name="dash_connect_approve_title">Approve connection to %1$s?</string>
+    <string name="dash_connect_approve_will_be_able">This app will be able to:</string>
+    <string name="dash_connect_approve_see_username">See your username</string>
+    <string name="dash_connect_approve_verify_identity">Verify your identity</string>
+    <string name="dash_connect_username">Username</string>
+    <string name="dash_connect_identity">Identity</string>
+    <string name="dash_connect_approve_no_access">This app will NOT have access to:</string>
+    <string name="dash_connect_approve_no_private_keys">Your private keys</string>
+    <string name="dash_connect_approve_no_withdraw_funds">Withdraw funds</string>
+    <string name="dash_connect_approve">Approve</string>
+    <string name="dash_connect_deny">Deny</string>
+    <string name="dash_connect_unknown_app">Unknown app</string>
+    <string name="dash_connect_login_completed">Login completed</string>
+    <string name="dash_connect_error">Could not complete the DashConnect request: %1$s</string>
+    <string name="dash_connect_cancel_login_title">Cancel login to %1$s?</string>
+    <string name="dash_connect_cancel_login_message">The pending login will be discarded. You can start over at any time by scanning a new QR code.</string>
+    <string name="dash_connect_disconnect_title">Disconnect from %1$s?</string>
+    <string name="dash_connect_disconnect_message">The app will no longer be able to use your login. You can log back in by scanning a new QR code.</string>
+    <string name="dash_connect_remove_title">Remove %1$s?</string>
+    <string name="dash_connect_remove_message">The connection will be removed from this list. You can connect again at any time by scanning a new QR code.</string>
+    <string name="dash_connect_confirm">Confirm</string>
+    <string name="dash_connect_testnet_only_heading">Unavailable on mainnet</string>
+    <string name="dash_connect_testnet_only_message">DashConnect login is not yet available on mainnet</string>
+
+    <string name="dash_connect_group_scope_changed">This group\'s scope has changed since your previous approval, or its previous scope was not recorded. Review the current members and administrators below before continuing. Previously registered keys may still be active; Revoke access remains available.</string>
+    <string name="dash_connect_group_scope_approve">I approve the updated group scope shown above.</string>
 </resources>

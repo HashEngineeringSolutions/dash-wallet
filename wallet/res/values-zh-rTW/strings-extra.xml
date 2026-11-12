@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <string name="onboarding_create_wallet">創建一個新錢包</string>
-    <string name="onboarding_recover_wallet">從恢復詞組還原錢包</string>
+    <string name="onboarding_create_wallet">創建新錢包</string>
+    <string name="onboarding_recover_wallet">回復錢包</string>
     <string name="onboarding_restore_wallet">從文件還原錢包</string>
     <string name="onboarding_load_wallet_error">無法加載錢包!</string>
 
@@ -23,6 +23,7 @@
     <string name="dialog_confirm_confirm">確認:</string>
     <string name="dialog_confirm_pay_to">發給</string>
     <string name="dialog_confirm_secured_by">由擔保</string>
+    <string name="dialog_confirm_connected_to_unsecured">已連接到（不安全）</string>
     <string name="dialog_confirm_fee">網絡費用</string>
     <string name="dialog_confirm_total">總共</string>
     <string name="dialog_confirm_accept_contact_request">接受聯繫請求</string>
@@ -38,6 +39,8 @@
     <string name="shortcut_pay_to_contact">發送給聯繫人</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_buy_sell">購買 &amp; 出售</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_dash_dex">達世幣去中心化交易所</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_receive">接收</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
@@ -68,6 +71,11 @@
 
     <string name="pay_title">付款</string>
     <string name="history_title">歷史</string>
+    <string name="wallet_transactions_building_cache">確定交易歷史記錄...</string>
+    <string name="history_refresh_dialog_title">刷新交易列表</string>
+    <string name="history_refresh_dialog_message">這將清除事務顯示快取並從頭開始重建。該列表在重建時將暫時無法使用。</string>
+    <string name="history_refresh_dialog_confirm">重新整理</string>
+    <string name="history_refresh_complete">交易清單已刷新</string>
     <string name="more_title">更多</string>
     <string name="settings_title">設定</string>
     <string name="security_title">安全性</string>
@@ -86,6 +94,7 @@
     <string name="payments_pay_to_clipboard_sub_title">未能復制位址</string>
 
     <string name="forgot_pin_title">忘記密碼了嗎?</string>
+    <string name="forgot_pin_setup_new_pin_title">設置一個新的密碼</string>
     <string name="forgot_pin_message">您可以在恢復詞組的幫助下設置新的密碼。</string>
     <string name="forgot_pin_instruction_1">輸入恢復詞組以恢復您的錢包</string>
     <string name="forgot_pin_instruction_2">設置一個新的密碼</string>
@@ -258,7 +267,7 @@
     <string name="authenticate_switch_to_fingerprint">使用指紋</string>
     <string name="authenticate_switch_to_pin">使用密碼</string>
 
-    <string name="menu_invite_title">邀請</string>
+    <string name="menu_invite_title">邀請函</string>
     <string name="menu_invite_subtitle">幫助您的朋友和家人加入達世幣</string>
     <string name="menu_buy_and_sell_title">購買 &amp; 出售達世幣</string>
     <string name="menu_buy_and_sell_subtitle">與第三方交易所連結</string>
@@ -279,18 +288,26 @@
 
     <string name="tools_address_book">地址簿</string>
     <string name="tools_import_private_key">導入私鑰</string>
+    <string name="import_private_key_description">此操作會將所有代幣從達世幣紙錢包轉移到該裝置上的 DashPay 應用程式。</string>
     <string name="tools_network_monitor">網路監視器</string>
-    <string name="tools_show_xpub">擴展的公鑰</string>
+    <string name="tools_show_xpub">擴展公鑰（BIP44）</string>
 
     <string name="about_help_us_improve">幫助我們改善您的體驗</string>
     <string name="about_review_and_rate">對應用程式進行評價和評分</string>
     <string name="about_contact_support">聯繫支援服務</string>
     <string name="about_fork_disclaimer">這是一個從比特幣錢包分叉的開源應用程序</string>
-    <string name="about_copyright">版權所有 © 2025 Dash Core Group</string>
+    <string name="about_copyright">版權所有t © %1$d 達世幣核心集團</string>
     <string name="about_license">GNU通用公共許可證 v3.0</string>
     <string name="about_version_name">DashPay 錢包%s</string>
     <string name="about_last_explore_device_sync">上一次探索設備同步</string>
     <string name="about_last_explore_server_update">上一次探索服務器更新</string>
+    <string name="about_app_version_label">應用程式版本</string>
+    <string name="about_platform_label">平台</string>
+    <string name="about_explore_section">瀏覽達世幣</string>
+    <string name="about_explore_update">更新</string>
+    <string name="about_last_device_sync">上一次設備同步</string>
+    <string name="about_last_server_update">上一次服務器更新</string>
+    <string name="about_value_not_available">無法使用</string>
     <string name="about_firebase_installation_id">Firebase 安裝 ID</string>
     <string name="about_fcm_token">Firebase 雲消息代幣</string>
     <string name="about_last_explore_dash_update_error">無法獲取</string>
@@ -331,13 +348,9 @@
 
     <string name="skip">略過</string>
     <string name="get_started">開始使用</string>
-    <string name="welcome_screen_title_1_new_install">歡迎</string>
-    <string name="welcome_screen_title_1_upgrade">我們升級了</string>
-    <string name="welcome_screen_subtitle_1">跨所有設備的直觀熟悉的體驗</string>
-    <string name="welcome_screen_title_2">輕鬆付款</string>
-    <string name="welcome_screen_subtitle_2">易於使用的付款流程，可立即付款並能即時確認付款</string>
-    <string name="welcome_screen_title_3">更多控制選項</string>
-    <string name="welcome_screen_subtitle_3">能夠讓您完全控制並根據您的個人需要自定義錢包</string>
+    <string name="welcome_screen_title_1">通過用戶名發送和接收達世幣</string>
+    <string name="welcome_screen_title_2">在數千家商店花費 達世幣</string>
+    <string name="welcome_screen_title_3">存儲 達世幣 最安全的方式</string>
 
     <string-array name="history_filter">
         <item>所有</item>
@@ -419,7 +432,7 @@
     <string name="launch_reset_wallet_extra_message">備份您的恢復詞組</string>
     <string name="start_reset_wallet_title">你可能失去 %s</string>
     <string name="reset_wallet_text">重置錢包</string>
-
+    <string name="reset_wallet_button">重置錢包</string>
 
 
     <!-- Tax category -->
@@ -434,11 +447,11 @@
     <string name="reclassify_transactions_linked_accounts_message">在預設情況下，所有進出您關聯賬戶的交易（交易所、質押等）都將被標記為轉賬。</string>
     <string name="reclassify_transactions_change_explanation">從主頁選擇任何交易並在交易詳情頁面更改類別。</string>
 
-    <string name="masternode_keys_title">主節點密鑰</string>
-    <string name="masternode_key_type_owner">擁有者公鑰</string>
-    <string name="masternode_key_type_voting">投票公鑰</string>
-    <string name="masternode_key_type_operator">操作員公鑰</string>
-    <string name="masternode_key_type_platform">Evolution 節點 ID 金鑰</string>
+    <string name="masternode_keys_title">主節點金鑰</string>
+    <string name="masternode_key_type_owner">所有者鑰匙</string>
+    <string name="masternode_key_type_voting">投票鑰匙</string>
+    <string name="masternode_key_type_operator">操作員金鑰</string>
+    <string name="masternode_key_type_platform">HPMN 操作鑰匙</string>
     <string name="masternode_key_type_total">%d 密鑰</string>
     <string name="masternode_key_type_used">%d 己使用</string>
     <string name="masternode_key_pair_index">密鑰對%d</string>

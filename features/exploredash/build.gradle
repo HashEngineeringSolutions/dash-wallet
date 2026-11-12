@@ -10,10 +10,11 @@ plugins {
 }
 
 android {
+    compileSdk 36
+
     defaultConfig {
-        compileSdk 34
         minSdkVersion 24
-        targetSdkVersion 34
+        targetSdkVersion 36
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
         javaCompileOptions {
@@ -21,6 +22,19 @@ android {
                 arguments += ["room.schemaLocation": "$projectDir/schemas".toString()]
             }
         }
+
+        // Seed PiggyCards test merchants in any build except the production
+        // release pipeline (fastlane sets BUILD_PROD=1). The project property
+        // takes precedence: a long-lived Gradle daemon does not pick up an
+        // environment variable set after it started, so local distribution
+        // builds pass -PBUILD_PROD instead.
+        def buildProd = project.findProperty("BUILD_PROD") ?: System.getenv("BUILD_PROD")
+        def supportPiggyCardsTestMerchant = buildProd != "1"
+        buildConfigField "boolean", "PIGGY_CARDS_TEST_MERCHANT", supportPiggyCardsTestMerchant.toString()
+    }
+    
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
     }
 
     buildTypes {
@@ -31,15 +45,16 @@ android {
     }
     compileOptions {
         coreLibraryDesugaringEnabled true
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
     buildFeatures {
         viewBinding true
         compose = true
+        buildConfig true
     }
     testOptions {
         unitTests.returnDefaultValues = true
@@ -88,6 +103,7 @@ dependencies {
     implementation "androidx.recyclerview:recyclerview:$recyclerViewVersion"
     api 'androidx.paging:paging-runtime-ktx:3.1.1'
     implementation "io.coil-kt:coil:$coilVersion"
+    implementation "io.coil-kt:coil-compose:$coilVersion"
     //noinspection GradleDependency
     implementation "com.google.zxing:core:$zxingVersion"
 
@@ -114,8 +130,11 @@ dependencies {
     testImplementation "androidx.test:core-ktx:$testCoreVersion"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion"
     testImplementation "org.mockito.kotlin:mockito-kotlin:$mockitoVersion"
+    // the view models here are constructed from final Kotlin classes, which the mockito version
+    // this project pins cannot stand in for
+    testImplementation "io.mockk:mockk:1.13.8"
     testImplementation "androidx.arch.core:core-testing:$coreTestingVersion"
-    testImplementation "org.robolectric:robolectric:4.13"
+    testImplementation "org.robolectric:robolectric:4.15.1"
     testImplementation "androidx.room:room-testing:$roomVersion"
 
     androidTestImplementation "org.mockito.kotlin:mockito-kotlin:$mockitoVersion"

@@ -17,40 +17,55 @@
 
 package de.schildbach.wallet.ui.explore
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.isVisible
+import android.view.ViewGroup
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
-import de.schildbach.wallet.ui.staking.StakingActivity
-import de.schildbach.wallet_test.R
 import kotlinx.coroutines.launch
-import org.dash.wallet.common.services.analytics.AnalyticsConstants
-import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
-import org.dash.wallet.common.ui.viewBinding
-import org.dash.wallet.common.util.Constants
+import org.dash.wallet.common.ui.components.DashWalletTheme
 import org.dash.wallet.common.util.safeNavigate
-import org.dash.wallet.features.exploredash.databinding.FragmentExploreBinding
 import org.dash.wallet.features.exploredash.ui.explore.ExploreTopic
 import org.dash.wallet.features.exploredash.ui.explore.dialogs.ExploreDashInfoDialog
-import java.util.Locale
 
 @AndroidEntryPoint
-class ExploreFragment : Fragment(R.layout.fragment_explore) {
-    private val binding by viewBinding(FragmentExploreBinding::bind)
+class ExploreFragment : Fragment() {
     private val viewModel: ExploreEntryViewModel by viewModels()
 
-    private val stakingLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Constants.USER_BUY_SELL_DASH) {
-            safeNavigate(ExploreFragmentDirections.exploreToBuySell())
+    private val screenState = mutableStateOf(
+        ExploreScreenState(showFaucet = false)
+    )
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        return ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                DashWalletTheme {
+                    ExploreScreen(
+                        state = screenState.value,
+                        onBackClick = { findNavController().popBackStack() },
+                        onWhereToSpendClick = ::handleMerchantsNavigation,
+                        onAtmsClick = {
+                            safeNavigate(ExploreFragmentDirections.exploreToSearch(ExploreTopic.ATMs))
+                        },
+                        onFaucetClick = {
+                            safeNavigate(ExploreFragmentDirections.exploreToFaucet())
+                        }
+                    )
+                }
+            }
         }
     }
 
@@ -58,72 +73,19 @@ class ExploreFragment : Fragment(R.layout.fragment_explore) {
         super.onViewCreated(view, savedInstanceState)
         enterTransition = MaterialFadeThrough()
 
-        binding.merchantsBtn.setOnClickListener {
-            lifecycleScope.launch {
-                if (viewModel.isInfoShown()) {
-                    safeNavigate(ExploreFragmentDirections.exploreToSearch(ExploreTopic.Merchants))
-                } else {
-                    ExploreDashInfoDialog().show(requireActivity()) {
-                        viewModel.setIsInfoShown(true)
-                        safeNavigate(ExploreFragmentDirections.exploreToSearch(ExploreTopic.Merchants))
-                    }
-                }
-            }
-        }
-
-//        binding.atmsBtn.setOnClickListener {
-//            safeNavigate(ExploreFragmentDirections.exploreToSearch(ExploreTopic.ATMs))
-//        }
-
-        binding.stakingBtn.setOnClickListener {
-            viewModel.logEvent(AnalyticsConstants.CrowdNode.STAKING_ENTRY)
-            handleStakingNavigation()
-        }
-
-        binding.faucetBtn.isVisible = viewModel.isTestNet()
-        binding.faucetBtn.setOnClickListener {
-            safeNavigate(ExploreFragmentDirections.exploreToFaucet())
-        }
-
-        viewModel.stakingAPY.observe(viewLifecycleOwner) {
-            setAPY(it)
-        }
-
-        // load the last APY value
-        viewModel.getLastStakingAPY()
+        screenState.value = screenState.value.copy(showFaucet = viewModel.isTestNet())
     }
 
-    private fun handleStakingNavigation() {
+    private fun handleMerchantsNavigation() {
         lifecycleScope.launch {
-            if (viewModel.isBlockchainSynced.value == true) {
-                stakingLauncher.launch(Intent(requireContext(), StakingActivity::class.java))
+            if (viewModel.isInfoShown()) {
+                safeNavigate(ExploreFragmentDirections.exploreToSearch(ExploreTopic.Merchants))
             } else {
-                val openWebsite = AdaptiveDialog.create(
-                    null,
-                    getString(R.string.chain_syncing),
-                    getString(R.string.crowdnode_wait_for_sync),
-                    getString(R.string.button_close),
-                    getString(R.string.crowdnode_open_website)
-                ).showAsync(requireActivity())
-
-                if (openWebsite == true) {
-                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.crowdnode_website)))
-                    startActivity(browserIntent)
+                ExploreDashInfoDialog().show(requireActivity()) {
+                    viewModel.setIsInfoShown(true)
+                    safeNavigate(ExploreFragmentDirections.exploreToSearch(ExploreTopic.Merchants))
                 }
             }
-        }
-    }
-
-    private fun setAPY(apy: Double) {
-        if (apy != 0.0) {
-            binding.stakingApyContainer.isVisible = true
-            binding.stakingApy.text = getString(
-                R.string.explore_staking_current_apy,
-                String.format(Locale.getDefault(), "%.1f", apy)
-            )
-        } else {
-            // hide the APY container if we don't have a value yet
-            binding.stakingApyContainer.isVisible = false
         }
     }
 }

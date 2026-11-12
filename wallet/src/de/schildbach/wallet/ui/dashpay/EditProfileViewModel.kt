@@ -32,6 +32,7 @@ import de.schildbach.wallet.database.dao.DashPayProfileDao
 import de.schildbach.wallet.database.entity.BlockchainIdentityConfig
 import de.schildbach.wallet.database.entity.DashPayProfile
 import de.schildbach.wallet.livedata.Resource
+import de.schildbach.wallet.service.platform.IdentityRepository
 import de.schildbach.wallet.ui.dashpay.utils.DashPayConfig
 import de.schildbach.wallet.ui.dashpay.utils.ImgurService
 import de.schildbach.wallet.ui.dashpay.work.UpdateProfileOperation
@@ -61,6 +62,7 @@ class EditProfileViewModel @Inject constructor(
     blockchainIdentityDataDao: BlockchainIdentityConfig,
     dashPayProfileDao: DashPayProfileDao,
     val platformRepo: PlatformRepo,
+    val identityRepository: IdentityRepository,
     private val imgurService: ImgurService,
     private val dashPayConfig: DashPayConfig
 ) : BaseProfileViewModel(blockchainIdentityDataDao, dashPayProfileDao) {
@@ -248,7 +250,7 @@ class EditProfileViewModel @Inject constructor(
         }
     }
 
-    suspend fun hasEnoughCredits(): CreditBalanceInfo {
-        return platformRepo.getIdentityBalance()
+    suspend fun hasEnoughCredits(): CreditBalanceInfo? {
+        return identityRepository.getIdentityBalance()
     }
 }

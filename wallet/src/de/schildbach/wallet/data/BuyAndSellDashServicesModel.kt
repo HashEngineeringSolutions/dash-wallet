@@ -35,7 +35,9 @@ enum class ServiceType(
 ) {
     TOPPER(R.string.topper, R.drawable.logo_topper),
     UPHOLD(R.string.uphold_account, R.drawable.ic_uphold),
-    COINBASE(R.string.coinbase, R.drawable.ic_coinbase)
+    COINBASE(R.string.coinbase, R.drawable.ic_coinbase),
+    MAYA(R.string.maya_service_name, R.drawable.ic_maya_logo),
+    SWAPKIT(R.string.swapkit_service_name, R.drawable.ic_swapkit_logo)
 }
 
 @Parcelize
@@ -49,7 +51,8 @@ data class BuyAndSellDashServicesModel(
         fun getBuyAndSellDashServicesList() = listOf(
             BuyAndSellDashServicesModel(ServiceType.TOPPER, ServiceStatus.IDLE),
             BuyAndSellDashServicesModel(ServiceType.UPHOLD, ServiceStatus.IDLE),
-            BuyAndSellDashServicesModel(ServiceType.COINBASE, ServiceStatus.IDLE)
+            BuyAndSellDashServicesModel(ServiceType.COINBASE, ServiceStatus.IDLE),
+            BuyAndSellDashServicesModel(ServiceType.SWAPKIT, ServiceStatus.IDLE)
         )
     }
 

@@ -18,10 +18,15 @@
 package org.dash.wallet.common.util
 
 import android.os.LocaleList
+import org.bitcoinj.utils.MonetaryFormat
+import java.math.BigDecimal
 import java.math.RoundingMode
+import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.util.Currency
 import java.util.Locale
+import java.text.ParseException
+
 
 /**
  * @author Andreas Schildbach
@@ -63,6 +68,10 @@ object GenericUtils {
         return Locale(deviceLocaleLanguage, countryCode)
     }
 
+    fun getDefaultLocale(): Locale {
+        return Locale.US
+    }
+
     /**
      * To perform some operations on our fiat values (ex: parse to double, convert fiat to Coin), it needs to be properly formatted
      * In case our fiat value is in a currency that has a comma, we need to strip it away so as to have our value as a decimal
@@ -72,11 +81,19 @@ object GenericUtils {
     fun formatFiatWithoutComma(fiatValue: String): String {
         val fiatValueContainsCommaWithDecimal = fiatValue.contains(".") && fiatValue.contains(",")
 
-        return if (fiatValueContainsCommaWithDecimal) {
+        val cleaned = if (fiatValueContainsCommaWithDecimal) {
             fiatValue.replace(",", "")
         } else {
             fiatValue.replace(",", ".")
                 .replace("٫", ".")
+        }
+        
+        // Limit to 8 decimal places to prevent rounding errors in Coin.parseCoin
+        val decimalIndex = cleaned.indexOf('.')
+        return if (decimalIndex != -1 && cleaned.length > decimalIndex + 9) {
+            cleaned.substring(0, decimalIndex + 9)
+        } else {
+            cleaned
         }
     }
 
@@ -87,9 +104,36 @@ object GenericUtils {
         return currency.getSymbol(getDeviceLocale())
     }
 
-    fun getCoinIcon(code: String): String {
-        return "https://raw.githubusercontent.com/jsupa/crypto-icons/main/icons/" +
-            code.lowercase(Locale.getDefault()) + ".png"
+    /**
+     * Ordered list of candidate icon URLs for a coin, to be tried in sequence until
+     * one loads.
+     *
+     * When a SwapKit [identifier] is supplied (e.g. "ETH.USDC-0x...") the SwapKit
+     * token-list bucket is tried first: it keys off the full chain-qualified
+     * identifier, so it disambiguates same-ticker tokens across chains and has the
+     * widest coverage of the assets the wallet can route. The bucket only serves
+     * fully-lowercased identifier filenames. CoinCap (broader generic coverage,
+     * includes Solana memecoins like WIF that the older jsupa repo lacks) and the
+     * jsupa repo follow as ticker-keyed fallbacks.
+     *
+     * Some assets (e.g. Solana tokens like $WIF) carry a leading '$' or other
+     * non-alphanumeric characters in their symbol; the ticker-keyed hosts key off
+     * the plain ticker (wif), so strip anything that isn't alphanumeric.
+     */
+    fun getCoinIconUrls(code: String, identifier: String? = null): List<String> {
+        val sanitized = code.lowercase(Locale.getDefault()).filter { it.isLetterOrDigit() }
+        val urls = mutableListOf<String>()
+        if (!identifier.isNullOrEmpty()) {
+            val swapKitId = identifier.lowercase(Locale.getDefault())
+            urls.add("https://tokens.swapkit.dev/images/$swapKitId.png")
+        }
+        urls.add("https://assets.coincap.io/assets/icons/$sanitized@2x.png")
+        urls.add("https://raw.githubusercontent.com/jsupa/crypto-icons/main/icons/$sanitized.png")
+        return urls
+    }
+
+    fun getCoinIcon(code: String, identifier: String? = null): String {
+        return getCoinIconUrls(code, identifier).first()
     }
 
     /**
@@ -100,5 +144,58 @@ object GenericUtils {
     fun formatPercent(fraction: Double): String? {
         // the formatter translates 0.01 to 1.00%
         return percentFormat.format(fraction)
+    }
+
+    fun isCurrencySymbolFirst(): Boolean {
+        val locale = getDeviceLocale()
+        // val currency: Currency = Currency.getInstance(locale)
+        val currencyFormat = NumberFormat.getCurrencyInstance(locale)
+
+        val pattern = (currencyFormat as DecimalFormat).toPattern()
+        println("Currency Pattern: $pattern")
+
+        return pattern.startsWith("¤")
+    }
+
+    fun getCurrencyDigits(): Int {
+        val locale = getDeviceLocale()
+        val currency: Currency? = Currency.getInstance(locale)
+        return currency?.defaultFractionDigits ?: 0
+    }
+
+    fun getCurrencyDigits(code: String): Int {
+        val currency: Currency? = Currency.getInstance(code)
+        return currency?.defaultFractionDigits ?: 2
+    }
+
+    private fun stringToBigDecimal(value: String): BigDecimal {
+        return try {
+            val format = NumberFormat.getNumberInstance(getDeviceLocale())
+            val number = format.parse(value)
+            if (number != null) BigDecimal(number.toString()) else BigDecimal.ZERO
+        } catch (e: ParseException) {
+            BigDecimal.ZERO
+        }
+    }
+
+    fun toScaledBigDecimal(value: String, localized: Boolean = false, scale: Int = 8): BigDecimal {
+        return if (localized) {
+            stringToBigDecimal(value).setScale(scale, RoundingMode.HALF_UP)
+        } else {
+            value.toBigDecimal().setScale(scale, RoundingMode.HALF_UP)
+        }
+    }
+
+    val dashFormat: MonetaryFormat
+        get() = MonetaryFormat().withLocale(getDeviceLocale()).noCode().minDecimals(0).repeatOptionalDecimals(1, 8)
+    val fiatFormat: MonetaryFormat
+        get() = MonetaryFormat().withLocale(getDeviceLocale()).noCode().minDecimals(getCurrencyDigits())
+
+    fun toLocalizedString(value: BigDecimal, isCrypto: Boolean, currencyCode: String): String {
+        return if (isCrypto) {
+            dashFormat.format(value.toCoin())
+        } else {
+            fiatFormat.format(value.toFiat(currencyCode))
+        }.toString()
     }
 }

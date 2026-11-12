@@ -16,9 +16,10 @@
     <string name="new_account_confirm_accept">Akceptuję</string>
     <string name="new_account_confirm_upgrade_fee">Opłata za Ulepszenie</string>
     <string name="new_account_confirm_message">Wybrałeś %s jako swoją nazwę użytkownika. Pamiętaj, że nazwy użytkownika NIE można zmienić po jej zarejestrowaniu.</string>
+    <string name="new_account_secondary_confirm_message">Wybrano %s jako natychmiastową nazwę użytkownika. Należy pamiętać, że nazwy użytkownika NIE można zmienić po jej zarejestrowaniu.</string>
     <string name="invitation_confirm_title">Opłata za zaproszenie</string>
     <string name="invitation_confirm_message">Każde zaproszenie będzie opłacone tą sumą, aby odbiorca mógł szybko stworzyć swój własny profil na Sieci Dash</string>
-    <string name="invitation_init_title">Zaproś</string>
+    <string name="invitation_title">Zaproszenie</string>
     <string name="invitation_init_header">Zaproś przyjaciół i rodzię</string>
     <string name="invitation_init_message">Pomóż swoim znajomym i rodzinie dołączyć do sieci Dash. Zaproś ich do świata społecznościowych finansów.</string>
     <string name="invitation_init_button_text">Stwórz nowe zaproszenie</string>
@@ -52,8 +53,12 @@
     <string name="invitation_invalid_invite_message">Twoje zaproszenie od %s jest nieważne</string>
     <string name="invitation_username_already_found_title">Użytkownik został już znaleziony</string>
     <string name="invitation_username_already_found_message">Nie możesz odebrać tego zaproszenia, ponieważ już masz własną nazwę użytkownika na sieci Dash.</string>
+    <string name="invitation_username_already_found_voting_title">Nazwa użytkownika została już zażądana</string>
+    <string name="invitation_username_already_found_voting_message">Nie możesz odebrać tego zaproszenia, ponieważ już poprosiłeś o nazwę użytkownika Dash</string>
     <string name="invitation_onboarding_has_began_error_title">Wystąpił błąd podczas rejestracji</string>
+    <string name="invitation_error_title">Błąd zaproszenia</string>
     <string name="invitation_onboarding_has_began_error">Proces rejestracji jest w toku. Odbierz zaproszenie po stworzeniu portfela.</string>
+    <string name="invitation_accept_invite_has_began_error">DashPay aktualnie przetwarza zaproszenie.</string>
     <string name="invitation_accept_title_1">Dostań swoją nazwę użytkownika</string>
     <string name="invitation_accept_title_2">Dodaj Przyjaciół i Rodzinę</string>
     <string name="invitation_accept_message_2">Zaproś rodzię i znajdź przyjaciół zapomocą wyszukiwarki nazw użytkowników</string>
@@ -99,8 +104,18 @@
     <string name="search_user_no_results">Nie ma użytkowników z tą nazwą</string>
     <string name="search_user_loading">Szukiwanie nazwy użytkownika <b>„%”</b> w sieci Dash</string>
     <string name="contact_request_pending">Zaproszenie do kontaktów czeka na odpowiedź</string>
+    <string name="send_contact_request_short">Wyślij zaproszenie</string>
+    <string name="contact_request_sent_short">Zaproszenie wysłane</string>
+    <string name="send_button_label">Wyślij</string>
+    <string name="contact_history_disclaimer_pending_plain">Gdy %1$s zaakceptuje Twoje zaproszenie, możesz zapłacić bezpośrednio na nazwę użytkownika</string>
     <string name="pay">Zapłać</string>
     <string name="contact_request_received_title">%s poprosił o dodanie do znajomych</string>
+    <string name="contact_request_received_card_title">%s wysłał do ciebie prośbę o kontakt</string>
+    <string name="contact_request_received_card_message">Jeśli nie chcesz, aby użytkownik %s był na Twojej liście kontaktów, naciśnij przycisk \"Zignoruj\". Nie zostanie on powiadomiony o Twojej decyzji.</string>
+    <string name="contact_request_row_received">%s wysłał(a) Ci zaproszenie do kontaktów</string>
+    <string name="contact_request_row_sent">Zaproszenie do kontaktów wysłane</string>
+    <string name="contact_request_row_established_incoming">Zaakceptowano zaproszenie od %s</string>
+    <string name="contact_request_row_established_outgoing">%s zaakceptował(a) Twoje zaproszenie do kontaktów</string>
     <string name="contact_request_accept">Akceptuj</string>
     <string name="contact_request_ignore">Zignoruj</string>
 
@@ -210,6 +225,8 @@
 
     <string name="join_dashpay_subtitle">Utwórz nazwę użytkownika, dodaj znajomych…</string>
     <string name="join_dashpay_more_subtitle">Stwórz swoją nazwę użytkownika, znajdź znajomych i dodaj ich do kontaktów</string>
+    <string name="join_dashpay_more_subtitle_two">Utwórz nazwę użytkownika i pożegnaj się z adresami numerycznymi</string>
+    <string name="join_dashpay_wait">Poczekaj aż synchronizacja się zakończy aby móc stworzyć nazwę użytkownika</string>
     <string name="join">Dołącz</string>
 
     <string name="more_suggestions">Więcej Sugesti</string>
@@ -306,6 +323,7 @@
         <item>Ma głosy za zablokowaniem</item>
     </string-array>
     <string name="request_your_username">Stwórz swoją nazwę użytkownika</string>
+    <string name="request_instant_username">Stwórz natychmiastową nazwę użytkownika</string>
     <string name="request_your_hint">Pamiętaj, że nie będziesz mógł tego zmienić w przyszłości</string>
     <string name="request_username">Poproś o nazwę użytkownika</string>
     <string name="request_voting_range">Sieć Dash będzie głosować nad tą nazwą użytkownika. Powiadomimy Cię o wynikach %s.</string>
@@ -381,6 +399,8 @@
     <string name="requested_voting_duration">Wyniki będą podane w %s</string>
     <string name="cancel_request">Anuluj żądanie</string>
     <string name="after_the_voting">Po zakończeniu głosowania poinformujemy cię o jego wynikach</string>
+    <string name="after_the_voting_result">Głosowanie się zakończyło</string>
+    <string name="voting_period_error">Nie znaleziono okresu głosowania</string>
     <string name="none">Żaden</string>
     <string name="verify_now">Zweryfikuj teraz</string>
     <string name="if_you_tap_cancel">Jeśli klikniesz „Anuluj żądanie”, nadal będziesz mieć możliwość zażądania innej nazwy bez ponownego płacenia</string>
@@ -403,6 +423,7 @@
     <string name="coinjoin_mixing_level_subtitle">Możesz zmienić lub zatrzymać poziom miksowania w dowolnym momencie</string>
     <string name="coinjoin_mixing_transactions">Miksowanie transakcji</string>
     <string name="coinjoin_transaction_group">Te transakcje są stworzone przez miksowanie</string>
+    <string name="coinjoin_transaction_group_title">Dlaczego widzę te wszystkie transakcje?</string>
     <string name="intermediate">Średni</string>
     <string name="advanced">Zaawansowany</string>
     <string name="intermediate_level_card_decs">Zaawansowani użytkownicy, którzy posiadają bardzo wysoki poziom wiedzy technicznej, mogą być w stanie odkryć historię twoich transakcji.</string>
@@ -412,8 +433,8 @@
     <string name="coinjoin_start">Zacznij Mieszanie</string>
     <string name="coinjoin_stop">Zatrzymaj Miksowanie</string>
     <string name="coinjoin_mixing">Miksowanie</string>
-    <string name="coinjoin_mixing_finishing">Kończenie Mieszania</string>
-    <string name="coinjoin_paused">Miksowanie zostało zatrzywame</string>
+    <string name="coinjoin_mixing_finishing">Kończę</string>
+    <string name="coinjoin_paused">Wstrzymano</string>
     <string name="coinjoin_not_started">Nie rozpoczęto</string>
     <string name="coinjoin_progress_balance">%1$s z %2$s</string>
     <string name="coinjoin_progress_finished">Całkowicie wymieszane</string>
@@ -434,8 +455,12 @@
 
     <string name="request_username_username_voting_message">+ Czym jest głosowanie na nazwę użytkownika\?</string>
     <string name="request_username_character_requirement">Tylklko litery, cyfry i myślniki są dozwolone</string>
-    <string name="request_username_balance_requirement">Aby stworzyć tę nazwę użytkownika, musisz mieć 0,25 DASH</string>
+    <string name="request_username_character_requirement_invite_noncontested">Numer 2-9</string>
+    <string name="request_username_balance_requirement">Aby stworzyć tę nazwę użytkownika, musisz mieć %s DASH</string>
+    <string name="request_username_requirements_message_invite_noncontested">Nazwa użytkownika musi spełniać jedno z tych kryterii</string>
+    <string name="request_username_requirements_message">Nazwa użytkownika musi spełniać te kryteria</string>
     <string name="request_username_length_requirement">Pomiędzy 3 a 23 znakami</string>
+    <string name="request_username_length_requirement_noncontested">Pomiędzy 20 a 23 znakami</string>
     <string name="request_username_confirm">Akceptuję</string>
     <string name="username_vote_one_left_message">Głosowałeś już na tę nazwę użytkownika %d razy. Został ci ostatni głos do oddania na tę nazwę użytkownika.</string>
     <string name="username_vote_one_left">Został ci tylko jeden głos</string>
@@ -462,4 +487,107 @@
     <string name="voting_period_ends_tomorrow">Głosowanie kończy się jutro</string>
     <string name="link_included">łącze dołączone</string>
     <string name="group_by">Grupuj według</string>
-</resources>
+    <string name="transaction_metadata_title">Matadane transakcji</string>
+    <string name="transaction_metadata_data_being_saved">Zaplanowany</string>
+    <string name="transaction_metadata_payment_category_description">Wskazuje, czy transakcja jest powiązana z Coinbase, Uphold, Topper lub CrowdNode</string>
+    <string name="transaction_metadata_fiat_price_description">Cena z przeszłości z czasu dokonania transakcji</string>
+    <string name="transaction_metadata_description">Twoje dane są przechowywane na Twoim urządzeniu, ale zostaną utracone, jeśli zresetujesz lub przywrócisz portfel. Poniżej znajdują się przykłady informacji, które zostaną zachowane po zapisaniu w sieci.</string>
+    <string name="transaction_metadata_cost">Ile to kosztuje\?</string>
+    <string name="transaction_metadata_payment_category">Kategorie płatnosci</string>
+    <string name="transaction_metadata_save_data">Zachowaj dane</string>
+    <string name="transaction_metadata_tax_category">Kategorie podatkowe</string>
+    <string name="transaction_metadata_fiat_prices">Ceny w walutach krajowych</string>
+    <string name="transaction_metadata_private_memos">Prywatna Notatka</string>
+    <string name="transaction_metadata_gift_card_info">Dane Karty Podarunkowej</string>
+    <string name="transaction_metadata_private_memo_description">Krótkie notatki opisujące cel transakcji</string>
+    <string name="transaction_metadata_tax_category_description">Wskazuje, czy transakcja jest transferem, przychodem czy wydatkiem</string>
+    <string name="transaction_metadata_gift_card_info_description">Zawiera numer karty, kod PIN i inne informacje</string>
+    <string name="transaction_metadata_costs_title">Koszty związane z zapisaniem danych w sieci</string>
+    <string name="transaction_metadata_costs_description">W ramach tworzenia nazwy użytkownika otrzymujesz kredyty, które są wykorzystywane do różnych czynności w sieci; zapisywanie metadanych transakcji w sieci spowoduje szybsze wykorzystanie tych kredytów. Po wykorzystaniu wszystkich kredytów możesz kupić kolejne.\n\nPrzesyłanie danych do sieci kosztuje około %s, dlatego zaleca się przesyłanie wielu transakcji jednocześnie.</string>
+    <string-array name="transaction_metadata_save_frequency">
+        <item>Po 10ciu transakcjach</item>
+        <item>Raz na tydzień</item>
+        <item>Po każdej transakcji</item>
+    </string-array>
+    <string name="reset_wallet_metadata_title">Czy chcesz zresetować portfel bez zapisywania metadanych w sieci\?</string>
+    <string name="reset_wallet_metadata_message">Zresetowanie portfela bez zapisania danych w sieci spowoduje utratę części metadanych transakcji.</string>
+    <string name="reset_wallet_metadata_button_without">Zresetuj portfel bez zapisywania</string>
+    <string name="reset_wallet_metadata_button_with">Zachowaj dane i zresetuj portfel</string>
+    <string name="reset_wallet_metadata_button_saving">Zachowuje</string>
+    <string name="transaction_metadata_save_to_network">Zachowaj do sieci</string>
+    <string name="transaction_metadata_save_frequency">Jak często zachowywać\?</string>
+    <string name="transaction_metadata_what_to_save">Co zachować\?</string>
+    <string name="transaction_metadata_past_title">Przeszłe</string>
+    <string name="transaction_metadata_future_title">Przyszłe</string>
+    <string name="transaction_metadata_past_subtitle">Zachowaj wszystkie transakcje dokonane do %s</string>
+    <string name="transaction_metadata_future_subtitle">Zachowaj automatycznie wszystkiego transakcje które zrobisz po %s</string>
+    <string name="transaction_metadata_gift_card_data">Dane karty podarunkowej</string>
+    <string name="transaction_metadata_saving_to_network">Zachowuje do sieci - %d%%</string>
+    <string name="transaction_metadata_last_saved_date">Ostatnio zachowany %s</string>
+    <string name="transaction_metadata_past_already_saved">Wszystkie transakcje do %szostały już zachowane</string>
+    <string name="transaction_metadata_past_already_saved_none">Żadna transakcja nie została zachowana</string>
+    <string name="transaction_metadata_past_syncing">Wszystkie transakcje dokonane do %ssą synchronizowane</string>
+    <string name="transaction_metadata_save_new_tx_title">Czy chcesz zachować niezachowane transakcje\?</string>
+    <string name="transaction_metadata_you_have_n_tx">Masz %dniezachowanych transakcji od %s</string>
+    <string name="transaction_metadata_save_transactions">Zachowaj niezachowane transakcje</string>
+    <string name="transaction_metadata_continue_without_saving">Kontynuuj bez zachowywania</string>
+    <string name="invitation_fee_title">Opłata za zaproszenie</string>
+    <string name="invitation_fee_message">Każde zaproszenie zostanie sfinansowane tak, aby odbiorca mógł szybko utworzyć swoją nazwę użytkownika w sieci Dash.</string>
+    <string name="invitation_fee_noncontested">Bezsporny</string>
+    <string name="invitation_fee_contested">Sporny</string>
+    <string name="invitation_fee_contested_message">Osoba, do której wysyłasz zaproszenie, może poprosić o podanie dowolnej nazwy użytkownika, a sieć zagłosuje nad jej zatwierdzeniem.</string>
+    <string name="invitation_fee_noncontested_message">Osoba, do której wysyłasz to zaproszenie, może poprosić o nazwę użytkownika składającą się z cyfr 2-9 i dłuższą niż 20 znaków.</string>
+    <string name="invitation_creating_progress_loading">Ładuje zaproszenie...</string>
+    <string name="invitation_creating_progress_wip">Tworzenie zaproszenia</string>
+    <string name="invitation_fee_confirm_and_pay_button">Potwiedź i zapłać</string>
+    <string name="error_sending_invite_transaction">Błąd w wysyłaniu transakcji zaproszenia</string>
+    <string name="request_username_invitation_not_mixed_message">Zaproszenie zostało stworzone z niewymieszanych środków</string>
+    <string name="request_username_invitation_only_noncontested_message">Za pomocą tego zaproszenia możesz tylko utworzyć bezsporną nazwę użytkownika</string>
+    <string name="username_types_title">Czym są sporne i bezsporne nazwy użytkownika\?</string>
+    <string name="username_types_message">Istnieją dwa rodzaje nazw użytkowników: sporne i bezsporne.\n\nNazwy użytkowników bezsporne mają co najmniej jedną cyfrę (2-9) lub są dłuższe niż 20 znaków i zostaną automatycznie zatwierdzone.\n\nJeśli chcesz utworzyć sporną nazwę użytkownika, która jest krótsza i bez cyfr, musisz zarejestrować się w DashPay bez zaproszenia, zapłacić wymaganą opłatę i poczekać na zatwierdzenie po zakończeniu okresu głosowania.</string>
+    <string name="accept_invitation_hide">Ukryj</string>
+    <string name="accept_invitation_create">Stwórz</string>
+
+    <!-- Create Instant Username Dialog -->
+    <string name="create_instant_username_title">Stwórz natychmiastową nazwę użytkownika</string>
+    <string name="create_instant_username_description">Twoja wybrana nazwa użytkownika będzie poddane głosowaniu przez 2 tygodnie. Do natychmiastowych kontaktów i płatności możesz utworzyć podobną natychmiastową nazwę użytkownika.\n\nJeśli Twoja pierwotna prośba zostanie zatwierdzona, zastąpi ona natychmiastową nazwę użytkownika, zachowując kontakty i historię. W przeciwnym razie możesz ciągle korzystać z tej samej natychmiastowej nazwy.</string>
+    <string name="create_instant_username_button">Stwórz natychmiastową nazwę użytkownika</string>
+    <string name="create_instant_username_cancel">Anuluj</string>
+    <string name="dash_connect_connections_title">Połączenia</string>
+    <string name="dash_connect_empty_heading">Brak połączonych aplikacji</string>
+    <string name="dash_connect_empty_message">Połącz swoją nazwę użytkownika DashPay z aplikacjami w sieci Dash, aby logować się bez haseł i kont</string>
+
+    <string name="dash_connect_scan_qr">Skanuj QR</string>
+    <string name="dash_connect_status_approved">Zatwierdzono</string>
+    <string name="dash_connect_status_active">Aktywne</string>
+    <string name="dash_connect_status_disconnected">Rozłączony</string>
+    <string name="dash_connect_hint_complete_login">Zeskanuj kod QR %1$s, aby dokończyć logowanie</string>
+    <string name="dash_connect_scan_to_complete_banner">Zeskanuj kod QR, aby dokończyć proces logowania</string>
+    <string name="dash_connect_hint_active">Dotknij, aby w każdej chwili się rozłączyć</string>
+    <string name="dash_connect_hint_log_back_in">Zeskanuj kod QR %1$s, aby zalogować się ponownie</string>
+    <string name="dash_connect_approve_title">Zatwierdzić połączenie z %1$s?</string>
+    <string name="dash_connect_approve_will_be_able">Ta aplikacja będzie mogła:</string>
+    <string name="dash_connect_approve_see_username">Zobaczyć Twoją nazwę użytkownika</string>
+    <string name="dash_connect_approve_verify_identity">Zweryfikuj swoją tożsamość</string>
+    <string name="dash_connect_username">Nazwa użytkownika</string>
+    <string name="dash_connect_identity">Tożsamość</string>
+    <string name="dash_connect_approve_no_access">Ta aplikacja NIE będzie mieć dostępu do:</string>
+    <string name="dash_connect_approve_no_private_keys">Twoich kluczy prywatnych</string>
+    <string name="dash_connect_approve_no_withdraw_funds">Wypłać środki</string>
+    <string name="dash_connect_approve">Zatwierdź</string>
+    <string name="dash_connect_deny">Odmów</string>
+    <string name="dash_connect_unknown_app">Nieznana aplikacja</string>
+    <string name="dash_connect_login_completed">Logowanie zakończone</string>
+    <string name="dash_connect_error">Nie udało się zrealizować żądania DashConnect: %1$s</string>
+    <string name="dash_connect_cancel_login_title">Anulować logowanie do %1$s?</string>
+    <string name="dash_connect_cancel_login_message">Oczekujące logowanie zostanie odrzucone. Możesz zacząć od nowa w każdej chwili, skanując nowy kod QR.</string>
+    <string name="dash_connect_disconnect_title">Rozłączyć z %1$s?</string>
+    <string name="dash_connect_disconnect_message">Aplikacja nie będzie już mogła korzystać z Twojego logowania. Możesz zalogować się ponownie, skanując nowy kod QR.</string>
+    <string name="dash_connect_remove_title">Usunąć %1$s?</string>
+    <string name="dash_connect_remove_message">Połączenie zostanie usunięte z tej listy. Możesz połączyć się ponownie w każdej chwili, skanując nowy kod QR.</string>
+    <string name="dash_connect_confirm">Potwierdź</string>
+    <string name="dash_connect_testnet_only_heading">Dostępne tylko w sieci testowej</string>
+    <string name="dash_connect_testnet_only_message">Logowanie DashConnect nie jest jeszcze dostępne w sieci głównej</string>
+    <string name="dash_connect_group_scope_changed">Zakres tej grupy zmienił się od Twojego poprzedniego zatwierdzenia lub jej poprzedni zakres nie został zapisany. Przed kontynuowaniem przejrzyj poniżej obecnych członków i administratorów. Wcześniej zarejestrowane klucze mogą być nadal aktywne; opcja Cofnij dostęp pozostaje dostępna.</string>
+    <string name="dash_connect_group_scope_approve">Zatwierdzam zaktualizowany zakres grupy pokazany powyżej.</string>
+    </resources>

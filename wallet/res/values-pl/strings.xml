@@ -61,7 +61,6 @@
     <string name="send_coins_fragment_hint_fee_economic">Opłata sieci %s zostanie pobrana.</string>
     <string name="send_coins_fragment_hint_fee_priority">zostanie pobrana opłata priorytetowa  %s. Jeśli zależy ci na niskich opłatach, używaj \'opłaty priorytetowej\', jedynie gdy potrzebujesz szybkiego potwierdzenia transakcji.</string>
     <string name="send_coins_fragment_hint_empty_wallet_failed">Ilość małych płatności w twoim portfelu nie dodaje się do wartości możliwej do wysyłki.</string>
-    <string name="send_coins_fragment_hint_replaying">Obecnie, płatności nie są możliwe, ponieważ portfel nie jest w pełni zsynchronizowany z siecią. </string>
     <string name="send_coins_fragment_direct_payment_enable">Wyślij płatność bezpośrednio do odbiorcy.</string>
     <string name="send_coins_fragment_direct_payment_ack">Twoja płatność bezpośrednia została pomyślnie zrealizowana.</string>
     <string name="send_coins_fragment_direct_payment_nack">Twoja płatność bezpośrednia została odrzucona.</string>
@@ -102,7 +101,7 @@
     <string name="maintenance_dialog_title">Zalecana konserwacja</string>
     <string name="maintenance_dialog_message">Otrzymałeś %1$s na niezabezpieczony adres. Czy chcesz przenieść środki na bezpieczny adres? Zostanie pobrana niewielka opłata za transakcję w wysokości %2$s.</string>
     <string name="maintenance_dialog_state_decrypting">Odszyfrowywanie...</string>
-    <string name="maintenance_dialog_state_done">Zrobione.</string>
+    <string name="maintenance_dialog_state_done">OK</string>
     <string name="maintenance_dialog_button_move">Przenieś</string>
     <string name="request_coins_activity_title">Poproś o Dashe</string>
     <string name="request_coins_fragment_amount_label">Żądana kwota (opcjonalnie)</string>
@@ -166,6 +165,10 @@
     <string name="transaction_row_status_error_obsolete">Przestarzały</string>
     <string name="transaction_row_status_error_invalid">Niewłaściwy</string>
     <string name="transaction_row_status_error_other">Nieznany</string>
+    <string name="transaction_row_status_refunded">Zwrócono</string>
+    <string name="transaction_row_status_failed">Niepowodzenie</string>
+    <string name="transaction_row_conversion">Konwersja · %1$s/%2$s</string>
+    <string name="transaction_row_converted">Skonwertowano · %1$s/%2$s</string>
     <!-- The first %s is the date and the second %s is the time.  e.g. On 29 December 2019 at 15:59 -->
     <string name="transaction_row_time_text">Na %s na %s</string>
     <string name="transaction_row_status_masternode_registration">Rejestracja Masternoda</string>
@@ -204,6 +207,13 @@
     <string name="restore_wallet_dialog_success_replay">Twój portfel został przywrócony pomyślnie. Następnie zostanie określone jego saldo. Może to zająć chwilę.</string>
     <string name="restore_wallet_dialog_success_encrypted">Uwaga! Twój portfel jest zabezpieczony za pomocą kodu PIN. Upewnij się, że  pamiętasz swój PIN zanim wyślesz tam fundusze. </string>
     <string name="import_keys_dialog_failure">Nie udało się zaimportować kluczy prywatnych:\n\n%s\n\nBłędne hasło?</string>
+    <string name="restore_wallet_creation_date_label">Data Stworzenia Portfela (Opcjonalne)</string>
+    <string name="restore_wallet_creation_date_info">Zaznaczenie kiedy twój portfel został stworzony, pozwala na szybszą synchronizację, poprzez skanowanie tylko od daty zaznaczenia.</string>
+    <string name="restore_wallet_select_date">Wybierz Date Stworzenia</string>
+    <string name="restore_wallet_selected_date">Zaznaczono: %s</string>
+    <string name="restore_wallet_date_picker_title">Kiedy twój portfel został stworzony?</string>
+    <string name="wallet_creation_date_info_title">Jak data stworzenia portfela może przyspieszyć proces?</string>
+    <string name="wallet_creation_date_info_description">Jeśli znasz przybliżoną datę utworzenia portfela, możesz ją wprowadzić, a transakcje z tego dnia zostaną pobrane, co przyspieszy synchronizację. Pamiętaj, że jeśli podasz datę późniejszą niż data utworzenia portfela, starsze transakcje nie zostaną pobrane.</string>
     <string name="export_keys_dialog_title">Eksportuj prywatne klucze</string>
     <string name="backup_wallet_dialog_message">Twoje prywatne klucze zostaną zaszyfrowane wybranym hasłem a następnie zapisane na zewnętrznym nośniku.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Twój portfel jest chroniony przez PIN do wydawania. Miej pewność, że pamiętasz PIN w dodatku hasło zapasowe!</string>
@@ -232,18 +242,7 @@
     <string name="encrypt_keys_dialog_show">Pokaż PIN</string>
     <string name="encrypt_keys_dialog_state_encrypting">Szyfruje...</string>
     <string name="encrypt_keys_dialog_state_decrypting">Odszyfrowywuje...</string>
-    <string name="encrypt_keys_dialog_state_done">Zrobione</string>
-    <string name="scan_camera_problem_dialog_title">Przepraszam</string>
-    <string name="scan_camera_problem_dialog_message">Nastąpił problem z aparatem fotograficznym. Prawdopodobnie musisz zrestartować urządzenie.</string>
-    <string name="scan_camera_permission_dialog_title">Pozwolenie na użycie kamery</string>
-    <string name="scan_camera_permission_dialog_message">Aby skanować kody QR, wymagane jest udzielenie pozwolenia na użycie kamery.</string>
-    <string name="input_parser_io_error">Nie mogę czytać danych:\\n%s</string>
-    <string name="input_parser_cannot_classify">Nie udało się sklasyfikować danych wejściowych:\n%s</string>
-    <string name="input_parser_invalid_bitcoin_uri">Niepoprawny URI Dash:\n%s</string>
-    <string name="input_parser_invalid_address">Otrzymano niepoprawny adres Dash!\n(Pomylono Testnet z Prodnet?)</string>
-    <string name="input_parser_unverifyable_paymentrequest">Nie mogę zweryfikować rzadanie płatności:\\n%s</string>
-    <string name="input_parser_invalid_paymentrequest">Niewłaściwe rzadanie płatności:\\n%s</string>
-    <string name="input_parser_invalid_transaction">Transakcja nie powiodła się:\n%s</string>
+    <string name="encrypt_keys_dialog_state_done">OK</string>
     <string name="preferences_activity_title">Ustawienia</string>
     <string name="preferences_category_diagnostics">Diagnostyka</string>
     <string name="preferences_category_labs">Eksperymentalne</string>
@@ -279,11 +278,18 @@
     <string name="preferences_initiate_reset_summary">Ponownie przeskanuj blockchain, transakcje i saldo portfela. Powtórka zajmie trochę czasu, więc rób to tylko wtedy, gdy masz dobry powód.</string>
     <string name="preferences_initiate_reset_dialog_message">Chcesz ponownie przeskanować łańcuch bloków?\n\nSpowoduje to tymczasowe ukrycie salda portfela i usunięcie transakcji. Oba zostaną odzyskane w miarę postępu synchronizacji łańcucha bloków. Upewnij się, że masz niezawodne połączenie z internetem.</string>
     <string name="preferences_initiate_reset_dialog_positive">Ponownie zeskanuj</string>
+    <string name="rescan_blockchain_dialog_title">Czy na pewno chcesz przeskanować portfel?</string>
+    <string name="rescan_blockchain_dialog_message">Spowoduje to tymczasowe ukrycie salda w portfelu i usunięcie transakcji. Oba zostaną przywrócone w miarę postępu synchronizacji blockchain. Upewnij się, że masz stabilne połączenie z internetem.</string>
+    <string name="rescan_blockchain_select_date_label">Zaznacz data stworzenia portfela (opcjonalne)</string>
+    <string name="rescan_blockchain_date_info_description">Informacje dotyczące daty utworzenia portfela</string>
+    <string name="rescan_blockchain_select_date_placeholder">Wybierz</string>
+    <string name="rescan_blockchain_confirm_button">Ponownie zeskanuj</string>
     <string name="preferences_extended_public_key_title">Pokaż xpub</string>
     <string name="preferences_extended_public_key_summary">Sprawdź rozszerzony klucz publiczny twojego portfela, tak aby mógł być zaimportowany do innych aplikacji i usług. Bądź ostrożny: ta operacja ujawni poufne dane twojego portfela.</string>
     <string name="bitmap_fragment_share">Udostępnij…</string>
-    <string name="extended_public_key_fragment_title">Wydłużony Publiczny Klucz</string>
+    <string name="extended_public_key_fragment_title">Wydłużone klucze publiczne (BIP44)</string>
     <string name="extended_public_key_fragment_share">Udostępnij xpub</string>
+    <string name="extended_public_key_share_key">Udostępnij klucz</string>
     <string name="report_issue_dialog_title_issue">Zgłoś problem</string>
     <string name="report_issue_dialog_title_crash">Wykryto poprzednią awarię</string>
     <string name="report_issue_dialog_title_transaction">Zgłoś problem z wybraną płatnością</string>
@@ -297,13 +303,26 @@
     <string name="report_issue_dialog_collect_wallet_dump">Dołącz zrzut portfela</string>
     <string name="report_issue_dialog_mail_intent_failed">Wysyłanie raportu nie powiodło się.</string>
     <string name="report_issue_dialog_generating_report">Generuje raport</string>
-    <string name="report_transaction_history_export">Eksportuj</string>
+    <string name="report_issue_dialog_status_device_info">informacje o urządzeniu</string>
+    <string name="report_issue_dialog_status_installed_packages">lista zainstalowanych pakietów</string>
+    <string name="report_issue_dialog_status_application_log">logi aplikacji</string>
+    <string name="report_issue_dialog_status_application_info">informacje o aplikacji</string>
+    <string name="report_issue_dialog_status_wallet_dump">zrzut portfela (powolny)</string>
+    <string name="report_issue_dialog_status_contextual_info">informacje kontekstowe</string>
+    <string name="report_issue_dialog_status_background_traces">Awarie w tle</string>
+    <string name="report_issue_dialog_status_stack_trace">Informacje o awarii</string>
+    <string name="report_issue_dialog_status_finishing">kończę</string>
+    <string name="report_transaction_history_export">Eksportuj transakcje</string>
     <string name="report_transaction_history_title">Eksportuj CSV</string>
+    <string name="report_transaction_history_dialog_title">Pełna historia transakcji będzie wyeksportowana do pliku CSV</string>
     <string name="report_transaction_history_not_synced_title">Eksportuj CSV</string>
     <string name="report_transaction_history_not_synced_message">Poczekaj, aż portfel będzie w pełni zsynchronizowany przed eksportem historii transakcji.</string>
     <string name="report_transaction_history_message">Pełna historia transakcji zostanie wyeksportowana. Płatności będą uważane za koszt, a wszystkie nadchodzące transakcje będą dochodami. Właściciel tego portfela jest odpowiedzialny za dokonywanie wszelkich korekt w wybranym systemie raportowania podatków.</string>
+    <string name="report_transaction_history_body_1">Wszystkie płatności będą traktowane jako wydatki, a wszystkie transakcje przychodzące będą przychodem.</string>
+    <string name="report_transaction_history_body_2">Właściciel tego portfela jest odpowiedzialny za dokonywanie wszelkich korekt podstawy kosztowej w wybranym przez siebie systemie raportowania podatkowego.</string>
     <string name="report_transaction_history_mail_intent_chooser">Wyślij historię transakcji za pomocą…</string>
     <string name="report_transaction_history_dialog_mail_intent_failed">Wysyłanie historii transakcji nie powiodło się.</string>
+    <string name="report_transaction_history_dialog_export_csv_failed">Eksportowanie historii transakcji nie powiodło się.</string>
 
     <!-- ZenLedger -->
     <string name="zenledger_export_title">ZenLedger</string>
@@ -316,6 +335,7 @@
 
 
     <string name="about_title">O programie</string>
+    <string name="about_dash_title">O Dash</string>
     <string name="about_version_title">Wersja</string>
     <string name="about_copyright_title">Prawa autorskie</string>
     <string name="about_license_title">Licencja</string>
@@ -338,6 +358,9 @@
     <string name="notification_inactivity_action_dismiss">Przypomnij później</string>
     <string name="notification_inactivity_action_dismiss_forever">Nie przypominaj więcej</string>
     <string name="notification_bluetooth_service_listening">Gotowy do otrzymania płatności przez Bluetooth</string>
+    <string name="notification_sync_paused">Synchronizacja blockchain wstrzymana</string>
+    <string name="notification_background_processes_paused">Przetwarzanie w tle wstrzymane</string>
+    <string name="notification_background_processes_paused_text">Osiągnąłeś limit 6 godzin działania usługi na pierwszym planie w systemie Android dla miksowania lub synchronizacji blockchain. Dotknij, aby zresetować…</string>
     <string name="appwidget_wallet_balance_title">Saldo Dash</string>
 
     <!-- generic buttons -->
@@ -396,10 +419,9 @@
     <string name="reason">Powód</string>
     <string name="link_account">Połącz swoje konto</string>
     <string name="buy_no_account_needed">Kup Dash · Konto nie jest potrzebne</string>
+    <string name="convert_no_account_needed">Zamień Dash · Nie potrzeba konta</string>
 
     <string name="recipient_address">Adres odbiorcy</string>
-    <string name="show_clipboard">Pokaz zawartość schowka</string>
-    <string name="tap_to_paste">Naciśnij, adres ze schowka, aby go wkleić</string>
     <string name="not_dash_address">Nieprawidłowy adres Dash lub żądanie adresu URL</string>
     <string name="send_to_address">Zapłać na Adres</string>
 
@@ -421,4 +443,15 @@
     <string name="select_option">Wybierz opcje</string>
     <string name="customize_shortcuts">Dostosuj pasek skrótów</string>
     <string name="customize_shortcuts_description">Przytrzymaj dowolny powyższy przycisk, aby zastąpić go potrzebną funkcją</string>
+
+    <!-- PIN Upgrade Dialog -->
+    <string name="upgrade_pin_title">Musisz zaktualizować swój PIN</string>
+    <string name="upgrade_pin_description">Ustaw nowy PIN</string>
+    <string name="upgrade_pin_continue">Dalej</string>
+
+    <!-- CrowdNode withdrawal reminder -->
+    <string name="crowdnode_withdrawal_reminder_title">Posiadasz środki na CrowdNode</string>
+    <string name="crowdnode_withdrawal_reminder_message">Fundusze te powinny zostać wypłacone z CrowdNode. Możesz przelać te środki na ten portfel lub za pośrednictwem swojego konta online na innym urządzeniu.</string>
+    <string name="crowdnode_withdraw_funds">Wypłać środki</string>
+    <string name="dash_connect_revoke_access">Cofnij dostęp</string>
 </resources>

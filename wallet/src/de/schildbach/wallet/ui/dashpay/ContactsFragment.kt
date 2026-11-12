@@ -17,7 +17,6 @@
 
 package de.schildbach.wallet.ui.dashpay
 
-import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.text.Editable
@@ -36,13 +35,11 @@ import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
-import de.schildbach.wallet.data.PaymentIntent
 import de.schildbach.wallet.data.UsernameSearchResult
 import de.schildbach.wallet.data.UsernameSortOrderBy
 import de.schildbach.wallet.livedata.Status
 import de.schildbach.wallet.ui.*
-import de.schildbach.wallet.ui.invite.InviteFriendActivity
-import de.schildbach.wallet.ui.invite.InvitesHistoryActivity
+import de.schildbach.wallet.ui.dashpay.user.DashPayUserBottomSheet
 import de.schildbach.wallet.ui.main.MainViewModel
 import de.schildbach.wallet.ui.payments.PaymentsFragment.Companion.ARG_SOURCE
 import de.schildbach.wallet.ui.send.SendCoinsActivity
@@ -53,6 +50,7 @@ import kotlinx.coroutines.launch
 import org.bitcoinj.core.PrefixedChecksummedBytes
 import org.bitcoinj.core.Transaction
 import org.bitcoinj.core.VerificationException
+import org.dash.wallet.common.data.PaymentIntent
 import org.dash.wallet.common.data.entity.BlockchainState
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
@@ -84,18 +82,52 @@ class ContactsFragment : Fragment(),
     private val args by navArgs<ContactsFragmentArgs>()
     private var initialSearch = true
     private var searchEventSent = false
+    private var identityResolved = false
+    private var viewsInitialized = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        if (!mainViewModel.hasIdentity) {
-            safeNavigate(ContactsFragmentDirections.contactsToEvoUpgrade())
-            return null
-        }
-
         return inflater.inflate(R.layout.fragment_contacts_root, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // DashPayUserBottomSheet is shown on the activity's FragmentManager (via show(activity)),
+        // so listen there for its result.
+        requireActivity().supportFragmentManager.setFragmentResultListener(
+            DashPayUserBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            if (bundle.getBoolean(DashPayUserBottomSheet.KEY_CHANGED, false)) {
+                searchContacts()
+            }
+        }
+        // blockchainIdentity LiveData is populated asynchronously from DataStore.
+        // Reading hasIdentity synchronously can return false before the first
+        // emission, misrouting users who have a username to the EvoUpgrade screen.
+        // The observer can fire repeatedly (BlockchainIdentityData is not deduped
+        // by distinctUntilChanged, and DataStore emits on any preference change),
+        // so identityResolved makes the routing decision one-shot.
+        binding.container.isVisible = false
+        mainViewModel.blockchainIdentity.observe(viewLifecycleOwner) { identityData ->
+            if (identityData == null || identityResolved) return@observe
+
+            identityResolved = true
+            if (!identityData.hasUsername) {
+                // No username: don't initialize the contacts UI or trigger any
+                // platform queries (PlatformRepo/blockchainIdentity are not set up
+                // without a username); just route to the upgrade screen.
+                safeNavigate(ContactsFragmentDirections.contactsToEvoUpgrade())
+            } else {
+                binding.container.isVisible = true
+                setupContactsViews()
+            }
+        }
+    }
+
+    private fun setupContactsViews() {
+        if (viewsInitialized) return
+        viewsInitialized = true
 
         enterTransition = MaterialFadeThrough()
         binding.appBar.toolbar.setNavigationOnClickListener {
@@ -166,13 +198,11 @@ class ContactsFragment : Fragment(),
             emptyStatePane.inviteHintLayout.inviteFriendHint.setOnClickListener {
                 dashPayViewModel.logEvent(AnalyticsConstants.UsersContacts.INVITE_CONTACTS)
 
-                lifecycleScope.launch {
-                    val inviteHistory = dashPayViewModel.getInviteHistory()
-
-                    if (inviteHistory.isEmpty()) {
-                        InviteFriendActivity.startOrError(requireActivity(), source = "contacts")
+                viewLifecycleOwner.lifecycleScope.launch {
+                    if (dashPayViewModel.getInviteCount() == 0) {
+                        safeNavigate(ContactsFragmentDirections.contactsToInviteFee("contacts"))
                     } else {
-                        startActivity(InvitesHistoryActivity.createIntent(requireContext()))
+                        safeNavigate(ContactsFragmentDirections.contactsToInviteHistory("contacts"))
                     }
                 }
             }
@@ -188,7 +218,7 @@ class ContactsFragment : Fragment(),
             }
         )
 
-        lifecycleScope.launch {
+        viewLifecycleOwner.lifecycleScope.launch {
             mainViewModel.dismissUsernameCreatedCardIfDone()
         }
     }
@@ -201,22 +231,25 @@ class ContactsFragment : Fragment(),
         dashPayViewModel.searchContactsLiveData.observe(viewLifecycleOwner) {
             imitateUserInteraction()
             if (Status.SUCCESS == it.status) {
-                if (initialSearch && query.isEmpty() && (args.mode != ContactsScreenMode.VIEW_REQUESTS)) {
-                    if (it.data == null || it.data.isEmpty() || it.data.find { u -> u.requestReceived } == null) {
-                        binding.contactList.apply {
-                            emptyStatePane.root.isVisible = true
-                            search.isVisible = false
-                            icon.isVisible = false
-                        }
-                    } else {
-                        binding.contactList.apply {
-                            search.isVisible = true
-                            icon.isVisible = true
-                            emptyStatePane.root.isVisible = false
-                        }
+                // Re-evaluate the empty-state on every emission, not just the first.
+                // Platform sync can deliver an incomplete contact list first (e.g. a
+                // mutual contact whose incoming request hasn't synced yet, so it looks
+                // like a one-way REQUEST_SENT) and fill in the rest moments later.
+                // Gating this on the one-shot initialSearch flag left the empty-state
+                // pane stuck on top of contacts that arrived after the first emission.
+                if (query.isEmpty() && (args.mode != ContactsScreenMode.VIEW_REQUESTS)) {
+                    // Mirror what processResults() actually displays: pending requests
+                    // and established (mutual) contacts.
+                    val hasContactsToShow = it.data?.any { u ->
+                        u.isPendingRequest || (u.requestSent && u.requestReceived)
+                    } ?: false
+                    binding.contactList.apply {
+                        emptyStatePane.root.isVisible = !hasContactsToShow
+                        search.isVisible = hasContactsToShow
+                        icon.isVisible = hasContactsToShow
                     }
-                    initialSearch = false
                 }
+                initialSearch = false
                 if (it.data != null) {
                     processResults(it.data)
                 }
@@ -291,6 +324,18 @@ class ContactsFragment : Fragment(),
         dashPayViewModel.updateDashPayState()
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // identityResolved and viewsInitialized are one-shot guards scoped to a single view
+        // lifecycle, but the fragment instance (and these fields) survives on the navigation back
+        // stack while the view is destroyed and later recreated. If we don't reset them, returning
+        // to this screen (e.g. back from SearchUserFragment) leaves the blockchainIdentity observer
+        // early-returning and setupContactsViews() skipped, so the container stays hidden and the
+        // contact list never repopulates. Reset so a recreated view re-runs the full setup.
+        identityResolved = false
+        viewsInitialized = false
+    }
+
     private fun processResults(data: List<UsernameSearchResult>) {
         val results = ArrayList<ContactSearchResultsAdapter.ViewItem>()
         // process the requests
@@ -336,7 +381,8 @@ class ContactsFragment : Fragment(),
     }
 
     private fun searchUser() {
-        startActivity(SearchUserActivity.createIntent(requireContext(), query))
+        safeNavigate(ContactsFragmentDirections.contactsToSearchUser())
+        //startActivity(SearchUserActivity.createIntent(requireContext(), query))
     }
 
     private fun searchContacts() {
@@ -377,7 +423,7 @@ class ContactsFragment : Fragment(),
     override fun onItemClicked(view: View, usernameSearchResult: UsernameSearchResult) {
         when (args.mode) {
             ContactsScreenMode.SEARCH_CONTACTS, ContactsScreenMode.VIEW_REQUESTS -> {
-                startActivity(DashPayUserActivity.createIntent(requireContext(), usernameSearchResult))
+                DashPayUserBottomSheet.newInstance(usernameSearchResult).show(requireActivity())
             }
             ContactsScreenMode.SELECT_CONTACT -> {
                 handleString(usernameSearchResult.toContactRequest!!.toUserId, true, R.string.scan_to_pay_username_dialog_message)
@@ -391,13 +437,6 @@ class ContactsFragment : Fragment(),
     }
 
     override fun onIgnoreRequest(usernameSearchResult: UsernameSearchResult, position: Int) {
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == DashPayUserActivity.REQUEST_CODE_DEFAULT && resultCode == DashPayUserActivity.RESULT_CODE_CHANGED) {
-            searchContacts()
-        }
     }
 
     private fun handleString(input: String, fireAction: Boolean, errorDialogTitleResId: Int) {

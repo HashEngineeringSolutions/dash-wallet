@@ -86,6 +86,11 @@ object AnalyticsConstants {
         const val COINJOIN = "settings_coinjoin"
     }
 
+    object Tools {
+        const val EXPORT_CSV = "tools_export_csv"
+        const val ZENLEDGER = "tools_export_zenledger"
+    }
+
     object SendReceive {
         const val SEND_TX = "send_tx" // also include amount sent
         const val SEND_TX_CONTACT = "send_tx_to_contact"  // also include amount sent
@@ -128,6 +133,7 @@ object AnalyticsConstants {
         const val SHORTCUT_RECEIVE = "shortcut_receive"
         const val SHORTCUT_SEND = "shortcut_send"
         const val SHORTCUT_BUY_AND_SELL = "shortcut_buy_and_sell_dash"
+        const val SHORTCUT_DASH_DEX = "shortcut_dash_dex"
         const val SHORTCUT_EXPLORE = "shortcut_explore"
         const val HIDE_BALANCE = "home_hide_balance"
         const val SHOW_BALANCE = "home_show_balance"
@@ -163,6 +169,7 @@ object AnalyticsConstants {
 
     object UsersContacts {
         const val CREATE_USERNAME = "create_username"
+        const val CREATE_USERNAME_INSTANT = "create_username_instant"
         const val JOIN_DASHPAY = "start_btn_join_dashpay"
         const val CREATE_USERNAME_CONFIRM = "start_username_btn_confirm"
         const val CREATE_USERNAME_SUCCESS = "start_username_created_success"
@@ -212,6 +219,9 @@ object AnalyticsConstants {
         const val PROCESS_CONTACT_REQUEST_RECEIVE = "process_contact_request_receive"
         const val PROCESS_PROFILE_CREATE = "process_profile_create"
         const val PROCESS_PROFILE_UPDATE = "process_profile_update"
+        const val PROCESS_BIP7O_GET_PAYMENT_REQUEST = "process_bip70_get_payment_request"
+        const val PROCESS_BIP7O_SEND_PAYMENT = "process_bip70_send_payment"
+        const val PROCESS_GIFT_CARD_PURCHASE = "process_gift_card_purchase"
     }
 
     object Explore {
@@ -275,37 +285,6 @@ object AnalyticsConstants {
         const val HOW_TO_USE = "dashspend__btn_how_to_use"
         const val FILTER_GIFT_CARD = "home_transaction_filter_gift_card"
         const val DETAILS_GIFT_CARD = "home_transaction_details_gift_card"
-    }
-
-    object CrowdNode {
-        const val STAKING_ENTRY = "explore__staking"
-
-        const val WELCOME_DIALOG_CONTINUE = "staking_cn__welcome_modal__b_continue"
-        const val CREATE_NEW_ACCOUNT = "staking_cn__b_create_acc"
-        const val CREATE_ACCOUNT_BUTTON = "staking_cn__new_acc__b_create_acc"
-        const val CREATE_ACCOUNT_ERROR_RETRY = "staking_cn__new_acc__dialogue_b_retry"
-        const val CREATE_ACCOUNT_SUCCESS = "staking_cn__new_account_created"
-
-        const val LINK_EXISTING = "staking_cn__b_link_acc"
-        const val LINK_EXISTING_LOGIN_BUTTON = "staking_cn__link_acc__b_login"
-
-        const val PORTAL_DEPOSIT = "staking_cn__b_deposit"
-        const val PORTAL_DEPOSIT_SUCCESS = "staking_cn_deposit_success"
-        const val PORTAL_DEPOSIT_ERROR = "staking_cn_deposit_error"
-        const val PORTAL_WITHDRAW = "staking_cn__b_withdraw"
-        const val PORTAL_WITHDRAW_CANCEL = "staking_cn__withdraw__m_b_cancel"
-        const val PORTAL_WITHDRAW_SUCCESS = "staking_cn_withdraw_success"
-        const val PORTAL_WITHDRAW_ERROR = "staking_cn_withdraw_error"
-        const val PORTAL_WITHDRAW_BUY = "staking_cn__withdraw__m_b_buy"
-        const val PORTAL_CREATE_ONLINE_ACCOUNT = "staking_cn__b_create_online_acc"
-        const val PORTAL_VERIFY = "staking_cn__b_verify"
-
-        const val CREATE_ONLINE_CONTINUE = "staking_cn__online__b_continue"
-        const val WITHDRAWAL_REQUESTED = "staking_cn__b_withdraw_final"
-        const val DEPOSIT_REQUESTED = "staking_cn__b_deposit_final"
-
-        const val LOW_BALANCE_PROCEED = "staking_cn__dialogue_low_balance_proceed"
-        const val LOW_BALANCE_CANCEL = "staking_cn__dialogue_low_balance_cancel"
     }
 
     object Coinbase {
@@ -409,5 +388,9 @@ object AnalyticsConstants {
     object BlockchainExplorer {
         const val INSIGHT_PICKED = "blockchain_explorer_insight_picked"
         const val BLOCKCHAIR_PICKED = "blockchain_explorer_blockchair_picked"
+    }
+
+    object Maya {
+
     }
 }

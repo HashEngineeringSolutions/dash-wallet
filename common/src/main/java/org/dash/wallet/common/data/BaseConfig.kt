@@ -66,9 +66,12 @@ abstract class BaseConfig(
 
     init {
         walletDataProvider.attachOnWalletWipedListener {
-            @OptIn(DelicateCoroutinesApi::class)
-            GlobalScope.launch { clearAll() }
+            onWalletWiped()
         }
+    }
+
+    protected open suspend fun onWalletWiped() {
+        clearAll()
     }
 
     fun <T> observe(key: Preferences.Key<T>): Flow<T?> {

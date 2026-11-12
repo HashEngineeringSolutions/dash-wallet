@@ -18,8 +18,6 @@
 package de.schildbach.wallet;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.NotificationChannel;
@@ -33,9 +31,8 @@ import android.content.Intent;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.StrictMode;
-import android.preference.PreferenceManager;
+import androidx.preference.PreferenceManager;
 import android.text.format.DateUtils;
 import android.util.Log;
 import android.webkit.CookieManager;
@@ -43,6 +40,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.hilt.work.HiltWorkerFactory;
@@ -56,6 +54,7 @@ import com.google.common.collect.Lists;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.params.RegTestParams;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionBag;
@@ -79,7 +78,7 @@ import org.dash.wallet.common.Configuration;
 import org.dash.wallet.common.InteractionAwareActivity;
 import org.dash.wallet.common.WalletDataProvider;
 import org.dash.wallet.common.data.WalletUIConfig;
-import org.dash.wallet.common.services.LeftoverBalanceException;
+import org.dash.wallet.common.integrations.ExchangeIntegrationProvider;
 import org.dash.wallet.common.services.TransactionMetadataProvider;
 import org.dash.wallet.common.services.analytics.AnalyticsService;
 import org.dash.wallet.common.transactions.TransactionWrapperFactory;
@@ -93,16 +92,19 @@ import ch.qos.logback.core.util.FileSize;
 import de.schildbach.wallet.security.SecurityInitializer;
 import de.schildbach.wallet.service.BlockchainStateDataProvider;
 import de.schildbach.wallet.service.CoinJoinService;
+import de.schildbach.wallet.service.TxDisplayCacheService;
 import de.schildbach.wallet.service.DashSystemService;
 import de.schildbach.wallet.service.PackageInfoProvider;
 import de.schildbach.wallet.service.WalletFactory;
+import de.schildbach.wallet.service.platform.IdentityRepository;
+import de.schildbach.wallet.service.platform.TopUpRepository;
 import de.schildbach.wallet.transactions.MasternodeObserver;
 import de.schildbach.wallet.transactions.WalletBalanceObserver;
 import de.schildbach.wallet.ui.buy_sell.LiquidClient;
 import org.dash.wallet.integrations.uphold.api.UpholdClient;
 import org.dash.wallet.integrations.uphold.data.UpholdConstants;
-import org.dash.wallet.integrations.crowdnode.utils.CrowdNodeConfig;
-import org.dash.wallet.integrations.crowdnode.utils.CrowdNodeBalanceCondition;
+import org.dash.wallet.integrations.maya.api.SwapTrackingService;
+import org.dash.wallet.integrations.uphold.utils.UpholdConfig;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,8 +120,11 @@ import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
@@ -138,7 +143,6 @@ import de.schildbach.wallet.service.BlockchainSyncJobService;
 import de.schildbach.wallet.service.platform.PlatformSyncService;
 import de.schildbach.wallet.transactions.TransactionWrapperHelper;
 import de.schildbach.wallet.service.RestartService;
-import de.schildbach.wallet.transactions.WalletBalanceObserver;
 import de.schildbach.wallet.transactions.WalletObserver;
 import de.schildbach.wallet.ui.dashpay.HistoryHeaderAdapter;
 import de.schildbach.wallet.ui.dashpay.PlatformRepo;
@@ -153,9 +157,13 @@ import de.schildbach.wallet_test.BuildConfig;
 import de.schildbach.wallet_test.R;
 import kotlin.Deprecated;
 import kotlin.Unit;
+import kotlin.coroutines.Continuation;
 import kotlin.jvm.functions.Function0;
+import kotlin.jvm.functions.Function1;
 import kotlinx.coroutines.flow.Flow;
 import kotlinx.coroutines.flow.FlowKt;
+import kotlinx.coroutines.flow.MutableStateFlow;
+import kotlinx.coroutines.flow.StateFlowKt;
 
 /**
  * @author Andreas Schildbach
@@ -166,9 +174,9 @@ public class WalletApplication extends MultiDexApplication
     private static WalletApplication instance;
     private Configuration config;
     private ActivityManager activityManager;
-    private final List<Function0<Unit>> wipeListeners = new ArrayList<>();
+    private final List<Function1<? super Continuation<? super Unit>, ?>> wipeListeners = new ArrayList<>();
 
-    private boolean basicWalletInitalizationFinished = false;
+    private boolean basicWalletInitializationFinished = false;
 
     private Intent blockchainServiceIntent;
 
@@ -182,13 +190,11 @@ public class WalletApplication extends MultiDexApplication
 
     public static final long TIME_CREATE_APPLICATION = System.currentTimeMillis();
 
-    private static final Logger log = LoggerFactory.getLogger(WalletApplication.class);
+    public static final Logger log = LoggerFactory.getLogger(WalletApplication.class);
 
     private static final int BLOCKCHAIN_SYNC_JOB_ID = 1;
 
     public boolean myPackageReplaced = false;
-
-    public Activity currentActivity;
 
     private AutoLogout autoLogout;
     private AnrSupervisor anrSupervisor;
@@ -203,15 +209,19 @@ public class WalletApplication extends MultiDexApplication
     @Inject
     BlockchainStateDataProvider blockchainStateDataProvider;
     @Inject
-    CrowdNodeConfig crowdNodeConfig;
-    @Inject
     TransactionMetadataProvider transactionMetadataProvider;
     @Inject
     PlatformRepo platformRepo;
     @Inject
+    IdentityRepository identityRepository;
+    @Inject
     PlatformSyncService platformSyncService;
     @Inject
+    TopUpRepository topUpRepository;
+    @Inject
     PackageInfoProvider packageInfoProvider;
+    @Inject
+    UpholdConfig upholdConfig;
     @Inject
     WalletFactory walletFactory;
     @Inject
@@ -220,8 +230,16 @@ public class WalletApplication extends MultiDexApplication
     WalletUIConfig walletUIConfig;
     @Inject
     SecurityInitializer securityInitializer;
+    @Inject
+    TxDisplayCacheService txDisplayCacheService;
+    @Inject
+    SwapTrackingService swapTrackingService;
+    @Inject
+    de.schildbach.wallet.ui.more.connections.DashConnectConfig dashConnectConfig;
     private WalletBalanceObserver walletBalanceObserver;
     private CoinJoinService coinJoinService;
+    @Inject
+    public ExchangeIntegrationProvider exchangeIntegrationProvider;
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -238,84 +256,11 @@ public class WalletApplication extends MultiDexApplication
         super.onCreate();
         initLogging();
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
-        log.info("WalletApplication.onCreate()");
+        log.info("STARTUP WalletApplication.onCreate()");
         config = new Configuration(PreferenceManager.getDefaultSharedPreferences(this));
         autoLogout = new AutoLogout(config);
         autoLogout.registerDeviceInteractiveReceiver(this);
-        registerActivityLifecycleCallbacks(new ActivitiesTracker() {
-            int activityCount = 0;
-            int foregroundActivityCount = 0;
-            int visibleActivityCount = 0;
-            final String logName = "activity lifecycle";
-            @Override
-            protected void onStartedFirst(Activity activity) {
-
-            }
-
-            @Override
-            protected void onStartedAny(boolean isTheFirstOne, Activity activity) {
-                super.onStartedAny(isTheFirstOne, activity);
-                // force restart if the app was updated
-                // this ensures that v6.x or previous will go through the PIN upgrade process
-                if (!BuildConfig.DEBUG && myPackageReplaced) {
-                    log.info("restarting app due to upgrade");
-                    myPackageReplaced = false;
-                    restartService.performRestart(activity, true, true);
-                }
-            }
-
-            @Override
-            protected void onStoppedLast() {
-                autoLogout.setAppWentBackground(true);
-                if (config.getAutoLogoutEnabled() && config.getAutoLogoutMinutes() == 0) {
-                    sendBroadcast(new Intent(InteractionAwareActivity.FORCE_FINISH_ACTION));
-                }
-            }
-
-            public void onActivityCreated(@NonNull Activity activity, Bundle bundle) {
-                if (activityCount == 0)
-                    log.info("{}: app started", logName);
-                activityCount++;
-                log.info("{}: activity {} created", logName, activity.getClass().getSimpleName());
-                logState();
-                currentActivity = activity;
-            }
-
-            public void onActivityDestroyed(@NonNull Activity activity) {
-                log.info("{}: activity {} destroyed", logName, activity.getClass().getSimpleName());
-                activityCount--;
-                logState();
-                if (activityCount == 0)
-                    log.info("{}: app closed", logName);
-            }
-
-            public void onActivityResumed(@NonNull Activity activity) {
-                foregroundActivityCount++;
-                logState();
-                currentActivity = activity;
-            }
-
-            public void onActivityPaused(@NonNull Activity activity) {
-                foregroundActivityCount--;
-                logState();
-            }
-
-            public void onActivityStarted(@NonNull Activity activity) {
-                visibleActivityCount++;
-                logState();
-                currentActivity = activity;
-            }
-
-            public void onActivityStopped(Activity activity) {
-                visibleActivityCount--;
-                logState();
-            }
-
-            private void logState() {
-                log.info("{}: activities: {} visible: {} foreground: {}", logName,
-                        activityCount, visibleActivityCount, foregroundActivityCount);
-            }
-        });
+        registerActivityLifecycleCallbacks(new WalletActivityTracker(this, config, autoLogout, restartService));
         walletFile = getFileStreamPath(Constants.Files.WALLET_FILENAME_PROTOBUF);
         if (walletFileExists()) {
             fullInitialization();
@@ -342,11 +287,24 @@ public class WalletApplication extends MultiDexApplication
         anrSupervisor = new AnrSupervisor();
         anrSupervisor.start();
 
+        // resume status polling for any DEX swaps still in flight
+        swapTrackingService.start();
+
         // enable TLS 1.3 support on Android 9 and lower
         // Android 10 and above support TLS 1.3 by default
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q) {
             Security.insertProviderAt(Conscrypt.newProvider(), 1);
         }
+
+
+    }
+
+    @Override
+    public void onTerminate() {
+        super.onTerminate();
+        walletBalanceObserver.close();
+        topUpRepository.close();
+        anrSupervisor.stop();
     }
 
     private void syncExploreData() {
@@ -355,18 +313,23 @@ public class WalletApplication extends MultiDexApplication
     }
 
     public void fullInitialization() {
+        long t0 = System.currentTimeMillis();
         initEnvironment();
+        log.info("STARTUP fullInit: initEnvironment done in {}ms", System.currentTimeMillis() - t0);
+        long t1 = System.currentTimeMillis();
         loadWalletFromProtobuf();
+        log.info("STARTUP fullInit: loadWalletFromProtobuf done in {}ms", System.currentTimeMillis() - t1);
+        log.info("STARTUP fullInit: total {}ms", System.currentTimeMillis() - t0);
     }
 
     public void initEnvironmentIfNeeded() {
-        if (!basicWalletInitalizationFinished) {
+        if (!basicWalletInitializationFinished) {
             initEnvironment();
         }
     }
 
     private void initEnvironment() {
-        basicWalletInitalizationFinished = true;
+        basicWalletInitializationFinished = true;
 
         new LinuxSecureRandom(); // init proper random number generator
 
@@ -376,8 +339,28 @@ public class WalletApplication extends MultiDexApplication
         }
 
         Threading.throwOnLockCycles();
-        org.bitcoinj.core.Context.enableStrictMode();
+        // TODO: do we need this commented out for saving
+        // org.bitcoinj.core.Context.enableStrictMode();
         org.bitcoinj.core.Context.propagate(Constants.CONTEXT);
+
+        // Pre-warm RegTestParams on this single-threaded startup path.
+        //
+        // dashj's ZeroConfCoinSelector.isTransactionSelectable() compares a pending tx's params
+        // against RegTestParams.get() for *every* pending output it considers. This selector is
+        // used by getAnonymizableBalance(), send flows and ByAddressCoinSelector. RegTestParams.get()
+        // lazily runs the RegTestParams constructor, which recomputes the regtest genesis X11 hash
+        // and checkState()s it against a hardcoded value. When that lazy construction first happens
+        // on a contended background thread (notably CoinJoin's IO coroutines, which do heavy
+        // concurrent X11 hashing) a transient bad X11 result makes the checkState throw and crashes
+        // balance calculation - even though this wallet never runs on regtest.
+        //
+        // Forcing the (synchronized, cached) construction here, before any concurrent hashing
+        // begins, makes the instance compute correctly once and be reused forever, closing the race.
+        try {
+            RegTestParams.get();
+        } catch (Throwable t) {
+            log.warn("failed to pre-warm RegTestParams", t);
+        }
 
         log.info("=== starting app using configuration: {}, {}", BuildConfig.FLAVOR,
                 Constants.NETWORK_PARAMETERS.getId());
@@ -402,6 +385,7 @@ public class WalletApplication extends MultiDexApplication
                 AuthenticationKeyChain.KeyChainType.INVITATION_FUNDING
         );
         this.wallet = newWallet;
+        walletStateFlow.setValue(newWallet);
         // TODO: move to a wallet creation class
         if (!wallet.hasKeyChain(Constants.BIP44_PATH)) {
             wallet.addKeyChain(Constants.BIP44_PATH);
@@ -448,23 +432,46 @@ public class WalletApplication extends MultiDexApplication
     }
 
     public void finalizeInitialization() {
-        dashSystemService.getSystem().initDash(true, true, Constants.SYNC_FLAGS, Constants.VERIFY_FLAGS);
+        long _t = System.currentTimeMillis();
+        // TODO, put this in a different place. maybe SecurityInitilizer
+        // TODO, can we remove this?
+        try {
+            SecurityGuard securityGuard = SecurityGuard.getInstance();
+            List<String> mnemonicWords = platformRepo.getWalletSeed().getMnemonicCode();
+            if (mnemonicWords != null) {
+                securityGuard.ensureMnemonicFallbacks(mnemonicWords);
+                log.info("Mnemonic-based fallbacks ensured");
+            }
+            boolean success = securityGuard.ensurePinFallback(securityGuard.retrievePin());
+            if (success) {
+                log.info("PIN-based fallback added successfully");
+            }
+        } catch (Exception e) {
+            log.error("Failed to ensure mnemonic-based fallbacks", e);
+            // Don't crash - app can continue with primary+PIN fallback only
+        }
+        log.info("STARTUP finalizeInit: securityGuard done in {}ms", System.currentTimeMillis() - _t); _t = System.currentTimeMillis();
 
-        if (config.versionCodeCrossed(packageInfoProvider.getVersionCode(), VERSION_CODE_SHOW_BACKUP_REMINDER)
+        dashSystemService.getSystem().initDash(true, true, Constants.SYNC_FLAGS, Constants.VERIFY_FLAGS);
+        log.info("STARTUP finalizeInit: initDash done in {}ms", System.currentTimeMillis() - _t); _t = System.currentTimeMillis();
+
+        if (config.versionCodeCrossed((int)packageInfoProvider.getVersionCode(), VERSION_CODE_SHOW_BACKUP_REMINDER)
                 && !wallet.getImportedKeys().isEmpty()) {
             log.info("showing backup reminder once, because of imported keys being present");
             config.armBackupReminder();
         }
 
-        config.updateLastVersionCode(packageInfoProvider.getVersionCode());
+        config.updateLastVersionCode((int)packageInfoProvider.getVersionCode());
 
         if (config.getTaxCategoryInstallTime() == 0) {
             config.setTaxCategoryInstallTime(System.currentTimeMillis());
         }
 
         afterLoadWallet();
+        log.info("STARTUP finalizeInit: afterLoadWallet done in {}ms", System.currentTimeMillis() - _t); _t = System.currentTimeMillis();
 
         cleanupFiles();
+        removeCrowdNodeData();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             createNotificationChannels();
@@ -473,9 +480,12 @@ public class WalletApplication extends MultiDexApplication
         if (Constants.SUPPORTS_PLATFORM) {
             initPlatform();
         }
+        log.info("STARTUP finalizeInit: initPlatform+channels done in {}ms", System.currentTimeMillis() - _t); _t = System.currentTimeMillis();
         initUphold();
         initCoinbase();
         initDashSpend();
+        WalletApplicationExt.INSTANCE.clearCachedAddresses(this);
+        log.info("STARTUP finalizeInit: integrations done in {}ms", System.currentTimeMillis() - _t);
     }
 
     private void initUphold() {
@@ -487,13 +497,12 @@ public class WalletApplication extends MultiDexApplication
         UpholdConstants.CLIENT_ID = BuildConfig.UPHOLD_CLIENT_ID;
         UpholdConstants.CLIENT_SECRET = BuildConfig.UPHOLD_CLIENT_SECRET;
         UpholdConstants.INSTANCE.initialize(Constants.NETWORK_PARAMETERS.getId().contains("test"));
-        UpholdClient.init(getApplicationContext(), authenticationHash);
+        UpholdClient.init(getApplicationContext(), authenticationHash, upholdConfig);
         LiquidClient.Companion.init(getApplicationContext(), authenticationHash);
     }
 
     private void initPlatform() {
         platformSyncService.init();
-        //PlatformRepo.getInstance().initGlobal();
     }
 
     private void initCoinbase() {
@@ -506,7 +515,7 @@ public class WalletApplication extends MultiDexApplication
         // X-Client-Id will be set as "dcg_android"
     }
 
-    @TargetApi(Build.VERSION_CODES.O)
+    @RequiresApi(Build.VERSION_CODES.O)
     private void createNotificationChannels() {
         // Transactions
         createNotificationChannel(Constants.NOTIFICATION_CHANNEL_ID_TRANSACTIONS,
@@ -539,7 +548,7 @@ public class WalletApplication extends MultiDexApplication
                 NotificationManager.IMPORTANCE_LOW);
     }
 
-    @TargetApi(Build.VERSION_CODES.O)
+    @RequiresApi(Build.VERSION_CODES.O)
     private void createNotificationChannel(String channelId, @StringRes int channelName,
                                            @StringRes int channelDescription, int importance) {
         CharSequence name = getString(channelName);
@@ -566,15 +575,16 @@ public class WalletApplication extends MultiDexApplication
 
 
     private void afterLoadWallet() {
+        wallet.setSaveOnNextBlock(false);
         wallet.autosaveToFile(walletFile, Constants.Files.WALLET_AUTOSAVE_DELAY_MS, TimeUnit.MILLISECONDS, null);
 
         // clean up spam
         try {
             wallet.cleanup();
         } catch (IllegalStateException x) {
-            //Catch an inconsistent exception here and reset the blockchain.  This is for loading older wallets that had
-            //txes with fees that were too low or dust that were stuck and could not be sent.  In a later version
-            //the fees were fixed, then those stuck transactions became inconsistant and the exception is thrown.
+            // Catch an inconsistent exception here and reset the blockchain.  This is for loading older wallets that had
+            // txes with fees that were too low or dust that were stuck and could not be sent.  In a later version
+            // the fees were fixed, then those stuck transactions became inconsistent and the exception is thrown.
             if (x.getMessage().contains("Inconsistent spent tx:")) {
                 deleteBlockchainFiles();
             } else throw x;
@@ -602,9 +612,6 @@ public class WalletApplication extends MultiDexApplication
         blockChainFile.delete();
         File headerChainFile = new File(getDir("blockstore", Context.MODE_PRIVATE), Constants.Files.HEADERS_FILENAME);
         headerChainFile.delete();
-        // TODO: should we have a backup blockchain file?
-        // File backupBlockChainFile = new File(getDir("blockstore", Context.MODE_PRIVATE), Constants.Files.BACKUP_BLOCKCHAIN_FILENAME);
-        // backupBlockChainFile.delete();
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -628,7 +635,7 @@ public class WalletApplication extends MultiDexApplication
         final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
 
         final LogMarkerFilter markerFilter = new LogMarkerFilter();
-
+        markerFilter.addAcceptedMarker("PUBLISH");
         final PatternLayoutEncoder filePattern = new PatternLayoutEncoder();
         filePattern.setContext(context);
         filePattern.setPattern("%d{HH:mm:ss,UTC} [%thread] %logger{0} - %msg%n");
@@ -684,6 +691,23 @@ public class WalletApplication extends MultiDexApplication
     @Override
     public Wallet getWallet() {
         return wallet;
+    }
+
+    /**
+     * Whether a wallet is loaded, safe to ask from any thread. The wallet field is not volatile,
+     * so a background thread reading it can go on seeing a wallet a wipe has already removed;
+     * the state flow is updated alongside it and publishes the change to every thread.
+     */
+    public boolean hasWallet() {
+        return walletStateFlow.getValue() != null;
+    }
+
+    private final MutableStateFlow<Wallet> walletStateFlow = StateFlowKt.MutableStateFlow(null);
+    @NonNull
+    @Override
+    public
+    Flow<Wallet> observeWallet() {
+        return walletStateFlow;
     }
 
     @Nullable
@@ -751,7 +775,7 @@ public class WalletApplication extends MultiDexApplication
         wallet.setRiskAnalyzer(new AllowLockTimeRiskAnalysis.OfflineAnalyzer(config.getBestHeightEver(), System.currentTimeMillis()/1000));
 
         if (!wallet.isConsistent()) {
-            Toast.makeText(this, "inconsistent wallet: " + walletFile, Toast.LENGTH_LONG).show();
+            Toast.makeText(WalletApplication.this, "inconsistent wallet: " + walletFile, Toast.LENGTH_LONG).show();
 
             wallet = restoreWalletFromBackup();
             WalletExtension authenticationGroupExtension = wallet.getKeyChainExtension(AuthenticationGroupExtension.EXTENSION_ID);
@@ -762,7 +786,7 @@ public class WalletApplication extends MultiDexApplication
 
         if (!wallet.getParams().equals(Constants.NETWORK_PARAMETERS))
             throw new Error("bad wallet network parameters: " + wallet.getParams().getId());
-
+        walletStateFlow.setValue(wallet);
         finalizeInitialization();
     }
 
@@ -782,7 +806,7 @@ public class WalletApplication extends MultiDexApplication
 
             Toast.makeText(this, R.string.toast_wallet_reset, Toast.LENGTH_LONG).show();
 
-            log.info("wallet restored from backup: '" + Constants.Files.WALLET_KEY_BACKUP_PROTOBUF + "'");
+            log.info("wallet restored from backup: '{}'", Constants.Files.WALLET_KEY_BACKUP_PROTOBUF);
 
             return wallet;
         } catch (final IOException x) {
@@ -855,6 +879,19 @@ public class WalletApplication extends MultiDexApplication
         }
     }
 
+    // CrowdNode was removed: drop its preferences, DataStore file and any pending sign-up work
+    private void removeCrowdNodeData() {
+        final boolean hadPrefs = config.removeObsoleteCrowdNodePrefs();
+        final File dataStore = new File(new File(getFilesDir(), Constants.Files.DATASTORE_PREFS_DIRECTORY),
+                "crowdnode.preferences_pb");
+        final boolean hadDataStore = dataStore.delete();
+
+        if (hadPrefs || hadDataStore) {
+            log.info("removing obsolete CrowdNode data");
+            WorkManager.getInstance(this).cancelUniqueWork("CrowdNode.WORK");
+        }
+    }
+
     private void clearDatastorePrefs() {
         final File folder = new File(getFilesDir(), Constants.Files.DATASTORE_PREFS_DIRECTORY);
 
@@ -864,6 +901,10 @@ public class WalletApplication extends MultiDexApplication
 
             if (files != null) {
                 for (File file: files) {
+                    // This scoped authorization/replay audit must survive same-seed recovery.
+                    if (de.schildbach.wallet.ui.more.connections.DashConnectConfig.AUDIT_FILE_NAME.equals(file.getName())) {
+                        continue;
+                    }
                     file.delete();
                 }
             }
@@ -883,21 +924,38 @@ public class WalletApplication extends MultiDexApplication
             int importance = runningAppProcesses.get(0).importance;
             if (importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
                 if (wallet == null) {
-                    log.warn("wallet does not exist, but starting blockchain service");
+                    // The environment was never initialized in this process (no wallet file at
+                    // startup), so blockchainServiceIntent may still be null and the service has
+                    // no wallet to work with anyway.
+                    log.warn("wallet does not exist, not starting blockchain service");
+                    return;
                 }
                 if (cancelCoinsReceived) {
                     Intent blockchainServiceCancelCoinsReceivedIntent = new Intent(BlockchainService.ACTION_CANCEL_COINS_RECEIVED, null,
                             this, BlockchainServiceImpl.class);
                     startService(blockchainServiceCancelCoinsReceivedIntent);
                 } else {
-                    startService(blockchainServiceIntent);
+                    startService(getBlockchainServiceIntent());
                 }
             }
         }
     }
 
+    @Deprecated(message = "not used")
     public void stopBlockchainService() {
-        stopService(blockchainServiceIntent);
+        stopService(getBlockchainServiceIntent());
+    }
+
+    /**
+     * {@link #blockchainServiceIntent} is only assigned by {@link #initEnvironment()}, which does
+     * not run when the app starts without a wallet file. Build it on demand so that callers can
+     * never pass null to startService()/stopService().
+     */
+    private Intent getBlockchainServiceIntent() {
+        if (blockchainServiceIntent == null) {
+            blockchainServiceIntent = new Intent(this, BlockchainServiceImpl.class);
+        }
+        return blockchainServiceIntent;
     }
 
     public void resetBlockchainState() {
@@ -909,6 +967,9 @@ public class WalletApplication extends MultiDexApplication
         if (wallet != null && authenticationGroupExtension != null) {
             authenticationGroupExtension.reset();
         }
+        // Clear the in-memory pre-built rows immediately so that the new Activity
+        // launched by the caller does not display stale cached transaction data.
+        txDisplayCacheService.clearInMemoryCache();
         // implicitly stops blockchain service
         resetBlockchainState();
         Intent blockchainServiceResetBlockchainIntent = new Intent(BlockchainService.ACTION_RESET_BLOCKCHAIN, null, this,
@@ -920,6 +981,7 @@ public class WalletApplication extends MultiDexApplication
         blockchainStateDataProvider.resetBlockchainSyncProgress();
     }
 
+    @Deprecated(message = "not used")
     public void replaceWallet(final Wallet newWallet) {
         resetBlockchain();
         if (wallet != null) {
@@ -936,7 +998,7 @@ public class WalletApplication extends MultiDexApplication
     }
 
     @Override
-    public void processDirectTransaction(final Transaction tx) throws VerificationException {
+    public void processDirectTransaction(@NonNull final Transaction tx) throws VerificationException {
         if (wallet.isTransactionRelevant(tx)) {
             wallet.receivePending(tx, null);
             broadcastTransaction(tx);
@@ -946,7 +1008,7 @@ public class WalletApplication extends MultiDexApplication
     public void broadcastTransaction(final Transaction tx) {
         final Intent intent = new Intent(BlockchainService.ACTION_BROADCAST_TRANSACTION, null, this,
                 BlockchainServiceImpl.class);
-        intent.putExtra(BlockchainService.ACTION_BROADCAST_TRANSACTION_HASH, tx.getHash().getBytes());
+        intent.putExtra(BlockchainService.ACTION_BROADCAST_TRANSACTION_HASH, tx.getTxId().getBytes());
         startService(intent);
     }
     public boolean isLowRamDevice() {
@@ -968,7 +1030,7 @@ public class WalletApplication extends MultiDexApplication
         scheduleStartBlockchainService(this, true);
     }
 
-    @SuppressLint("NewApi")
+    @SuppressLint({"NewApi", "WrongConstant"})
     public static void scheduleStartBlockchainService(final Context context, Boolean cancelOnly) {
         final Configuration config = new Configuration(PreferenceManager.getDefaultSharedPreferences(context));
         final long lastUsedAgo = config.getLastUsedAgo();
@@ -1076,6 +1138,13 @@ public class WalletApplication extends MultiDexApplication
         // wallet must be null for the OnboardingActivity flow
         log.info("removing wallet from memory during wipe");
         wallet = null;
+        walletStateFlow.setValue(null);
+        // Here, after the wallet is gone, and not with the other alarms at the top: the service's
+        // cleanup can still be scheduling its one-minute recovery restart until this point, and
+        // from here on it refuses to. A restart that fires with no wallet leaves the service
+        // half-created, and every later start - including the one for a replacement wallet -
+        // waits on it for good.
+        BlockchainServiceImpl.cancelRecoveryRestart(this);
         authenticationGroupExtension = null;
         walletBalanceObserver.close();
         walletBalanceObserver = null;
@@ -1089,8 +1158,18 @@ public class WalletApplication extends MultiDexApplication
     }
 
     private void notifyWalletWipe() {
-        for (Function0<Unit> listener : wipeListeners) {
-            listener.invoke();
+        // Since these are now suspended listeners, we need to call them in a blocking way
+        // to ensure all clearing operations complete before proceeding
+        for (Function1<? super Continuation<? super Unit>, ?> listener : wipeListeners) {
+            try {
+                // Call the suspended function synchronously using runBlocking
+                kotlinx.coroutines.BuildersKt.runBlocking(
+                    kotlinx.coroutines.Dispatchers.getIO(),
+                    (scope, continuation) -> listener.invoke(continuation)
+                );
+            } catch (Exception e) {
+                log.error("Error in wallet wipe listener", e);
+            }
         }
     }
 
@@ -1132,7 +1211,7 @@ public class WalletApplication extends MultiDexApplication
     @NotNull
     @Override
     public Address currentReceiveAddress() {
-        return wallet.freshReceiveAddress();
+        return wallet.currentReceiveAddress();
     }
 
     @NotNull
@@ -1258,7 +1337,7 @@ public class WalletApplication extends MultiDexApplication
     @Override
     public Collection<Transaction> getTransactions(@NonNull TransactionFilter... filters) {
         if (wallet == null) {
-            return Lists.newArrayList();
+            return new ArrayList<>();
         }
         Set<Transaction> transactions = wallet.getTransactions(true);
 
@@ -1311,26 +1390,13 @@ public class WalletApplication extends MultiDexApplication
     }
 
     @Override
-    public void attachOnWalletWipedListener(@NonNull Function0<Unit> listener) {
+    public void attachOnWalletWipedListener(@NonNull Function1<? super Continuation<? super Unit>,?> listener) {
         wipeListeners.add(listener);
     }
 
     @Override
-    public void detachOnWalletWipedListener(@NonNull Function0<Unit> listener) {
+    public void detachOnWalletWipedListener(@NonNull Function1<? super Continuation<? super Unit>,?> listener) {
         wipeListeners.remove(listener);
-    }
-
-    @Override
-    public void checkSendingConditions(
-            @Nullable Address address,
-            @NonNull Coin amount
-    ) throws LeftoverBalanceException {
-        new CrowdNodeBalanceCondition().check(
-                getWalletBalance(),
-                address,
-                amount,
-                crowdNodeConfig
-        );
     }
 
     @Override

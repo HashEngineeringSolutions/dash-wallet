@@ -28,15 +28,17 @@ data class UserAlert(
     @PrimaryKey val stringResId: Int,
     @DrawableRes val iconResId: Int,
     var dismissed: Boolean = false,
-    val createdAt: Long = Date().time)
-{
+    val createdAt: Long = Date().time
+) {
     companion object {
         const val INVITATION_NOTIFICATION_TEXT = 1
         val textMap = hashMapOf(INVITATION_NOTIFICATION_TEXT to R.string.invitation_notification_text)
 
-
         const val INVITATION_NOTIFICATION_ICON = 1000
         val iconMap = hashMapOf(INVITATION_NOTIFICATION_ICON to R.drawable.ic_invitation)
+
+        fun getIdFromStringRes(@StringRes stringResId: Int) =
+            textMap.filter { it.value == stringResId }.map { it.key }.firstOrNull()
     }
 
 

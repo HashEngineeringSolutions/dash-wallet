@@ -11,6 +11,7 @@
     <string name="buy_dash">Dash kaufen</string>
     <string name="copied">Kopiert</string>
     <string name="staking_title">Staking</string>
+    <string name="spend_title">Ausgegeben</string>
     <string name="email">E-Mail</string>
     <string name="email_placeholder">z.B. maxmustermann@mail.com</string>
     <string name="error">Fehler</string>
@@ -24,6 +25,8 @@
     <string name="dash_address">Dash Adresse</string>
     <string name="username">Nutzername</string>
     <string name="balance">Guthaben:</string>
+    <string name="hide_balance">Guthaben ausblenden</string>
+    <string name="show_balance">Guthaben anzeigen</string>
     <string name="nothing_here">Hier gibt es nichts</string>
 
     <!-- Local Currency List: GGP -->
@@ -47,10 +50,16 @@
 
     <!-- Generic buttons -->
     <string name="button_dismiss">Schließen</string>
+    <string name="button_not_now">Nicht jetzt</string>
+    <string name="button_settings">Einstellungen</string>
     <string name="network_unavailable_return">Zur Wallet zurückkehren</string>
     <string name="button_continue">Fortfahren</string>
     <string name="get_quote">Angebot einholen</string>
     <string name="button_close">Schließen</string>
+    <string name="button_cancel">Abbrechen</string>
+    <string name="button_clear">Löschen</string>
+    <string name="button_paste">Einfügen</string>
+    <string name="button_confirm">Bestätigen</string>
     <string name="button_retry">Wiederholen</string>
     <string name="button_send_report">Bericht senden</string>
     <string name="button_info">Info</string>
@@ -79,6 +88,8 @@
     <string name="dash_wallet_name">Dash Wallet</string>
     <string name="from">von</string>
     <string name="to">nach</string>
+    <string name="from_title">Von</string>
+    <string name="to_title">Bis</string>
     <string name="select_currency">Währung auswählen</string>
     <string name="send_coins_error_dusty_send">Der Betrag ist zu klein zum Senden</string>
     <string name="send_coins_error_insufficient_money">Guthaben nicht ausreichend</string>
@@ -95,7 +106,10 @@
     <string name="payment_request_problem_title">Zahlung nicht anerkannt</string>
     <string name="payment_protocol_default_error_title">Zahlungsfehler</string>
     <string name="payment_request_problem_message">Deine Zahlung konnte nicht vom Server verarbeitet werden, wende dich bitte an den Händler.</string>
+    <string name="payment_submission_pending_title">Zahlungsstatus unbekannt</string>
+    <string name="payment_submission_pending_message">Die Zahlung wurde gesendet, aber wir haben keine Bestätigung vom Händler erhalten. Deine Wallet prüft weiterhin das Netzwerk und zeigt die Transaktion als gesendet an, sobald sie gefunden wurde. Bitte warte, bevor du diese Zahlung erneut sendest.</string>
     <string name="exchange_rate_not_found">Kann Wechselkurs nicht finden.</string>
+    <string name="send_coins_fragment_hint_replaying">Da die Wallet momentan nicht mit dem Netzwerk synchronisiert ist, kann keine Zahlung durchgeführt werden.</string>
 
     <!-- Integrations -->
     <string name="buy_dash_subtitle">Direkt in der Dash Wallet erhalten</string>
@@ -109,4 +123,41 @@
     <string name="chain_syncing">Die Chain synchronisiert...</string>
     <string name="report_issue_dialog_mail_intent_chooser">Bericht senden mit…</string>
 
-    </resources>
+    <!-- scan -->
+    <string name="scan_camera_problem_dialog_title">Sorry</string>
+    <string name="scan_camera_problem_dialog_message">Die Kamera scheint ein Problem zu haben. Bitte starte Dein Gerät neu.</string>
+    <string name="scan_camera_permission_dialog_title">Kamera genehmigen</string>
+    <string name="scan_camera_permission_dialog_message">Damit QR-Codes gescannt werden können, musst Du das Verwenden der Kamera erlauben.</string>
+    <string name="scan_camera_permission_denied_dialog_message">Um QR-Codes zu scannen, muss der Kamerazugriff für diese App in den Einstellungen aktiviert werden.</string>
+    <!-- address input -->
+    <string name="address_input_title">Dash senden</string>
+    <string name="show_clipboard">Inhalt der Zwischenablage anzeigen</string>
+    <string name="tap_to_paste">Tippe auf die Adresse in der Zwischenablage, um sie einzufügen.</string>
+    <string name="not_valid_address">Keine gültige %s Adresse oder URL-Anfrage</string>
+    <string name="recipient_address">Adresse des Empfängers</string>
+
+    <!-- input parser -->
+    <string name="input_parser_io_error">Kann Daten nicht lesen:\n%s</string>
+    <string name="input_parser_cannot_classify">Eingabe nicht erkannt:\n%s</string>
+    <string name="input_parser_invalid_bitcoin_uri">Ungültige Dash-URI:\n%s</string>
+    <string name="input_parser_invalid_address">Ungültige Dash-Adresse eingegeben!\n(Eventuell wurden Mainnet-/Testnet-Adressen vertauscht)</string>
+    <string name="input_parser_unverifyable_paymentrequest">Kann Zahlungsanforderung nicht verifizieren:\n%s</string>
+    <string name="input_parser_invalid_paymentrequest">Ungültige Zahlungsanforderung:\n%s</string>
+    <string name="input_parser_invalid_transaction">Ungültige Transaktion:\n%s</string>
+    <string name="address_input_paste_from">Einfügen von %s</string>
+    <!-- Trailing action on an address-source row for an exchange the user is not signed in to -->
+    <string name="input_log_in">Einloggen</string>
+
+    <!-- others -->
+    <string name="confirm_sec">Bestätigen (%ss)</string>
+    <string name="cancel_transaction">Transaktion abbrechen?</string>
+    <string name="yes_cancel">Ja, abbrechen</string>
+    <string name="no_keep_it">Nein, beibehalten</string>
+    <string name="insufficient_money_title">Nicht genug Dash</string>
+    <string name="insufficient_money_msg">Die Menge an Coins in der Wallet ist zu klein für diese Transaktion.</string>
+    <string name="send_coins_error_msg">Problem beim Versenden der Dash!</string>
+    <string name="from_dash_wallet_on_this_device">Von der Dash Wallet auf diesem Gerät</string>
+    <string name="preposition_at">bei</string>
+    <string name="info">Info</string>
+    <string name="scan_qr">QR Code scannen</string>
+</resources>

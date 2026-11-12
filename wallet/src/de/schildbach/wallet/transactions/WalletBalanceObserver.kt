@@ -17,6 +17,7 @@
 
 package de.schildbach.wallet.transactions
 
+import com.google.common.base.Stopwatch
 import de.schildbach.wallet.Constants
 import de.schildbach.wallet.service.CoinJoinMode
 import de.schildbach.wallet.service.CoinJoinService
@@ -37,8 +38,10 @@ import org.bitcoinj.utils.Threading
 import org.bitcoinj.wallet.CoinSelector
 import org.bitcoinj.wallet.Wallet
 import org.bitcoinj.wallet.Wallet.BalanceType
+import org.bitcoinj.wallet.listeners.WalletResetEventListener
 import org.dash.wallet.common.data.WalletUIConfig
 import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 
 class WalletBalanceObserver(
     private val wallet: Wallet,
@@ -60,7 +63,12 @@ class WalletBalanceObserver(
 
     private val walletChangeListener = object : ThrottlingWalletChangeListener() {
         override fun onThrottledWalletChanged() {
-            // log.info("emitting balance: wallet changed {}", this@WalletBalanceObserver)
+            emitBalances()
+        }
+    }
+
+    private val walletResetListener = object : WalletResetEventListener {
+        override fun onWalletReset(wallet: Wallet?) {
             emitBalances()
         }
     }
@@ -69,6 +77,7 @@ class WalletBalanceObserver(
         wallet.addChangeEventListener(Threading.SAME_THREAD, walletChangeListener)
         wallet.addCoinsSentEventListener(Threading.SAME_THREAD, walletChangeListener)
         wallet.addCoinsReceivedEventListener(Threading.SAME_THREAD, walletChangeListener)
+        wallet.addResetEventListener(Threading.SAME_THREAD, walletResetListener)
         emitLastBalances()
     }
 
@@ -76,6 +85,7 @@ class WalletBalanceObserver(
         wallet.removeChangeEventListener(walletChangeListener)
         wallet.removeCoinsSentEventListener(walletChangeListener)
         wallet.removeCoinsReceivedEventListener(walletChangeListener)
+        wallet.removeResetEventListener(walletResetListener)
         walletChangeListener.removeCallbacks()
         emitterJob.cancel()
     }
@@ -89,8 +99,6 @@ class WalletBalanceObserver(
 
     fun emitBalances() {
         emitterScope.launch {
-            //log.info("emitting balance {}", this@WalletBalanceObserver)
-            //val watch = Stopwatch.createStarted()
             org.bitcoinj.core.Context.propagate(Constants.CONTEXT)
 
             val mixedBalance = wallet.getBalance(BalanceType.COINJOIN_SPENDABLE)
@@ -99,8 +107,6 @@ class WalletBalanceObserver(
             val totalBalance = wallet.getBalance(BalanceType.ESTIMATED)
             walletUIConfig.set(WalletUIConfig.LAST_TOTAL_BALANCE, totalBalance.value)
             _totalBalance.emit(totalBalance)
-
-            //log.info("emit balance time: {} ms", watch.elapsed(TimeUnit.MILLISECONDS))
         }
     }
 
@@ -113,8 +119,7 @@ class WalletBalanceObserver(
         val emitterScope = CoroutineScope(Dispatchers.IO + emitterJob)
         fun emitBalance() {
             emitterScope.launch {
-                //log.info("emitting balance {}", this@WalletBalanceObserver)
-                //val watch = Stopwatch.createStarted()
+                val watch = Stopwatch.createStarted()
                 org.bitcoinj.core.Context.propagate(Constants.CONTEXT)
 
                 trySend(
@@ -124,13 +129,16 @@ class WalletBalanceObserver(
                         wallet.getBalance(balanceType)
                     }
                 )
-                //log.info("emit balance time: {} ms", watch.elapsed(TimeUnit.MILLISECONDS))
+                log.info(
+                    "process emit balance time: {} ms, selector {}",
+                    watch.elapsed(TimeUnit.MILLISECONDS),
+                    coinSelector?.javaClass?.simpleName
+                )
             }
         }
 
         val walletChangeListener = object : ThrottlingWalletChangeListener() {
             override fun onThrottledWalletChanged() {
-                // log.info("emitting balance: wallet changed {}", this@WalletBalanceObserver)
                 emitBalance()
             }
         }
@@ -171,10 +179,9 @@ class WalletBalanceObserver(
             }
         }
 
-        coinJoinService.observeMixing()
-            .onEach { isMixing ->
-                emitSpendingBalance(isMixing)
-            }
+        coinJoinService
+            .observeMixing()
+            .onEach { isMixing -> emitSpendingBalance(isMixing) }
             .launchIn(emitterScope)
 
         emitBalance()

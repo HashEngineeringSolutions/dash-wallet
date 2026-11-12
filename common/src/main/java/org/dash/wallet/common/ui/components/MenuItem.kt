@@ -17,8 +17,10 @@
 
 package org.dash.wallet.common.ui.components
 
+import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,119 +32,424 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import org.dash.wallet.common.R
+
+/**
+ * Opacity of a disabled [MenuItem]. The design shows the disabled row dimmed as a whole — icon,
+ * title and subtitles alike — and a whole-row alpha is the only treatment that also covers the
+ * icon, since those are full-colour exchange/currency logos that a content token such as
+ * `contentDisabled` cannot recolour.
+ */
+private const val DISABLED_ROW_ALPHA = 0.4f
 
 @Composable
 fun MenuItem(
     title: String,
+    modifier: Modifier = Modifier,
+    /**
+     * When false the row is dimmed as a whole and nothing in it is tappable: [action],
+     * [onTrailingButtonClick] and [onInfoClick] are all suppressed and the row no longer
+     * reports itself as a button to accessibility services.
+     */
+    enabled: Boolean = true,
+    helpTextAbove: String? = null,
     subtitle: String? = null,
-    details: String? = null,
-    icon: Int? = null, // Assuming you use resource IDs for icons
+    subtitleMaxLines: Int = Int.MAX_VALUE,
+    // Truncates `subtitle` from the middle to fit the available width (e.g. for addresses,
+    // where both the start and end need to stay checkable) instead of the standard end-ellipsis.
+    // Width-measured so it stays correct at any font scale, unlike a fixed character count.
+    subtitleMiddleEllipsis: Boolean = false,
+    subtitle2: String? = null,
+    icon: Int? = null,
+    // Custom icon slot (e.g. a Coil AsyncImage for coin logos); used when `icon` is null
+    customIcon: (@Composable () -> Unit)? = null,
+    showDirectionIndicator: Boolean = false,
     showInfo: Boolean = false,
+    onInfoClick: (() -> Unit)? = null,
     showChevron: Boolean = false,
-    isToggled: (() -> Boolean)? = null, // Change to a lambda that returns a Boolean
+    // New controlled props
+    checked: Boolean? = null,
+    onCheckedChange: ((Boolean) -> Unit)? = null,
+    // @Deprecated("Use `checked` and `onCheckedChange`")
+    isToggled: (() -> Boolean)? = null,
+    // @Deprecated("Use `checked` and `onCheckedChange`")
     onToggleChanged: ((Boolean) -> Unit)? = null,
+    // Balance/Amount display
+    dashAmount: String? = null,
+    dashIcon: Int? = R.drawable.ic_dash_blue_filled,
+    fiatAmount: String? = null,
+    // Trailing button
+    trailingButtonText: String? = null,
+    trailingButtonStyle: Style? = null,
+    onTrailingButtonClick: (() -> Unit)? = null,
     action: (() -> Unit)? = null
 ) {
-    var toggleState by remember { mutableStateOf(isToggled?.invoke() ?: false) }
-
+    var internalChecked by remember(checked) { mutableStateOf(checked ?: isToggled?.invoke() ?: false) }
+    val effectiveChecked = checked ?: internalChecked
+    val colors = LocalDashColors.current
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(10.dp)
-            .background(MyTheme.Colors.backgroundSecondary, RoundedCornerShape(8.dp))
-            .clickable { action?.invoke() }
-            .padding(10.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .heightIn(min = 56.dp)
+            .then(if (enabled) Modifier else Modifier.alpha(DISABLED_ROW_ALPHA))
+            .background(Color.Transparent, RoundedCornerShape(10.dp))
+            .then(if (enabled && action != null) Modifier.clickable { action() } else Modifier)
+            .semantics { if (enabled && action != null) role = Role.Button }
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        icon?.let {
-            Image(
-                painter = painterResource(id = it),
-                contentDescription = null,
-                modifier = Modifier.size(34.dp)
-            )
-        }
+            // Icon with direction indicator
+            Box(modifier = Modifier.size(26.dp)) {
+                if (icon != null) {
+                    Image(
+                        painter = painterResource(id = icon),
+                        contentDescription = null,
+                        modifier = Modifier.size(30.dp)
+                    )
+                } else {
+                    customIcon?.invoke()
+                }
 
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 8.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp,
-                    color = Color.Black,
-                    modifier = Modifier.weight(1f)
-                )
+                // Direction indicator overlay
+                if (showDirectionIndicator) {
+                    Box(
+                        modifier = Modifier
+                            .size(19.dp)
+                            .background(colors.backgroundSecondary, RoundedCornerShape(32.dp))
+                            .align(Alignment.BottomEnd)
+                            .offset(x = 8.dp, y = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Small circle indicator
+                        Box(
+                            modifier = Modifier
+                                .size(14.dp)
+                                .background(Color.Transparent, RoundedCornerShape(7.dp))
+                                .border(
+                                    width = 2.dp,
+                                    color = colors.gray300,
+                                    shape = RoundedCornerShape(7.dp)
+                                )
+                        )
+                    }
+                }
+            }
 
-                if (showInfo) {
-                    Icon(
-                        painter = painterResource(id = android.R.drawable.ic_dialog_info),
-                        contentDescription = "Info",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(18.dp)
+            // Main content
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
+                // Help text above (if provided) - aligned with title
+                helpTextAbove?.let {
+                    Text(
+                        text = it,
+                        style = MyTheme.Typography.BodyMedium,
+                        color = colors.textSecondary,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Title row with info icon
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MyTheme.Typography.LabelLargeMedium,
+                        color = colors.textPrimary
+                    )
+
+                    if (showInfo) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_menu_info),
+                            contentDescription = stringResource(id = R.string.info),
+                            tint = Color.Unspecified,
+                            modifier = Modifier
+                                .size(15.dp)
+                                .then(
+                                    if (enabled && onInfoClick != null) {
+                                        Modifier.clickable { onInfoClick() }
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                        )
+                    }
+                }
+
+                // Subtitle
+                subtitle?.let {
+                    if (subtitleMiddleEllipsis) {
+                        MiddleEllipsisText(
+                            text = it,
+                            style = MyTheme.Typography.BodyMedium,
+                            color = colors.textSecondary,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        Text(
+                            text = it,
+                            style = MyTheme.Typography.BodyMedium,
+                            color = colors.textSecondary,
+                            maxLines = subtitleMaxLines,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                // Second subtitle
+                subtitle2?.let {
+                    Text(
+                        text = it,
+                        style = MyTheme.Typography.BodyMedium,
+                        color = colors.textSecondary,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
 
-            subtitle?.let {
-                Text(
-                    text = it,
-                    fontSize = 12.sp,
-                    color = Color.DarkGray,
-                    modifier = Modifier.padding(top = 2.dp)
+            // Toggle switch
+            if (isToggled != null || checked != null) {
+                DashSwitch(
+                    checked = effectiveChecked,
+                    enabled = enabled,
+                    onCheckedChange = { newState ->
+                        if (checked == null) internalChecked = newState
+                        (onCheckedChange ?: onToggleChanged)?.invoke(newState)
+                    }
                 )
             }
 
-            details?.let {
-                Text(
-                    text = it,
-                    fontSize = 12.sp,
-                    color = Color.DarkGray,
-                    modifier = Modifier.padding(top = 2.dp)
+            // Balance/Amount display
+            if (dashAmount != null) {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    // Dash amount with logo
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = dashAmount,
+                            style = MyTheme.Typography.FootnoteMedium,
+                            color = colors.textPrimary
+                        )
+                        // Dash logo
+                        dashIcon?.let { dashIcon ->
+                            Icon(
+                                painter = painterResource(id = dashIcon),
+                                contentDescription = "Dash",
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
+                    }
+
+                    // Fiat amount
+                    fiatAmount?.let {
+                        Text(
+                            text = it,
+                            style = MyTheme.OverlineCaptionRegular,
+                            color = colors.textSecondary
+                        )
+                    }
+                }
+            }
+
+            // Trailing small button
+            if (trailingButtonText != null && onTrailingButtonClick != null) {
+                DashButton(
+                    modifier = Modifier,
+                    onClick = onTrailingButtonClick,
+                    text = trailingButtonText,
+                    style = trailingButtonStyle ?: Style.Plain,
+                    size = Size.Small,
+                    stretch = false,
+                    isEnabled = enabled
+                )
+            //                {
+//                    Text(
+//                        text = trailingButtonText,
+//                        style = MyTheme.SubtitleSemibold.copy(
+//                            fontSize = 13.sp,
+//                            lineHeight = 18.sp,
+//                            fontWeight = FontWeight.Medium
+//                        )
+//                    )
+//                }
+            }
+
+            if (showChevron) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_menu_row_arrow),
+                    contentDescription = "Chevron",
+                    tint = colors.textTertiary,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
+}
 
-        isToggled?.let {
-            Switch(
-                checked = toggleState,
-                onCheckedChange = { newState ->
-                    toggleState = newState
-                    onToggleChanged?.invoke(newState)
-                },
-                modifier = Modifier.size(60.dp)
-            )
+/**
+ * Single-line text that keeps the start and end of [text] visible, truncating the middle
+ * with "…" only as much as needed to fit the measured width. Unlike a fixed character-count
+ * cut, this stays correct across screen widths, locales and font scales.
+ */
+@Composable
+private fun MiddleEllipsisText(
+    text: String,
+    style: TextStyle,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    BoxWithConstraints(modifier = modifier) {
+        val maxWidthPx = with(density) { maxWidth.toPx() }
+        val display = remember(text, maxWidthPx, style, density.fontScale) {
+            middleEllipsizeToFit(text, maxWidthPx, style, measurer)
         }
-
-        if (showChevron) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_menu_row_arrow),
-                contentDescription = "Chevron",
-                tint = Color.Gray,
-                modifier = Modifier.padding(end = 10.dp)
-            )
-        }
+        Text(text = display, style = style, color = color, maxLines = 1, overflow = TextOverflow.Clip)
     }
 }
 
-@Preview(showBackground = true)
+private fun middleEllipsizeToFit(text: String, maxWidthPx: Float, style: TextStyle, measurer: TextMeasurer): String {
+    fun widthOf(s: String) = measurer.measure(text = s, style = style, softWrap = false).size.width
+
+    if (maxWidthPx <= 0f || widthOf(text) <= maxWidthPx) return text
+
+    var head = (text.length + 1) / 2
+    var tail = text.length - head
+    while (head + tail > 0) {
+        val candidate = "${text.take(head)}…${text.takeLast(tail)}"
+        if (widthOf(candidate) <= maxWidthPx) return candidate
+        if (head >= tail) head-- else tail--
+    }
+    return "…"
+}
+
+@Preview(name = "MenuItem Light", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "MenuItem Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun PreviewMenuItem() {
-    MenuItem(
-        title = "Title",
-        subtitle = "Easily stake Dash and earn passive income with a few simple steps",
-        icon = R.drawable.ic_dash_blue_filled,
-        showInfo = true,
-        isToggled = { true },
-        onToggleChanged = { }
-    )
+    DashWalletTheme {
+        val colors = LocalDashColors.current
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .background(colors.backgroundPrimary),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Basic with help text above
+            MenuItem(
+                helpTextAbove = "help text 1",
+                title = "title",
+                subtitle = "help text 2",
+                subtitle2 = "help text 3",
+                icon = R.drawable.ic_dash_blue_filled,
+                showInfo = true,
+                showDirectionIndicator = true
+            )
+
+        // With toggle ON
+            MenuItem(
+            title = "Toggle Setting ON",
+                subtitle = "Enable this feature",
+                icon = R.drawable.ic_dash_blue_filled,
+                isToggled = { true },
+                onToggleChanged = { }
+            )
+
+        // With toggle OFF
+        MenuItem(
+            title = "Toggle Setting OFF",
+            subtitle = "Enable this feature",
+            icon = R.drawable.ic_dash_blue_filled,
+            isToggled = { false },
+            onToggleChanged = { }
+        )
+
+            // With balance display
+            MenuItem(
+                title = "Wallet Balance",
+                subtitle = "Available balance",
+                icon = R.drawable.ic_dash_blue_filled,
+                dashAmount = "0.00",
+                fiatAmount = "0.00 US$"
+            )
+
+            // With trailing button
+            MenuItem(
+                title = "Action Item w/ Chevron",
+                icon = R.drawable.ic_dash_blue_filled,
+                onTrailingButtonClick = { },
+                showChevron = true
+            )
+
+            // With trailing button
+            MenuItem(
+                title = "Action Item",
+                subtitle = "Tap button to proceed",
+                icon = R.drawable.ic_dash_blue_filled,
+                trailingButtonText = "Label",
+                onTrailingButtonClick = { }
+            )
+
+        // Complex example matching Figma
+        MenuItem(
+            helpTextAbove = "help text 1",
+            title = "title",
+            subtitle = "help text 2",
+            subtitle2 = "help text 3",
+            icon = R.drawable.ic_dash_blue_filled,
+            showDirectionIndicator = true,
+            showInfo = true,
+            isToggled = { true },
+            onToggleChanged = { },
+            dashAmount = "0.00",
+            fiatAmount = "0.00 US$",
+            trailingButtonText = "Label",
+            onTrailingButtonClick = { }
+        )
+
+            // Disabled row: dimmed as a whole and not tappable
+            MenuItem(
+                title = "Disabled Item",
+                subtitle = "Not available on this network",
+                icon = R.drawable.ic_dash_blue_filled,
+                enabled = false,
+                showChevron = true,
+                action = { }
+            )
+
+            // Complex example matching Figma
+            MenuItem(
+                title = "CoinJoin",
+                subtitle = "Mixing",
+                icon = R.drawable.ic_dash_blue_filled,
+                dashAmount = "0.0011 of 1.0000",
+                //fiatAmount = "0.0011 of 1.0000"
+            )
+        }
+    }
 }

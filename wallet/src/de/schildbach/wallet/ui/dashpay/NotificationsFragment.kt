@@ -16,7 +16,6 @@
  */
 package de.schildbach.wallet.ui.dashpay
 
-import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.view.View
@@ -35,10 +34,8 @@ import de.schildbach.wallet.data.NotificationItemPayment
 import de.schildbach.wallet.data.NotificationItemUserAlert
 import de.schildbach.wallet.data.UsernameSearchResult
 import de.schildbach.wallet.livedata.Status
-import de.schildbach.wallet.ui.DashPayUserActivity
 import de.schildbach.wallet.ui.dashpay.notification.NotificationsViewModel
-import de.schildbach.wallet.ui.invite.InviteFriendActivity
-import de.schildbach.wallet.ui.invite.InvitesHistoryActivity
+import de.schildbach.wallet.ui.dashpay.user.DashPayUserBottomSheet
 import de.schildbach.wallet.ui.send.SendCoinsActivity
 import de.schildbach.wallet_test.R
 import de.schildbach.wallet_test.databinding.FragmentNotificationsBinding
@@ -48,6 +45,7 @@ import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
 import org.dash.wallet.common.ui.viewBinding
 import org.dash.wallet.common.util.observe
+import org.dash.wallet.common.util.safeNavigate
 import org.slf4j.LoggerFactory
 import java.util.Date
 import javax.inject.Inject
@@ -130,6 +128,15 @@ class NotificationsFragment : Fragment(R.layout.fragment_notifications) {
 
         if (mode == MODE_NOTIFICATIONS) {
             dashPayViewModel.logEvent(AnalyticsConstants.UsersContacts.NOTIFICATIONS_HOME_SCREEN)
+        }
+
+        requireActivity().supportFragmentManager.setFragmentResultListener(
+            DashPayUserBottomSheet.REQUEST_KEY,
+            viewLifecycleOwner
+        ) { _, bundle ->
+            if (bundle.getBoolean(DashPayUserBottomSheet.KEY_CHANGED, false)) {
+                searchNotifications()
+            }
         }
     }
 
@@ -229,7 +236,7 @@ class NotificationsFragment : Fragment(R.layout.fragment_notifications) {
             is NotificationItemContact -> {
                 dashPayViewModel.logEvent(AnalyticsConstants.UsersContacts.NOTIFICATIONS_CONTACT_DETAILS)
                 val usernameSearchResult = notificationItem.usernameSearchResult
-                startActivityForResult(DashPayUserActivity.createIntent(requireContext(), usernameSearchResult), DashPayUserActivity.REQUEST_CODE_DEFAULT)
+                DashPayUserBottomSheet.newInstance(usernameSearchResult).show(requireActivity())
             }
             is NotificationItemPayment -> {
                 val tx = notificationItem.tx!!
@@ -237,14 +244,12 @@ class NotificationsFragment : Fragment(R.layout.fragment_notifications) {
             }
             is NotificationItemUserAlert -> {
                 lifecycleScope.launch {
-                    val inviteHistory = dashPayViewModel.getInviteHistory()
                     userAlertItem = null
                     viewModel.dismissUserAlert(R.string.invitation_notification_text)
-
-                    if (inviteHistory.isEmpty()) {
-                        InviteFriendActivity.startOrError(requireActivity())
+                    if (dashPayViewModel.getInviteCount() == 0) {
+                        safeNavigate(NotificationsFragmentDirections.notificationsToInviteFee("notifications"))
                     } else {
-                        startActivity(InvitesHistoryActivity.createIntent(requireActivity()))
+                        safeNavigate(NotificationsFragmentDirections.notificationsToInviteHistory("notifications"))
                     }
                 }
             }
@@ -262,40 +267,42 @@ class NotificationsFragment : Fragment(R.layout.fragment_notifications) {
     }
 
     private fun onIgnoreRequest(usernameSearchResult: UsernameSearchResult, position: Int) {
-        // this Ignmore Request function is not currently implemented
+        // this Ignore Request function is not currently implemented
     }
 
     private fun sendContactRequest(usernameSearchResult: UsernameSearchResult) {
         lifecycleScope.launch {
             val enough = dashPayViewModel.hasEnoughCredits()
-            val shouldWarn = enough.isBalanceWarning()
-            val isEmpty = enough.isBalanceWarning()
-
-            if (shouldWarn || isEmpty) {
-                val answer = AdaptiveDialog.create(
+            if (enough == null) {
+                AdaptiveDialog.create(
                     R.drawable.ic_warning_yellow_circle,
-                    if (isEmpty) getString(R.string.credit_balance_empty_warning_title) else getString(R.string.credit_balance_low_warning_title),
-                    if (isEmpty) getString(R.string.credit_balance_empty_warning_message) else getString(R.string.credit_balance_low_warning_message),
-                    getString(R.string.credit_balance_button_maybe_later),
-                    getString(R.string.credit_balance_button_buy)
+                    getString(R.string.platform_credits_error),
+                    getString(R.string.platform_communication_error),
+                    getString(R.string.button_ok),
                 ).showAsync(requireActivity())
-
-                if (answer == true) {
-                   SendCoinsActivity.startBuyCredits(requireActivity())
-                } else {
-                    if (shouldWarn)
-                        dashPayViewModel.sendContactRequest(usernameSearchResult.fromContactRequest!!.userId)
-                }
             } else {
-                dashPayViewModel.sendContactRequest(usernameSearchResult.fromContactRequest!!.userId)
-            }
-        }
-    }
+                val shouldWarn = enough.isBalanceWarning()
+                val isEmpty = enough.isBalanceEmpty()
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == DashPayUserActivity.REQUEST_CODE_DEFAULT && resultCode == DashPayUserActivity.RESULT_CODE_CHANGED) {
-            searchNotifications()
+                if (shouldWarn || isEmpty) {
+                    val answer = AdaptiveDialog.create(
+                        R.drawable.ic_warning_yellow_circle,
+                        if (isEmpty) getString(R.string.credit_balance_empty_warning_title) else getString(R.string.credit_balance_low_warning_title),
+                        if (isEmpty) getString(R.string.credit_balance_empty_warning_message) else getString(R.string.credit_balance_low_warning_message),
+                        getString(R.string.credit_balance_button_maybe_later),
+                        getString(R.string.credit_balance_button_buy)
+                    ).showAsync(requireActivity())
+
+                    if (answer == true) {
+                        SendCoinsActivity.startBuyCredits(requireActivity())
+                    } else {
+                        if (shouldWarn)
+                            dashPayViewModel.sendContactRequest(usernameSearchResult.fromContactRequest!!.userId)
+                    }
+                } else {
+                    dashPayViewModel.sendContactRequest(usernameSearchResult.fromContactRequest!!.userId)
+                }
+            }
         }
     }
 

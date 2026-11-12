@@ -11,6 +11,7 @@
     <string name="buy_dash">Compra Dash</string>
     <string name="copied">Copiato</string>
     <string name="staking_title">Staking</string>
+    <string name="spend_title">Speso</string>
     <string name="email">E-mail</string>
     <string name="email_placeholder">esempio: johndoe@mail.com</string>
     <string name="error">Errore</string>
@@ -22,9 +23,10 @@
     <string name="login_error_title">Impossibile accedere al tuo %s account</string>
     <string name="login_error_message">Si è verificato un errore durante l\'accesso al tuo %s account</string>
     <string name="dash_address">Indirizzo Dash</string>
-    <string name="username">Carica la tua foto, personalizza la tua identità.
- </string>
+    <string name="username">Nome Utente</string>
     <string name="balance">Saldo:</string>
+    <string name="hide_balance">Nascondi saldo</string>
+    <string name="show_balance">Mostra saldo</string>
     <string name="nothing_here">Niente qui</string>
 
     <!-- Local Currency List: GGP -->
@@ -48,10 +50,16 @@
 
     <!-- Generic buttons -->
     <string name="button_dismiss">Chiudi</string>
+    <string name="button_not_now">Non ora</string>
+    <string name="button_settings">Impostazioni</string>
     <string name="network_unavailable_return">Torna al Portafoglio</string>
     <string name="button_continue">Continua</string>
     <string name="get_quote">Ottieni preventivo</string>
     <string name="button_close">Chiudi</string>
+    <string name="button_cancel">Annulla</string>
+    <string name="button_clear">Rimuovere</string>
+    <string name="button_paste">Incolla</string>
+    <string name="button_confirm">Confermare</string>
     <string name="button_retry">Riprova</string>
     <string name="button_send_report">Spedisci il rapporto</string>
     <string name="button_info">info</string>
@@ -80,6 +88,8 @@
     <string name="dash_wallet_name">Portafoglio Dash</string>
     <string name="from">da</string>
     <string name="to">a</string>
+    <string name="from_title">Da</string>
+    <string name="to_title">A</string>
     <string name="select_currency">Seleziona Valuta</string>
     <string name="send_coins_error_dusty_send">L\'importo è troppo piccolo per l\'invio</string>
     <string name="send_coins_error_insufficient_money">Fondi insufficenti</string>
@@ -96,7 +106,10 @@
     <string name="payment_request_problem_title">Il pagamento non è stato riconosciuto</string>
     <string name="payment_protocol_default_error_title">Errore di pagamento</string>
     <string name="payment_request_problem_message">Non è stato possibile processare il tuo pagamento dal server, per favore informati col commerciante</string>
+    <string name="payment_submission_pending_title">Stato del pagamento sconosciuto</string>
+    <string name="payment_submission_pending_message">Il pagamento è stato inviato, ma non abbiamo ricevuto una conferma dal commerciante. Il tuo portafoglio continuerà a controllare la rete e mostrerà la transazione come inviata appena verrà trovata. Attendi prima di inviare di nuovo questo pagamento.</string>
     <string name="exchange_rate_not_found">Impossibile trovare il tasso di cambio.</string>
+    <string name="send_coins_fragment_hint_replaying">Attualmente i pagamenti non sono possibili perché il portafoglio non è completamente sincronizzato con la rete</string>
 
     <!-- Integrations -->
     <string name="buy_dash_subtitle">Ricevi direttamente nel Portafoglio Dash</string>
@@ -110,4 +123,41 @@
     <string name="chain_syncing">La catena si sta sincronizzando...</string>
     <string name="report_issue_dialog_mail_intent_chooser">Invio della segnalazione…</string>
 
-    </resources>
+    <!-- scan -->
+    <string name="scan_camera_problem_dialog_title">Scusa</string>
+    <string name="scan_camera_problem_dialog_message">La videocamera ha un problema. Probabilmente è necessario riavviare il dispositivo.</string>
+    <string name="scan_camera_permission_dialog_title">Permesso Camera</string>
+    <string name="scan_camera_permission_dialog_message">Per poter esequire lo scan dei codice QR devi dare il permesso d\'uso alla camera.</string>
+    <string name="scan_camera_permission_denied_dialog_message">Per scansionare i codici QR, è necessario attivare l\'accesso alla fotocamera per questa app nelle Impostazioni.</string>
+    <!-- address input -->
+    <string name="address_input_title">Invia Dash</string>
+    <string name="show_clipboard">Mostra il contenuto negli appunti</string>
+    <string name="tap_to_paste">Tocca l\'indirizzo dagli appunti per incollarlo</string>
+    <string name="not_valid_address">Richiesta di Indirizzo %s o URL non valida</string>
+    <string name="recipient_address">Indirizzo del destinatario</string>
+
+    <!-- input parser -->
+    <string name="input_parser_io_error">Impossibile leggere i dati:\n%s</string>
+    <string name="input_parser_cannot_classify">Impossibile classificare l\'input:\n%s</string>
+    <string name="input_parser_invalid_bitcoin_uri">URI Dash errato:\n%s</string>
+    <string name="input_parser_invalid_address">Ricevuto indirizzo Dash non valido!\n(Hai mescolato la mainnet con la testnet?)</string>
+    <string name="input_parser_unverifyable_paymentrequest">Impossibile verificare la richiesta di pagamento:\%s</string>
+    <string name="input_parser_invalid_paymentrequest">Richiesta di pagamento invalida:\n%s</string>
+    <string name="input_parser_invalid_transaction">Transazione non valida:\n%s</string>
+    <string name="address_input_paste_from">Incolla da %s</string>
+    <!-- Trailing action on an address-source row for an exchange the user is not signed in to -->
+    <string name="input_log_in">Log in</string>
+
+    <!-- others -->
+    <string name="confirm_sec">Conferma (%ss)</string>
+    <string name="cancel_transaction">Annullare la transazione?</string>
+    <string name="yes_cancel">Sì, annulla</string>
+    <string name="no_keep_it">No, tienila</string>
+    <string name="insufficient_money_title">Non hai abbastanza soldi disponibili</string>
+    <string name="insufficient_money_msg">La quantità di monete nel portafoglio è troppo esigua per questa transazione.</string>
+    <string name="send_coins_error_msg">Problemi durante l\'invio dei Dash!</string>
+    <string name="from_dash_wallet_on_this_device">Dal Portafoglio Dash su questo dispositivo</string>
+    <string name="preposition_at">a</string>
+    <string name="info">Info</string>
+    <string name="scan_qr">Scansiona QR</string>
+</resources>

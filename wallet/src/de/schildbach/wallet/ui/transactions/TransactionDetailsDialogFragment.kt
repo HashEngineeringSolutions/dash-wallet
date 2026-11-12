@@ -30,17 +30,23 @@ import de.schildbach.wallet.service.platform.work.TopupIdentityWorker
 import de.schildbach.wallet.ui.TransactionResultViewModel
 import de.schildbach.wallet.ui.compose_views.ComposeBottomSheet
 import de.schildbach.wallet.ui.dashpay.transactions.PrivateMemoDialog
+import de.schildbach.wallet.ui.dashpay.user.DashPayUserBottomSheet
 import de.schildbach.wallet.ui.more.ContactSupportDialogFragment
+import de.schildbach.wallet.ui.util.viewOnBlockExplorer
 import org.dash.wallet.common.UserInteractionAwareCallback
-import de.schildbach.wallet.util.WalletUtils
 import de.schildbach.wallet_test.R
 import de.schildbach.wallet_test.databinding.TransactionDetailsDialogBinding
 import de.schildbach.wallet_test.databinding.TransactionResultContentBinding
+import androidx.core.view.isVisible
 import kotlinx.coroutines.flow.filterNotNull
 import org.bitcoinj.core.Sha256Hash
 import org.bitcoinj.core.Transaction
 import org.dash.wallet.common.Configuration
+import org.dash.wallet.common.data.ServiceName
 import org.dash.wallet.common.data.Status
+import org.dash.wallet.common.data.entity.SwapOrder
+import org.dash.wallet.common.util.openCustomTab
+import org.dash.wallet.integrations.maya.ui.MayaConvertResultStateMapper
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
 import org.dash.wallet.common.ui.dialogs.OffsetDialogFragment
@@ -99,7 +105,10 @@ class TransactionDetailsDialogFragment : OffsetDialogFragment(R.layout.transacti
             viewModel.wallet!!,
             viewModel.dashFormat,
             contentBinding
-        )
+        ) {
+            DashPayUserBottomSheet.newInstance(it).show(requireActivity())
+            dismissAllowingStateLoss()
+        }
 
         viewModel.init(txId)
         viewModel.transaction.filterNotNull().observe(viewLifecycleOwner) { tx ->
@@ -111,6 +120,14 @@ class TransactionDetailsDialogFragment : OffsetDialogFragment(R.layout.transacti
 
             viewModel.merchantName.observe(this) {
                 transactionResultViewBinder.setCustomTitle(getString(R.string.gift_card_tx_title, it))
+                transactionResultViewBinder.setMerchantName(it)
+            }
+
+            viewModel.swapOrder.observe(this) { swapOrder ->
+                if (swapOrder != null) {
+                    transactionResultViewBinder.setTransactionIcon(R.drawable.ic_convert_circle)
+                    showProviderExplorer(swapOrder)
+                }
             }
 
             viewModel.transactionMetadata.observe(this) { metadata ->
@@ -145,7 +162,12 @@ class TransactionDetailsDialogFragment : OffsetDialogFragment(R.layout.transacti
                     Status.ERROR -> {
                         log.info("  error: {}", workData.data?.outputData)
                         viewModel.topUpError = true
-                        transactionResultViewBinder.setSentToReturn(viewModel.topUpError, viewModel.topUpComplete)
+                        transactionResultViewBinder.setSentToReturn(
+                            viewModel.transaction.value?.versionShort ?: Transaction.SPECIAL_VERSION,
+                            viewModel.transaction.value?.type ?: Transaction.Type.TRANSACTION_ASSET_LOCK,
+                            viewModel.topUpError,
+                            viewModel.topUpComplete
+                        )
                     }
 
                     Status.CANCELED -> {
@@ -159,7 +181,14 @@ class TransactionDetailsDialogFragment : OffsetDialogFragment(R.layout.transacti
 
         viewModel.topUpStatus(txId).observe(this) { topUp ->
             viewModel.topUpComplete = topUp?.used() == true
-            transactionResultViewBinder.setSentToReturn(viewModel.topUpError, viewModel.topUpComplete)
+            viewModel.transaction.value?.let {
+                transactionResultViewBinder.setSentToReturn(
+                    it.versionShort,
+                    it.type,
+                    viewModel.topUpError,
+                    viewModel.topUpComplete
+                )
+            }
         }
     }
 
@@ -193,13 +222,37 @@ class TransactionDetailsDialogFragment : OffsetDialogFragment(R.layout.transacti
         ).show(requireActivity())
     }
 
+    /**
+     * Swap transactions get a second explorer button, in the same format as "View on
+     * block explorer", linking to the swap provider's tracker (MayaChain scan or the
+     * NEAR Intents explorer, picked by the order's route).
+     */
+    private fun showProviderExplorer(swapOrder: SwapOrder) {
+        val spec = MayaConvertResultStateMapper.explorerFor(
+            swapOrder.provider,
+            swapOrder.txId.toString(),
+            swapOrder.depositAddress,
+            // Only the native Maya backend persists orders without a route name; a
+            // provider-less SwapKit order gets no link rather than a guessed one.
+            emptyRouteIsMaya = swapOrder.service == ServiceName.Maya
+        ) ?: return
+
+        contentBinding.viewOnProviderExplorer.setText(spec.linkTextRes)
+        contentBinding.openProviderExplorerCard.isVisible = true
+        contentBinding.openProviderExplorerCard.setOnClickListener {
+            imitateUserInteraction()
+            val url = spec.urlArg?.let { getString(spec.urlRes, it) } ?: getString(spec.urlRes)
+            requireActivity().openCustomTab(url)
+        }
+    }
+
     private fun viewOnBlockExplorer() {
         imitateUserInteraction()
         val tx = viewModel.transaction.value
         if (tx != null) {
             ComposeBottomSheet(R.style.PrimaryBackground) { dialog ->
                 BlockExplorerSelectionView(viewModel.analytics) { explorer ->
-                    WalletUtils.viewOnBlockExplorer(requireActivity(), tx.purpose, tx.txId.toString(), explorer)
+                    requireActivity().viewOnBlockExplorer(explorer, "tx/${tx.txId}")
                     dialog.dismiss()
                 }
             }.show(requireActivity())

@@ -18,23 +18,27 @@
 package de.schildbach.wallet.ui.transactions
 
 import android.text.format.DateUtils
-import android.util.Log
 import androidx.annotation.StringRes
+import de.schildbach.wallet.Constants
+import de.schildbach.wallet_test.R
 import org.bitcoinj.coinjoin.utils.CoinJoinTransactionType
 import org.bitcoinj.core.Context
 import org.bitcoinj.core.Transaction
 import org.bitcoinj.core.TransactionBag
 import org.bitcoinj.core.TransactionConfidence
 import org.bitcoinj.evolution.AssetLockTransaction
+import org.bitcoinj.wallet.AuthenticationKeyChain
 import org.bitcoinj.wallet.AuthenticationKeyChainGroup
 import org.bitcoinj.wallet.Wallet
 import org.bitcoinj.wallet.authentication.AuthenticationGroupExtension
-import de.schildbach.wallet.Constants
-import de.schildbach.wallet_test.R
-import org.bitcoinj.wallet.AuthenticationKeyChain
 import org.dash.wallet.common.transactions.TransactionUtils.isEntirelySelf
+import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 
 open class TxResourceMapper {
+    companion object {
+        private val log = LoggerFactory.getLogger(TxResourceMapper::class.java)
+    }
     open val dateTimeFormat: Int
         get() = DateUtils.FORMAT_SHOW_TIME
 
@@ -71,8 +75,8 @@ open class TxResourceMapper {
                         val authExtension = dashPayWallet.getKeyChainExtension(AuthenticationGroupExtension.EXTENSION_ID) as AuthenticationGroupExtension
                         val cftx = authExtension.getAssetLockTransaction(tx)
 
-                        val group = authExtension.keyChainGroup as AuthenticationKeyChainGroup
-                        typeId = if (cftx.assetLockPublicKeyId != null) {
+                        typeId = if (cftx != null && cftx.assetLockPublicKeyId != null) {
+                            val group = authExtension.keyChainGroup as AuthenticationKeyChainGroup
                             when (group.getKeyChainType(cftx.assetLockPublicKeyId.bytes)) {
                                 AuthenticationKeyChain.KeyChainType.INVITATION_FUNDING -> R.string.dashpay_invite_fee
                                 AuthenticationKeyChain.KeyChainType.BLOCKCHAIN_IDENTITY_FUNDING -> R.string.dashpay_upgrade_fee
@@ -80,6 +84,7 @@ open class TxResourceMapper {
                                 else -> R.string.transaction_row_status_sent
                             }
                         } else {
+                            log.info("transaction marked as asset lock, but not found (yet?)")
                             R.string.transaction_row_status_sent
                         }
                     } else if (coinJoinType == CoinJoinTransactionType.Mixing) {
@@ -148,20 +153,25 @@ open class TxResourceMapper {
      * @return the secondary status or -1 if there is none
      */
     @StringRes
-    open fun getReceivedStatusString(tx: Transaction, context: Context, bestChainLockBlockHeight: Int): Int {
+    open fun getReceivedStatusString(
+        tx: Transaction,
+        context: Context,
+        bestChainLockBlockHeight: Int
+    ): Int {
+        val oneHourAgo = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1)
         val confidence = tx.getConfidence(context)
         var statusId = -1
         if (confidence.confidenceType == TransactionConfidence.ConfidenceType.BUILDING) {
             val confirmations = confidence.depthInBlocks
-            val isChainLocked = bestChainLockBlockHeight >= confidence.depthInBlocks
+            val isChainLocked = confidence.isChainLocked
 
             // process coinbase transactions (Mining Rewards) before other BUILDING transactions
             if (tx.isCoinBase) {
                 // coinbase transactions are locked if they have less than 100 confirmations
-                if (confidence.depthInBlocks < Constants.NETWORK_PARAMETERS.spendableCoinbaseDepth) {
+                if (confirmations < Constants.NETWORK_PARAMETERS.spendableCoinbaseDepth) {
                     statusId = R.string.transaction_row_status_locked
                 }
-            } else if (confirmations < 6 && !isChainLocked && confidence.ixType != TransactionConfidence.IXType.IX_LOCKED) {
+            } else if (confirmations < 6 && !isChainLocked && confidence.ixType != TransactionConfidence.IXType.IX_LOCKED && tx.updateTime.time > oneHourAgo) {
                 // confirmations < 6
                 // not ChainLocked
                 // not InstantSendLocked

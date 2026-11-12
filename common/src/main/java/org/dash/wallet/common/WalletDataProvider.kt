@@ -29,7 +29,6 @@ import org.bitcoinj.wallet.CoinSelector
 import org.bitcoinj.wallet.Wallet
 import org.bitcoinj.wallet.authentication.AuthenticationGroupExtension
 import org.bitcoinj.wallet.authentication.AuthenticationKeyUsage
-import org.dash.wallet.common.services.LeftoverBalanceException
 import org.dash.wallet.common.transactions.TransactionWrapper
 import org.dash.wallet.common.transactions.TransactionWrapperFactory
 import org.dash.wallet.common.transactions.filters.TransactionFilter
@@ -37,6 +36,8 @@ import org.dash.wallet.common.transactions.filters.TransactionFilter
 interface WalletDataProvider {
     @Deprecated("The wallet is in here temporary and will be moved to a separate holder, limited to the the wallet module. In feature modules, use transactionBag instead.")
     val wallet: Wallet?
+
+    fun observeWallet(): Flow<Wallet?>
 
     val transactionBag: TransactionBag
 
@@ -72,14 +73,11 @@ interface WalletDataProvider {
 
     fun wrapAllTransactions(vararg wrappers: TransactionWrapperFactory): Collection<TransactionWrapper>
 
-    fun attachOnWalletWipedListener(listener: () -> Unit)
+    fun attachOnWalletWipedListener(listener: suspend () -> Unit)
 
-    fun detachOnWalletWipedListener(listener: () -> Unit)
+    fun detachOnWalletWipedListener(listener: suspend () -> Unit)
 
     fun processDirectTransaction(tx: Transaction)
-
-    @Throws(LeftoverBalanceException::class)
-    fun checkSendingConditions(address: Address?, amount: Coin)
 
     fun observeMostRecentTransaction(): Flow<Transaction>
     fun observeMixedBalance(): Flow<Coin>

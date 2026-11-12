@@ -31,6 +31,8 @@ import org.dashj.platform.dapiclient.DapiClient
 import org.dashj.platform.dashpay.ContactRequests
 import org.dashj.platform.dashpay.Profiles
 import org.dashj.platform.dpp.DashPlatformProtocol
+import org.dashj.platform.dpp.identifier.Identifier
+import org.dashj.platform.dpp.identity.Identity
 import org.dashj.platform.dpp.toHex
 import org.dashj.platform.sdk.callbacks.ContextProvider
 import org.dashj.platform.sdk.platform.Identities
@@ -60,6 +62,20 @@ interface PlatformService {
     suspend fun isPlatformAvailable(): Boolean
     fun hasApp(app: String): Boolean
     fun setMasternodeListManager(masternodeListManager: SimplifiedMasternodeListManager)
+
+    /**
+     * Fetch the identity for [userId], tolerating the legacy dashj identity
+     * cache being unable to serialize a v4.1-platform identity (e.g. an iOS
+     * username). [identities].get fetches the identity then caches it via
+     * PlatformStateRepository.storeIdentity, whose CBOR serializer throws
+     * `IllegalArgumentException("No converter for ...")` on a v4.1 identity
+     * shape — after the fetch succeeded but before the identity is returned,
+     * so the caller loses it. On that specific failure this refetches via the
+     * cache-bypassing DapiClient path so accept/receive contact-request flows
+     * are not aborted by a purely-local cache limitation. See
+     * [fetchIdentityToleratingCacheError].
+     */
+    fun getContactIdentity(userId: Identifier): Identity?
 }
 
 fun <T> platformLazy(initializer: () -> T): Lazy<T?> {
@@ -88,7 +104,7 @@ class PlatformServiceImplementation @Inject constructor(
     val walletDataProvider: WalletDataProvider
 ) : PlatformService {
     // none of the following should be initialized if platform is not supported
-    private val _platform by platformLazy { Platform(Constants.NETWORK_PARAMETERS) }
+    private val _platform by platformLazy { createNetworkPlatform(Constants.NETWORK_PARAMETERS) }
     override val platform: Platform
         get() = _platform!!
     private val _profiles by platformLazy { Profiles(platform) }
@@ -174,6 +190,29 @@ class PlatformServiceImplementation @Inject constructor(
 
     override fun setMasternodeListManager(masternodeListManager: SimplifiedMasternodeListManager) {
         this.masternodeListManager = masternodeListManager
+        val configuredAddresses = platform.client.dapiAddressListProvider
         platform.setMasternodeListManager(masternodeListManager)
+        if (params is de.schildbach.wallet.network.SakuraDevNetParams) {
+            // Keep Sakura's explicit HTTPS ports; the SDK's legacy discovery replaces them.
+            platform.client.dapiAddressListProvider = configuredAddresses
+        }
     }
+
+    override fun getContactIdentity(userId: Identifier): Identity? =
+        fetchIdentityToleratingCacheError(
+            cachedGet = { identities.get(userId) },
+            cacheBypassingFetch = {
+                // The identity WAS fetched; only the legacy in-memory CBOR
+                // cache write rejected its v4.1 shape. Refetch straight from
+                // the DAPI client (mirrors PlatformStateRepository.fetchIdentity's
+                // own client.getIdentity(id.toBuffer(), true) call), which never
+                // touches storeIdentity, so the identity is recovered uncached.
+                log.warn(
+                    "identity {} fetched but the legacy CBOR cache rejected its v4.1 shape; " +
+                        "bypassing the cache",
+                    userId
+                )
+                client.getIdentity(userId.toBuffer(), true)
+            }
+        )
 }

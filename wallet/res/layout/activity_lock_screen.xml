@@ -16,13 +16,6 @@
         app:layout_constraintGuide_percent="0.10" />
 
     <androidx.constraintlayout.widget.Guideline
-        android:id="@+id/bottom_guideline"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:orientation="horizontal"
-        app:layout_constraintGuide_end="@dimen/lock_screen_bottom_guideline_margin" />
-
-    <androidx.constraintlayout.widget.Guideline
         android:id="@+id/v_center_guideline"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -67,6 +60,43 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <!-- DEBUG UI - Commented out for production
+        <LinearLayout
+            style="?android:attr/buttonBarStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/securityStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@color/white"
+                tools:text="status"
+                android:padding="10dp"
+                />
+
+            <Button
+                android:id="@+id/break_primary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Break KeyStore"/>
+
+            <Button
+                android:id="@+id/break_all"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Break All"
+                />
+            <Button
+                android:id="@+id/break_before"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Break Before"
+                />
+        </LinearLayout>
+        -->
         <TextView
             android:id="@+id/action_title"
             style="@style/Headline6"
@@ -193,9 +223,9 @@
         android:id="@+id/numeric_keyboard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/dash_white"
+        android:background="@color/background_secondary"
         android:padding="16dp"
         android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@id/bottom_guideline" />
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

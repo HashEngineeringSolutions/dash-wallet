@@ -60,12 +60,10 @@ import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.wallet.Wallet.BalanceType;
 import org.bitcoinj.wallet.WalletTransaction;
 import org.dash.wallet.common.Configuration;
-import org.dash.wallet.common.services.ExchangeRatesProvider;
-import org.dash.wallet.common.services.LeftoverBalanceException;
 import org.dash.wallet.common.services.analytics.AnalyticsConstants;
 import org.dash.wallet.common.ui.CurrencyTextView;
-import org.dash.wallet.common.ui.FancyAlertDialog;
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog;
+import org.dash.wallet.common.ui.scan.ScanActivity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,13 +74,12 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import javax.annotation.Nullable;
-import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.data.StaticFeeLoader;
-import de.schildbach.wallet.data.PaymentIntent;
+import org.dash.wallet.common.data.PaymentIntent;
 
 import de.schildbach.wallet.payments.DecodePrivateKeyTask;
 import de.schildbach.wallet.data.FeeCategory;
@@ -90,7 +87,6 @@ import de.schildbach.wallet.payments.RequestWalletBalanceTask;
 import de.schildbach.wallet.payments.SendCoinsOfflineTask;
 import de.schildbach.wallet.ui.util.InputParser.StringInputParser;
 import de.schildbach.wallet.ui.transactions.TransactionResultActivity;
-import de.schildbach.wallet.ui.scan.ScanActivity;
 import de.schildbach.wallet.util.WalletUtils;
 import de.schildbach.wallet_test.R;
 import kotlin.Unit;
@@ -317,6 +313,43 @@ public class SweepWalletFragment extends Fragment {
                 }.parse();
             }
         }
+    }
+
+    /**
+     * Called by {@link SweepWalletActivity} when the scanner returns a result.
+     */
+    public void handleScanResult(@javax.annotation.Nullable final String input) {
+        if (input == null) return;
+
+        new StringInputParser(input, false) {
+            @Override
+            protected void handlePrivateKey(final PrefixedChecksummedBytes key) {
+                privateKeyToSweep = key;
+                setState(State.DECODE_KEY);
+                maybeDecodeKey();
+            }
+
+            @Override
+            protected void handlePaymentIntent(final PaymentIntent paymentIntent) {
+                cannotClassify(input);
+            }
+
+            @Override
+            protected void handleDirectTransaction(final Transaction transaction) throws VerificationException {
+                cannotClassify(input);
+            }
+
+            @Override
+            protected void error(Exception x, final int messageResId, final Object... messageArgs) {
+                AdaptiveDialog.create(
+                        null,
+                        getString(R.string.button_scan),
+                        getString(messageResId, messageArgs),
+                        getString(R.string.button_dismiss),
+                        null
+                ).show(requireActivity(), result -> Unit.INSTANCE);
+            }
+        }.parse();
     }
 
     private void showProgress(int messageResId) {
@@ -581,7 +614,7 @@ public class SweepWalletFragment extends Fragment {
             log.info("Using exchange rate: " + sendRequest.exchangeRate.coinToFiat(Coin.COIN).toFriendlyString());
         }
 
-        new SendCoinsOfflineTask(walletToSweep, application, backgroundHandler) {
+        new SendCoinsOfflineTask(walletToSweep, backgroundHandler) {
             @Override
             protected void onSuccess(final Transaction transaction) {
                 sentTransaction = transaction;
@@ -597,11 +630,6 @@ public class SweepWalletFragment extends Fragment {
                 setState(State.FAILED);
 
                 showInsufficientMoneyDialog();
-            }
-
-            @Override
-            protected void onLeftoverBalanceError(@NonNull LeftoverBalanceException ex) {
-                // pass
             }
 
             @Override
@@ -637,7 +665,7 @@ public class SweepWalletFragment extends Fragment {
                         null
                 ).show(requireActivity(), result -> Unit.INSTANCE);
             }
-        }.sendCoinsOffline(sendRequest, false, false); // send asynchronously
+        }.sendCoinsOffline(sendRequest, false); // send asynchronously
     }
 
     private void showTransactionResult(Transaction sentTransaction) {

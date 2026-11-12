@@ -51,6 +51,7 @@ class TransferDashViewModel @Inject constructor(
     private val walletUIConfig: WalletUIConfig
 ) : ViewModel() {
 
+    val minimumFee: Coin = Coin.valueOf(226)
     private val _loadingState: MutableLiveData<Boolean> = MutableLiveData()
     val observeLoadingState: LiveData<Boolean>
         get() = _loadingState
@@ -89,9 +90,10 @@ class TransferDashViewModel @Inject constructor(
     val isDeviceConnectedToInternet: LiveData<Boolean> = networkState.isConnected.asLiveData()
 
     var minAllowedSwapDashCoin: Coin = Coin.ZERO
-    var minFiatAmount = Fiat.valueOf(Constants.USD_CURRENCY, 0)
+    var minFiatAmount: Fiat = Fiat.valueOf(Constants.USD_CURRENCY, 0)
 
-    private var maxForDashCoinBaseAccount: Coin = Coin.ZERO
+    var maxForDashCoinBaseAccount: Coin = Coin.ZERO
+        private set
 
     init {
         getUserAccountAddress()
@@ -197,8 +199,8 @@ class TransferDashViewModel @Inject constructor(
         }
     }
 
-    suspend fun sendDash(dashValue: Coin, isEmptyWallet: Boolean, checkConditions: Boolean) {
-        _sendDashToCoinbaseState.value = checkTransaction(dashValue, isEmptyWallet, checkConditions)
+    suspend fun sendDash(dashValue: Coin, isEmptyWallet: Boolean) {
+        _sendDashToCoinbaseState.value = checkTransaction(dashValue, isEmptyWallet)
     }
 
     suspend fun estimateNetworkFee(value: Coin, emptyWallet: Boolean): SendPaymentService.TransactionDetails? {
@@ -227,23 +229,19 @@ class TransferDashViewModel @Inject constructor(
 
     private suspend fun checkTransaction(
         coin: Coin,
-        isEmptyWallet: Boolean,
-        checkConditions: Boolean
+        isEmptyWallet: Boolean
     ): SendDashResponseState {
         return try {
             val transaction = sendPaymentService.sendCoins(
                 dashAddress,
                 coin,
-                emptyWallet = isEmptyWallet,
-                checkBalanceConditions = checkConditions
+                emptyWallet = isEmptyWallet
             )
             transactionMetadataProvider.markAddressAsTransferOutAsync(
                 dashAddress.toBase58(),
                 ServiceName.Coinbase
             )
             SendDashResponseState.SuccessState(transaction.isPending)
-        } catch (e: LeftoverBalanceException) {
-            throw e
         } catch (e: InsufficientMoneyException) {
             e.printStackTrace()
             SendDashResponseState.InsufficientMoneyState

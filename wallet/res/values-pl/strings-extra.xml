@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <string name="onboarding_create_wallet">Stwórz Nowy Portfel</string>
-    <string name="onboarding_recover_wallet">Przywróć Portfel Z Fraz Odzyskiwania</string>
-    <string name="onboarding_restore_wallet">Przywróć Portfel Z Pliku</string>
+    <string name="onboarding_create_wallet">Stwórz nowy portfel</string>
+    <string name="onboarding_recover_wallet">Importowanie kluczy Dash</string>
+    <string name="onboarding_restore_wallet">Przywróć portfel z pliku</string>
     <string name="onboarding_load_wallet_error">Nie można załadować portfela!</string>
 
     <string name="set_pin_create_new_wallet">Stwórz Nowy Portfel</string>
@@ -23,6 +23,7 @@
     <string name="dialog_confirm_confirm">Potwierdź</string>
     <string name="dialog_confirm_pay_to">Wyślij do</string>
     <string name="dialog_confirm_secured_by">Zabezpieczony przez</string>
+    <string name="dialog_confirm_connected_to_unsecured">Połączono z (niezabezpieczone)</string>
     <string name="dialog_confirm_fee">Opłata sieci</string>
     <string name="dialog_confirm_total">Całkowite</string>
     <string name="dialog_confirm_accept_contact_request">Zaakceptuj prośbę o dodanie do kontaktów</string>
@@ -37,7 +38,9 @@
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_pay_to_contact">Wyślij do Kontaktu</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
-    <string name="shortcut_buy_sell">Kupuj &amp; Sprzedawaj</string>
+    <string name="shortcut_buy_sell">Kup &amp; Sprzedaj</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_dash_dex">Dash DEX</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_receive">Odbierz</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
@@ -68,6 +71,11 @@
 
     <string name="pay_title">Wyślij</string>
     <string name="history_title">Historia</string>
+    <string name="wallet_transactions_building_cache">Określanie historii transakcji…</string>
+    <string name="history_refresh_dialog_title">Odśwież Listę Transakcji</string>
+    <string name="history_refresh_dialog_message">Spowoduje to wyczyszczenie pamięci podręcznej wyświetlania transakcji i utworzenie jej od nowa. Lista będzie tymczasowo niedostępna podczas odbudowy.</string>
+    <string name="history_refresh_dialog_confirm">Odśwież</string>
+    <string name="history_refresh_complete">Lista transakcji odświeżona</string>
     <string name="more_title">Więcej</string>
     <string name="settings_title">Ustawienia</string>
     <string name="security_title">Bezpieczeństwo</string>
@@ -86,6 +94,7 @@
     <string name="payments_pay_to_clipboard_sub_title">Brak skopiowanego adresu</string>
 
     <string name="forgot_pin_title">Zapomniałeś kodu PIN?</string>
+    <string name="forgot_pin_setup_new_pin_title">Ustaw nowy PIN</string>
     <string name="forgot_pin_message">Możesz ustawić nowy kod PIN za pomocą frazy odzyskiwania danych</string>
     <string name="forgot_pin_instruction_1">Wpisz frazę odzyskiwania danych aby odzyskać swój portfel</string>
     <string name="forgot_pin_instruction_2">Ustaw nowy PIN</string>
@@ -234,7 +243,7 @@
     <string name="verify_warning_screenshots_message">Inne aplikacje i urządzenia mają dostęp do twoich screenshotów. </string>
     <string name="verify_warning_do_not_show">Nie pozwól, aby ktokolwiek zobaczył twoją listę słów do odzysku portfela.</string>
     <string name="verify_warning_do_not_type">NIGDY nie wpisuj twojej frazy odzyskiwania portfela do menedżerów haseł ani w innych miejscach.</string>
-    <string name="view_seed_done">Zrobione</string>
+    <string name="view_seed_done">OK</string>
     <string name="view_seed_title">Fraza Odzyskiwania</string>
     <string name="transaction_result_view_on_explorer">Zobacz na eksplorerze bloków</string>
     <string name="transaction_result_tax_category">Kategoria Podatkowa</string>
@@ -267,9 +276,9 @@
     <string name="authenticate_switch_to_fingerprint">Użyj Odcisku Palca</string>
     <string name="authenticate_switch_to_pin">Użyj kod PIN</string>
 
-    <string name="menu_invite_title">Zaproś</string>
+    <string name="menu_invite_title">Zaproszenia</string>
     <string name="menu_invite_subtitle">Pomóż twoim przyjaciołom i rodzinie na dołączanie do Dash</string>
-    <string name="menu_buy_and_sell_title">Kupuj &amp; Sprzedawaj Dash</string>
+    <string name="menu_buy_and_sell_title">Kup &amp; Sprzedaj Dash</string>
     <string name="menu_buy_and_sell_subtitle">Połącz się z giełdą stron trzecich</string>
     <string name="liquid_unavailable">Integracja portfela Dash z serwisem Liquid jest nieaktualna</string>
     <string name="liquid_unavailable_details">Jeśli masz jakiegolwiek pytania w sprawie Dash trzymanych na serwisie Liquid, musisz skontaktować się z centrum pomocy serwisu LIquid</string>
@@ -279,27 +288,35 @@
     <string name="menu_settings_subtitle">Domyślna waluta, skróty, o…</string>
     <string name="menu_tools_title">Narzędzia</string>
     <string name="menu_tools_subtitle">Importuj klucz prywatny...</string>
-    <string name="menu_local_currency">Lokalna Waluta</string>
-    <string name="menu_rescan_blockchain">Przeskanuj Blockchain Ponownie</string>
+    <string name="menu_local_currency">Lokalna waluta</string>
+    <string name="menu_rescan_blockchain">Przeskanuj blockchain ponownie</string>
     <string name="menu_contact_support_title">Skontaktuj się z pomocą techniczną</string>
     <string name="menu_contact_support_subtitle">Zgłoś problem</string>
     <string name="menu_explore_title">Odkryj</string>
     <string name="menu_explore_subtitle">Znajdź sprzedawców, którzy akceptują DASH</string>
 
-    <string name="tools_address_book">Książka Adresowa</string>
-    <string name="tools_import_private_key">Zaimportuj Klucz Prywatny</string>
-    <string name="tools_network_monitor">Monitor Sieci</string>
-    <string name="tools_show_xpub">Wydłużony Publiczny Klucz</string>
+    <string name="tools_address_book">Książka adresowa</string>
+    <string name="tools_import_private_key">Importuj klucz prywatny</string>
+    <string name="import_private_key_description">Ta akcja przeniesie wszystkie monety z papierowego portfela Dash do twojej aplikacji DashPay na tym urządzeniu.</string>
+    <string name="tools_network_monitor">Monitor sieci</string>
+    <string name="tools_show_xpub">Wydłużone klucze publiczne (BIP44)</string>
 
     <string name="about_help_us_improve">Pomóż nam poprawić Twoje wrażenia</string>
     <string name="about_review_and_rate">Przeglądnij i oceń appke</string>
     <string name="about_contact_support">Skontaktuj się z pomocą techniczną</string>
     <string name="about_fork_disclaimer">Jest to aplikacja typu open source opracowana na podstawie portfela Bitcoin</string>
-    <string name="about_copyright">Prawa autorskie © 2025 Dash Core Group</string>
+    <string name="about_copyright">Prawa autorskie © %1$d  Dash Core Group</string>
     <string name="about_license">GNU General Public License v3.0</string>
     <string name="about_version_name">DashPay Wallet %s</string>
     <string name="about_last_explore_device_sync">Ostatnia synchronizacja Eksploruj na urządzeniu</string>
     <string name="about_last_explore_server_update">Ostatnia aktualizacja Eksploruj dla serwera</string>
+    <string name="about_app_version_label">Wersja Aplikacji</string>
+    <string name="about_platform_label">Platforma</string>
+    <string name="about_explore_section">Odkryj Dash</string>
+    <string name="about_explore_update">Aktualizacja</string>
+    <string name="about_last_device_sync">Ostatnia synchronizacja urządzenia</string>
+    <string name="about_last_server_update">Ostatni update serwera</string>
+    <string name="about_value_not_available">Niedostępne</string>
     <string name="about_firebase_installation_id">ID instalacji Firebase</string>
     <string name="about_fcm_token">Token wiadomości chmury Firebase</string>
     <string name="about_last_explore_dash_update_error">nie można pobrać</string>
@@ -340,13 +357,9 @@
 
     <string name="skip">pomiń</string>
     <string name="get_started">Zacznij</string>
-    <string name="welcome_screen_title_1_new_install">Witaj</string>
-    <string name="welcome_screen_title_1_upgrade">My zaktualizowaliśmy</string>
-    <string name="welcome_screen_subtitle_1">Intuicyjne i znane doświadczenie na wszystkich urządzeniach</string>
-    <string name="welcome_screen_title_2">Płać z Łatwością</string>
-    <string name="welcome_screen_subtitle_2">Płać i otrzymuj natychmiastowe płatności dzięki łatwym w użyciu przepływom płatności</string>
-    <string name="welcome_screen_title_3">Więcej Kontroli</string>
-    <string name="welcome_screen_subtitle_3">Miej pełną kontrolę oraz dostosuj swój portfel w zależności od potrzeb</string>
+    <string name="welcome_screen_title_1">Wysyłaj i otrzymuj Dash używając nazw użytkownika</string>
+    <string name="welcome_screen_title_2">Wydawaj Dash w tysiącach sklepów</string>
+    <string name="welcome_screen_title_3">Najbezpieczniejszy sposób na przechowywanie twoich Dash</string>
 
     <string-array name="history_filter">
         <item>Całość</item>
@@ -428,7 +441,7 @@
     <string name="launch_reset_wallet_extra_message">Dokonaj kopii zapasowej fraz odzyskiwania</string>
     <string name="start_reset_wallet_title">Możesz stracić %s</string>
     <string name="reset_wallet_text">Resetuj portfel</string>
-
+    <string name="reset_wallet_button">Resetuj portfel</string>
 
 
     <!-- Tax category -->
@@ -443,11 +456,11 @@
     <string name="reclassify_transactions_linked_accounts_message">domyślnie wszystkie transakcje do lub z połączonych kont (giełdy, obstawianie itp.) będą oznaczone jako przelewy.</string>
     <string name="reclassify_transactions_change_explanation">Wybierz dowolną transakcję ze strony głównej i zmień kategorię na stronie szczegółów transakcji.</string>
 
-    <string name="masternode_keys_title">Klucze do Masternoda</string>
+    <string name="masternode_keys_title">Klucze Masternoda</string>
     <string name="masternode_key_type_owner">Klucze właściciela</string>
-    <string name="masternode_key_type_voting">Klucze głosujące</string>
+    <string name="masternode_key_type_voting">Klucze głosowania</string>
     <string name="masternode_key_type_operator">Klucze operatora</string>
-    <string name="masternode_key_type_platform">Klucze Evolution Node ID</string>
+    <string name="masternode_key_type_platform">HPMN klucze operatora</string>
     <string name="masternode_key_type_total">%d kluczy</string>
     <string name="masternode_key_type_used">%d użyte</string>
     <string name="masternode_key_pair_index">Para Kluczy %d</string>
@@ -461,7 +474,7 @@
     <string name="masternode_key_ip_address_unknown">Nieznany</string>
     <string name="masternode_key_not_used">Nie użyte</string>
     <string name="masternode_key_revoked">Unieważniony</string>
-    <string name="masternode_key_private_public_base64">Prywatne / Publiczne (base64)</string>
+    <string name="masternode_key_private_public_base64">Prywatne / Publiczne Klucze (base64)</string>
     <string name="timeskew_ahead">przed</string>
     <string name="timeskew_behind">za</string>
 

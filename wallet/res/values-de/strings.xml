@@ -62,7 +62,6 @@
     <string name="send_coins_fragment_hint_fee_economic">Eine Netzwerk-Gebühr von %szahlen.</string>
     <string name="send_coins_fragment_hint_fee_priority">Eine Vorzugs-Gebühr von %s zahlen. Wenn Dir eine geringe Gebühr wichtig ist, verwende diese Einstellung nur, wenn Du sehr schnell eine Bestätigung brauchst.</string>
     <string name="send_coins_fragment_hint_empty_wallet_failed">Die Summe an winzigen Zahlungen in Deiner Wallet ist zu klein, um verschickt zu werden.</string>
-    <string name="send_coins_fragment_hint_replaying">Da die Wallet momentan nicht mit dem Netzwerk synchronisiert ist, kann keine Zahlung durchgeführt werden.</string>
     <string name="send_coins_fragment_direct_payment_enable">Zahlung direkt an den Empfänger senden.</string>
     <string name="send_coins_fragment_direct_payment_ack">Die Zahlung wurde erfolgreich direkt gesendet.</string>
     <string name="send_coins_fragment_direct_payment_nack">Die Zahlung wurde über die direkte Verbindung abgelehnt.</string>
@@ -167,6 +166,10 @@
     <string name="transaction_row_status_error_obsolete">Obsolet</string>
     <string name="transaction_row_status_error_invalid">Ungültig</string>
     <string name="transaction_row_status_error_other">Unbekannt</string>
+    <string name="transaction_row_status_refunded">Erstattet</string>
+    <string name="transaction_row_status_failed">Fehlgeschlagen</string>
+    <string name="transaction_row_conversion">Konvertierung · %1$s/%2$s</string>
+    <string name="transaction_row_converted">Konvertiert · %1$s/%2$s</string>
     <!-- The first %s is the date and the second %s is the time.  e.g. On 29 December 2019 at 15:59 -->
     <string name="transaction_row_time_text">Auf %s bei %s</string>
     <string name="transaction_row_status_masternode_registration">Masternode-Registrierung</string>
@@ -205,6 +208,13 @@
     <string name="restore_wallet_dialog_success_replay">Deine Wallet wurde erfolgreich wiederhergestellt. Jetzt wird das Guthaben ermittelt. Das wird einige Zeit dauern.</string>
     <string name="restore_wallet_dialog_success_encrypted">Warnung: Deine Wallet ist durch eine Ausgabe-PIN geschützt. Vergewissere dich, dass du dich noch an diese erinnern kannst, bevor du Geld mit dieser Wallet empfängst.</string>
     <string name="import_keys_dialog_failure">Die Wallet konnte nicht wieder hergestellt werden:\n\n%s\n\nFalsches Passwort?</string>
+    <string name="restore_wallet_creation_date_label">Erstelldatum deiner Wallet (Optional)</string>
+    <string name="restore_wallet_creation_date_info">Durch die Auswahl des Erstellungsdatums Ihrer Wallet wird die Synchronisierung beschleunigt, da nur Daten ab diesem Datum gescannt werden.</string>
+    <string name="restore_wallet_select_date">Erstelldatum auswählen</string>
+    <string name="restore_wallet_selected_date">Ausgewählt: %s</string>
+    <string name="restore_wallet_date_picker_title">Wann wurde deine Wallet erstellt?</string>
+    <string name="wallet_creation_date_info_title">Wie kann dein Wallet-Erstelldatum den Prozess beschleunigen?</string>
+    <string name="wallet_creation_date_info_description">Wenn du das ungefähre Datum kennst, an dem deine Wallet erstellt wurde, kannst du dieses eingeben, damit die Transaktionen ab diesem Datum abgerufen werden und die Synchronisierung schneller erfolgt. Bitte beachte: Wenn du ein Datum eingibst, das nach dem Erstellungsdatum deiner Wallet liegt, werden ältere Transaktionen nicht heruntergeladen.</string>
     <string name="export_keys_dialog_title">Wallet sichern</string>
     <string name="backup_wallet_dialog_message">Dein Backup wird mit dem gewählten Passwort verschlüsselt und auf dem externen Speicher gesichert.</string>
     <string name="backup_wallet_dialog_warning_encrypted">Deine Wallet ist durch eine Ausgabe-PIN geschützt. Stell bitte sicher, dass Du die PIN, sowie das Backup-Passwort nicht vergisst!</string>
@@ -234,17 +244,6 @@
     <string name="encrypt_keys_dialog_state_encrypting">Verschlüsselung…</string>
     <string name="encrypt_keys_dialog_state_decrypting">Entschlüsselung…</string>
     <string name="encrypt_keys_dialog_state_done">Fertig</string>
-    <string name="scan_camera_problem_dialog_title">Sorry</string>
-    <string name="scan_camera_problem_dialog_message">Die Kamera scheint ein Problem zu haben. Bitte starte Dein Gerät neu.</string>
-    <string name="scan_camera_permission_dialog_title">Kamera genehmigen</string>
-    <string name="scan_camera_permission_dialog_message">Damit QR-Codes gescannt werden können, musst Du das Verwenden der Kamera erlauben.</string>
-    <string name="input_parser_io_error">Kann Daten nicht lesen:\n%s</string>
-    <string name="input_parser_cannot_classify">Eingabe nicht erkannt:\n%s</string>
-    <string name="input_parser_invalid_bitcoin_uri">Ungültige Dash-URI:\n%s</string>
-    <string name="input_parser_invalid_address">Ungültige Dash-Adresse eingegeben!\n(Eventuell wurden Mainnet-/Testnet-Adressen vertauscht)</string>
-    <string name="input_parser_unverifyable_paymentrequest">Kann Zahlungsanforderung nicht verifizieren:\n%s</string>
-    <string name="input_parser_invalid_paymentrequest">Ungültige Zahlungsanforderung:\n%s</string>
-    <string name="input_parser_invalid_transaction">Ungültige Transaktion:\n%s</string>
     <string name="preferences_activity_title">Einstellungen</string>
     <string name="preferences_category_diagnostics">Diagnose</string>
     <string name="preferences_category_labs">Labor</string>
@@ -280,11 +279,18 @@
     <string name="preferences_initiate_reset_summary">Blockchain, Transaktionen und Guthaben erneut scannen. Bitte beachte, dass dieser Vorgang einige Zeit in Anspruch nehmen wird.</string>
     <string name="preferences_initiate_reset_dialog_message">Möchtest du die Blockchain erneut scannen?\n\nGuthaben und Transaktionen werden für einige Zeit nicht einsehbar sein. Mit dem Fortschreiten der Blockchain-Synchronisierung werden die Daten wieder sichtbar. Stelle sicher, dass du über eine gute Internetverbindung verfügst.</string>
     <string name="preferences_initiate_reset_dialog_positive">Erneut scannen</string>
+    <string name="rescan_blockchain_dialog_title">Bist du sicher, dass du Blockchain erneut scannen willst?</string>
+    <string name="rescan_blockchain_dialog_message">Dadurch wird dein Wallet-Guthaben vorübergehend ausgeblendet und Transaktionen entfernt. Beides wird im Laufe der Blockchain-Synchronisierung wiederhergestellt. Stelle sicher, dass du über eine zuverlässige Internetverbindung verfügst.</string>
+    <string name="rescan_blockchain_select_date_label">Wallet-Erstelldatum auswählen (optional)</string>
+    <string name="rescan_blockchain_date_info_description">Information über das Wallet-Erstelldatum</string>
+    <string name="rescan_blockchain_select_date_placeholder">Auswählen</string>
+    <string name="rescan_blockchain_confirm_button">Erneut scannen</string>
     <string name="preferences_extended_public_key_title">Xpub anzeigen</string>
     <string name="preferences_extended_public_key_summary">Zeigt den Extended Public Key Ihrer Wallet an, sodass er in andere Apps oder Dienste importiert werden kann. Sei dabei jedoch bitte vorsichtig, da dies Deine finanzielle Situation gegenüber jener anderen App offenlegen könnte.</string>
     <string name="bitmap_fragment_share">Teilen…</string>
-    <string name="extended_public_key_fragment_title">Extended Public Key</string>
+    <string name="extended_public_key_fragment_title">Extended Public Key (BIP44)</string>
     <string name="extended_public_key_fragment_share">Xpub teilen…</string>
+    <string name="extended_public_key_share_key">Key teilen</string>
     <string name="report_issue_dialog_title_issue">Problem melden</string>
     <string name="report_issue_dialog_title_crash">Absturz erkannt</string>
     <string name="report_issue_dialog_title_transaction">Melde ein Problem mit der ausgewählten Bezahlmethode</string>
@@ -294,17 +300,30 @@
     <string name="report_issue_dialog_report">Senden</string>
     <string name="report_issue_dialog_collect_device_info">Geräte-Informationen anhängen</string>
     <string name="report_issue_dialog_collect_installed_packages">Liste von installierten Paketen anhängen</string>
-    <string name="report_issue_dialog_collect_application_log">Applikations-Logfile anhängen</string>
+    <string name="report_issue_dialog_collect_application_log">Logdatei der Anwendung anhängen</string>
     <string name="report_issue_dialog_collect_wallet_dump">Dump der Wallet anhängen</string>
     <string name="report_issue_dialog_mail_intent_failed">Senden des Berichts fehlgeschlagen.</string>
     <string name="report_issue_dialog_generating_report">Bericht erstellen</string>
-    <string name="report_transaction_history_export">Export</string>
-    <string name="report_transaction_history_title">CSV Export</string>
-    <string name="report_transaction_history_not_synced_title">CSV Export</string>
+    <string name="report_issue_dialog_status_device_info">Geräte-Information</string>
+    <string name="report_issue_dialog_status_installed_packages">Liste der installierten Pakete</string>
+    <string name="report_issue_dialog_status_application_log">Logdatei der Anwendung</string>
+    <string name="report_issue_dialog_status_application_info">Anwendungsinfo</string>
+    <string name="report_issue_dialog_status_wallet_dump">Wallet Dump (langsam)</string>
+    <string name="report_issue_dialog_status_contextual_info">Kontextinformationen</string>
+    <string name="report_issue_dialog_status_background_traces">Background Traces</string>
+    <string name="report_issue_dialog_status_stack_trace">Stack Traces</string>
+    <string name="report_issue_dialog_status_finishing">abschließen</string>
+    <string name="report_transaction_history_export">Transaktionen exportieren</string>
+    <string name="report_transaction_history_title">CSV-Export</string>
+    <string name="report_transaction_history_dialog_title">Die gesamte Transaktionshistorie wird als CSV-Datei exportiert</string>
+    <string name="report_transaction_history_not_synced_title">CSV-Export</string>
     <string name="report_transaction_history_not_synced_message">Bitte warte, bis die Wallet vollständig synchronisiert ist, bevor du deinen Transaktionsverlauf exportierst.</string>
     <string name="report_transaction_history_message">Der vollständige Transaktionsverlauf wird exportiert.\n\nAlle ausgehenden Transaktionen werden als Aufwand und alle eingehenden Transaktionen als Ertrag betrachtet. Der Eigentümer dieser Wallet ist dafür verantwortlich, alle Anpassungen der Kostenbasis in dem von ihm gewählten Steuermeldesystem vorzunehmen.</string>
+    <string name="report_transaction_history_body_1">Alle Auszahlungen gelten als Ausgaben, alle Zahlungseingänge als Einnahmen.</string>
+    <string name="report_transaction_history_body_2">Der Inhaber dieser Wallet ist dafür verantwortlich, etwaige Anpassungen der Anschaffungskosten in dem von ihm gewählten Steuererklärungssystem vorzunehmen.</string>
     <string name="report_transaction_history_mail_intent_chooser">Transaktionsverlauf senden mit...</string>
     <string name="report_transaction_history_dialog_mail_intent_failed">Das Senden der Transaktionshistorie ist fehlgeschlagen.</string>
+    <string name="report_transaction_history_dialog_export_csv_failed">Der Export der Transaktionshistorie ist fehlgeschlagen.</string>
 
     <!-- ZenLedger -->
     <string name="zenledger_export_title">ZenLedger</string>
@@ -317,6 +336,7 @@
 
 
     <string name="about_title">Über</string>
+    <string name="about_dash_title">DashPay Wallet Info</string>
     <string name="about_version_title">Version</string>
     <string name="about_copyright_title">Urheberrecht</string>
     <string name="about_license_title">Lizenz</string>
@@ -339,6 +359,9 @@
     <string name="notification_inactivity_action_dismiss">Später erinnern</string>
     <string name="notification_inactivity_action_dismiss_forever">Nicht weiter erinnern</string>
     <string name="notification_bluetooth_service_listening">Bereit zum Empfang von Zahlungen über Bluetooth</string>
+    <string name="notification_sync_paused">Synchronisierung der Blockchain pausiert</string>
+    <string name="notification_background_processes_paused">Verarbeitung im Hintergrund pausiert</string>
+    <string name="notification_background_processes_paused_text">Du hast das Android-6h-Foreground-Servicelimit für das Mixen oder der Synchronisierung der Blockchain erreicht. Tippe zum Zurücksetzen ...</string>
     <string name="appwidget_wallet_balance_title">Dash-Guthaben</string>
 
     <!-- generic buttons -->
@@ -397,10 +420,9 @@
     <string name="reason">Ursache</string>
     <string name="link_account">Konto verknüpfen</string>
     <string name="buy_no_account_needed">Dash kaufen. Es wird kein Konto benötigt.</string>
+    <string name="convert_no_account_needed">Dash swappen · Kein Konto notwendig</string>
 
     <string name="recipient_address">Adresse des Empfängers</string>
-    <string name="show_clipboard">Inhalt der Zwischenablage anzeigen</string>
-    <string name="tap_to_paste">Tippe auf die Adresse in der Zwischenablage, um sie einzufügen.</string>
     <string name="not_dash_address">Keine gültige Dash Adresse oder URL-Anfrage</string>
     <string name="send_to_address">An Adresse senden</string>
 
@@ -422,4 +444,15 @@
     <string name="select_option">Option auswählen</string>
     <string name="customize_shortcuts">Shortcut-Leiste anpassen</string>
     <string name="customize_shortcuts_description">Halte eine beliebige Taste oben gedrückt, um sie durch die gewünschte Funktion zu ersetzen</string>
+
+    <!-- PIN Upgrade Dialog -->
+    <string name="upgrade_pin_title">Du musst deinen PIN aktualisieren</string>
+    <string name="upgrade_pin_description">Neue PIN einrichten</string>
+    <string name="upgrade_pin_continue">Fortfahren</string>
+
+    <!-- CrowdNode withdrawal reminder -->
+    <string name="crowdnode_withdrawal_reminder_title">Du besitzt noch Guthaben auf CrowdNode</string>
+    <string name="crowdnode_withdrawal_reminder_message">Du solltest dein Guthaben von CrowdNode abziehen. Das Guthaben kannst du in diese Wallet oder über dein Online-Konto auf ein anderes Gerät auszahlen lassen.</string>
+    <string name="crowdnode_withdraw_funds">Guthaben auszahlen</string>
+    <string name="dash_connect_revoke_access">Zugriff widerrufen</string>
 </resources>

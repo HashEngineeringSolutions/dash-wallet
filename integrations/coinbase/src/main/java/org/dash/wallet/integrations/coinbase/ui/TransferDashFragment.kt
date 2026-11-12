@@ -37,11 +37,9 @@ import org.bitcoinj.utils.ExchangeRate
 import org.bitcoinj.utils.MonetaryFormat
 import org.dash.wallet.common.services.ConfirmTransactionService
 import org.dash.wallet.common.services.AuthenticationManager
-import org.dash.wallet.common.services.LeftoverBalanceException
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.ui.*
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
-import org.dash.wallet.common.ui.dialogs.MinimumBalanceDialog
 import org.dash.wallet.common.util.*
 import org.dash.wallet.integrations.coinbase.CoinbaseConstants
 import org.dash.wallet.integrations.coinbase.R
@@ -54,12 +52,14 @@ import org.dash.wallet.integrations.coinbase.viewmodels.EnterAmountToTransferVie
 import org.dash.wallet.integrations.coinbase.viewmodels.SendDashResponseState
 import org.dash.wallet.integrations.coinbase.viewmodels.TransferDashViewModel
 import org.dash.wallet.integrations.coinbase.viewmodels.coinbaseViewModels
+import org.slf4j.LoggerFactory
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class TransferDashFragment : Fragment(R.layout.transfer_dash_fragment) {
 
     companion object {
+        private val log = LoggerFactory.getLogger(TransferDashFragment::class.java)
         fun newInstance() = TransferDashFragment()
     }
 
@@ -140,7 +140,13 @@ class TransferDashFragment : Fragment(R.layout.transfer_dash_fragment) {
                     }
                 } else {
                     binding.dashWalletLimitBanner.isVisible = false
-                    val error = transferDashViewModel.checkEnteredAmountValue(it.second)
+                    val isEmptyWallet = enterAmountToTransferViewModel.isMaxAmountSelected
+                    val amountToTransfer = if (isEmptyWallet) {
+                        transferDashViewModel.maxForDashCoinBaseAccount - transferDashViewModel.minimumFee
+                    } else {
+                        it.second
+                    }
+                    val error = transferDashViewModel.checkEnteredAmountValue(amountToTransfer)
                     binding.authLimitBanner.root.isVisible = error == SwapValueErrorType.UnAuthorizedValue
                     binding.dashWalletLimitBanner.isVisible = (error == SwapValueErrorType.MoreThanMax
                             || error == SwapValueErrorType.LessThanMin
@@ -162,7 +168,7 @@ class TransferDashFragment : Fragment(R.layout.transfer_dash_fragment) {
                             else -> {}
                         }
                     } else {
-                        transferDashViewModel.reviewTransfer(dashValue.toPlainString())
+                        transferDashViewModel.reviewTransfer(amountToTransfer.toPlainString())
                     }
                 }
             }
@@ -218,6 +224,13 @@ class TransferDashFragment : Fragment(R.layout.transfer_dash_fragment) {
             } else {
                 "$amountFiat $fiatSymbol"
             }
+            
+            // Log the values to debug zero amounts
+            log.info("Amount received - DASH: '{}', Fiat: '{}', exchangeRate: {}", 
+                formatDashValue, formatFiatValue, enterAmountToTransferViewModel.coinbaseExchangeRate != null)
+            log.info("Raw values - dashInStr: '{}', amountFiat: '{}', fiatSymbol: '{}', it.second: {}, it.first: {}", 
+                dashInStr, amountFiat, fiatSymbol, it.second, it.first)
+            
             // For initial load till coinbase exchange rate loaded
             if(enterAmountToTransferViewModel.coinbaseExchangeRate==null){
                 binding.amountReceived.text = getString(
@@ -334,19 +347,8 @@ class TransferDashFragment : Fragment(R.layout.transfer_dash_fragment) {
     }
 
     private suspend fun handleSend(value: Coin, isEmptyWallet: Boolean): Boolean {
-        try {
-            transferDashViewModel.sendDash(value, isEmptyWallet, true)
-            return true
-        } catch (ex: LeftoverBalanceException) {
-            val result = MinimumBalanceDialog().showAsync(requireActivity())
-
-            if (result == true) {
-                transferDashViewModel.sendDash(value, isEmptyWallet, false)
-                return true
-            }
-        }
-
-        return false
+        transferDashViewModel.sendDash(value, isEmptyWallet)
+        return true
     }
 
     private fun handleBackButtonPress(){

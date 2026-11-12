@@ -32,12 +32,14 @@ import de.schildbach.wallet.WalletApplication
 import de.schildbach.wallet.data.CoinJoinConfig
 import de.schildbach.wallet.database.entity.BlockchainIdentityConfig
 import de.schildbach.wallet.payments.ConfirmTransactionLauncher
+import de.schildbach.wallet.payments.PendingDirectPaymentVerifier
 import de.schildbach.wallet.payments.SendCoinsTaskRunner
 import de.schildbach.wallet.security.SecurityFunctions
 import de.schildbach.wallet.service.*
 import de.schildbach.wallet.service.AndroidActionsService
 import de.schildbach.wallet.service.AppRestartService
 import de.schildbach.wallet.service.RestartService
+import de.schildbach.wallet.service.platform.IdentityRepository
 import de.schildbach.wallet.ui.dashpay.PlatformRepo
 import de.schildbach.wallet.ui.more.tools.ZenLedgerApi
 import de.schildbach.wallet.ui.more.tools.ZenLedgerClient
@@ -54,7 +56,6 @@ import org.dash.wallet.common.services.LockScreenBroadcaster
 import org.dash.wallet.common.services.NotificationService
 import org.dash.wallet.common.services.SendPaymentService
 import org.dash.wallet.common.services.analytics.AnalyticsService
-import org.dash.wallet.common.services.analytics.FireplaceAnalyticsServiceImpl
 import org.dash.wallet.integrations.uphold.api.UpholdClient
 import org.dash.wallet.features.exploredash.network.service.stubs.FakeDashSpendService
 import javax.inject.Singleton
@@ -112,10 +113,25 @@ abstract class AppModule {
             identityConfig: BlockchainIdentityConfig,
             coinJoinConfig: CoinJoinConfig,
             coinJoinService: CoinJoinService,
+            identityRepository: IdentityRepository,
             platformRepo: PlatformRepo,
-            transactionMetadataProvider: TransactionMetadataProvider
+            transactionMetadataProvider: TransactionMetadataProvider,
+            pendingPaymentVerifier: PendingDirectPaymentVerifier
         ): SendPaymentService {
-            val realService = SendCoinsTaskRunner(walletData, walletApplication, securityFunctions, packageInfoProvider, analyticsService, identityConfig, coinJoinConfig, coinJoinService, platformRepo, transactionMetadataProvider)
+            val realService = SendCoinsTaskRunner(
+                walletData,
+                walletApplication,
+                securityFunctions,
+                packageInfoProvider,
+                analyticsService,
+                identityConfig,
+                coinJoinConfig,
+                coinJoinService,
+                identityRepository,
+                platformRepo,
+                transactionMetadataProvider,
+                pendingPaymentVerifier
+            )
 
             return if (BuildConfig.FLAVOR.lowercase() == "prod") {
                 realService
@@ -130,11 +146,6 @@ abstract class AppModule {
             return CoroutineScope(SupervisorJob() + Dispatchers.Default)
         }
     }
-
-    @Binds
-    abstract fun bindAnalyticsService(
-        analyticsService: FireplaceAnalyticsServiceImpl
-    ): AnalyticsService
 
     @Binds
     abstract fun bindConfirmTransactionService(

@@ -22,9 +22,8 @@ package de.schildbach.wallet
 import androidx.work.WorkManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
-import java.util.concurrent.Executors
+import kotlinx.coroutines.runBlocking
 
 object WalletApplicationExt {
     /**
@@ -40,8 +39,13 @@ object WalletApplicationExt {
             if (isWalletWipe) {
                 transactionMetadataProvider.clear()
             }
-            platformRepo.clearDatabase(isWalletWipe)
+            identityRepository.clearDatabase(isWalletWipe)
+            txDisplayCacheService.clearDatabase()
             WorkManager.getInstance(context).cancelAllWork()
         }
+    }
+
+    fun WalletApplication.clearCachedAddresses(): Unit = runBlocking {
+        exchangeIntegrationProvider.clearCachedAddresses()
     }
 }

@@ -18,20 +18,24 @@ package de.schildbach.wallet.ui
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.view.MenuItem
 import android.view.View
+import android.view.WindowManager
 import android.widget.TextView
 import android.widget.ViewSwitcher
+import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
+import de.schildbach.wallet.WalletApplication
 import de.schildbach.wallet.livedata.Status
 import de.schildbach.wallet.ui.main.MainActivity
-import de.schildbach.wallet.ui.invite.OnboardFromInviteActivity
 import de.schildbach.wallet.service.RestartService
 import de.schildbach.wallet.security.SecurityFunctions
 import de.schildbach.wallet.service.PackageInfoProvider
@@ -45,11 +49,11 @@ import org.dash.wallet.common.data.OnboardingState
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
 import org.dash.wallet.common.ui.enter_amount.NumericKeyboardView
+import org.slf4j.LoggerFactory
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class SetPinActivity : InteractionAwareActivity() {
-
     private lateinit var numericKeyboardView: NumericKeyboardView
     private lateinit var confirmButtonView: View
     private lateinit var pinProgressSwitcherView: ViewSwitcher
@@ -62,6 +66,7 @@ class SetPinActivity : InteractionAwareActivity() {
     @Inject lateinit var restartService: RestartService
     @Inject lateinit var authManager: SecurityFunctions
     @Inject lateinit var packageInfoProvider: PackageInfoProvider
+    @Inject lateinit var walletApplication: WalletApplication
 
     val pin = arrayListOf<Int>()
     var seed = listOf<String>()
@@ -99,6 +104,8 @@ class SetPinActivity : InteractionAwareActivity() {
         private const val EXTRA_ONBOARDING_PATH = "onboarding_path"
         private const val EXTRA_ONBOARDING_INVITE = "onboarding_invite"
         private const val UPGRADING_WALLET = "upgrading_wallet"
+        private const val REQUIRES_RESCAN = "requires_rescan"
+        private val log = LoggerFactory.getLogger(SetPinActivity::class.java)
 
         @JvmOverloads
         @JvmStatic
@@ -108,7 +115,8 @@ class SetPinActivity : InteractionAwareActivity() {
             onboarding: Boolean = false,
             onboardingPath: OnboardingPath = OnboardingPath.Create,
             onboardingInvite: Boolean = false,
-            upgradingWallet: Boolean = false
+            upgradingWallet: Boolean = false,
+            requiresRescan: Boolean = false
         ): Intent {
             val intent = Intent(context, SetPinActivity::class.java)
             intent.putExtra(EXTRA_TITLE_RES_ID, titleResId)
@@ -118,6 +126,7 @@ class SetPinActivity : InteractionAwareActivity() {
             intent.putExtra(EXTRA_ONBOARDING_PATH, onboardingPath)
             intent.putExtra(EXTRA_ONBOARDING_INVITE, onboardingInvite)
             intent.putExtra(UPGRADING_WALLET, upgradingWallet)
+            intent.putExtra(REQUIRES_RESCAN, requiresRescan)
             return intent
         }
 
@@ -125,6 +134,12 @@ class SetPinActivity : InteractionAwareActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            // no-op on API 35+, where edge-to-edge is enforced
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            @Suppress("DEPRECATION")
+            window.statusBarColor = ContextCompat.getColor(this, R.color.colorPrimary)
+        }
         setContentView(R.layout.activity_set_pin)
 
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
@@ -139,6 +154,10 @@ class SetPinActivity : InteractionAwareActivity() {
 
         initView()
         initViewModel()
+
+        onBackPressedDispatcher.addCallback(this) {
+            handleBackNavigation()
+        }
 
         if (viewModel.walletData.wallet == null) {
             showErrorDialog(false, NullPointerException("wallet is null in SetPinActivity"))
@@ -533,8 +552,7 @@ class SetPinActivity : InteractionAwareActivity() {
         return super.onOptionsItemSelected(item)
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
+    private fun handleBackNavigation() {
         when {
             pin.size > 0 -> setState(state)
             state == State.CONFIRM_PIN -> setState(State.SET_PIN)
@@ -554,22 +572,25 @@ class SetPinActivity : InteractionAwareActivity() {
             logSuccess(path)
         }
 
-        if (onboardingInvite) {
-            startActivity(OnboardFromInviteActivity.createIntent(this, OnboardFromInviteActivity.Mode.STEP_3, verifySeedActivityIntent))
-        } else {
-            startActivity(verifySeedActivityIntent)
-        }
+        startActivity(verifySeedActivityIntent)
         finishAffinity()
     }
 
     private fun goHome() {
         startActivity(MainActivity.createIntent(this))
+        val isOnboarding = intent.getBooleanExtra(EXTRA_ONBOARDING, false)
+        val requiresRescan = intent.getBooleanExtra(REQUIRES_RESCAN, false)
 
-        if (intent.getBooleanExtra(EXTRA_ONBOARDING, false)) {
+        if (!requiresRescan && isOnboarding) {
             val path = intent.getSerializableExtra(EXTRA_ONBOARDING_PATH) as OnboardingPath
             logSuccess(path)
             finishAffinity()
         } else {
+            if (requiresRescan) {
+                log.info("automatically initiated blockchain reset, due to security system recovery")
+                viewModel.logEvent(AnalyticsConstants.Settings.RESCAN_BLOCKCHAIN_RESET)
+                walletApplication.resetBlockchain()
+            }
             finish()
         }
     }

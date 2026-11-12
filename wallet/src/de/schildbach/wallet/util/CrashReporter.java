@@ -38,6 +38,7 @@ import java.util.TimeZone;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.wallet.Wallet;
+import org.dash.wallet.common.util.Bluetooth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -196,6 +197,7 @@ public class CrashReporter {
         report.append("Test/Prod: " + (Constants.IS_PROD_BUILD ? "prod" : "test") + "\n");
         report.append("Flavor: " + BuildConfig.FLAVOR + "\n");
         report.append("Build Type: " + BuildConfig.BUILD_TYPE + "\n");
+        report.append("Target SDK: " + pi.applicationInfo.targetSdkVersion + "\n");
         final boolean isIgnoringBatteryOptimization =
                 powerManager.isIgnoringBatteryOptimizations(packageInfoProvider.getPackageInfo().packageName);
         report.append("Battery optimization: ").append(isIgnoringBatteryOptimization ? "no" : "yes").append("\n");

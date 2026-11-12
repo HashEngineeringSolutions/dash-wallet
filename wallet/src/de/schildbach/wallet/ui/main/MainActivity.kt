@@ -34,7 +34,7 @@ import androidx.activity.viewModels
 import androidx.annotation.NavigationRes
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
+import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
@@ -42,16 +42,15 @@ import com.google.common.collect.ImmutableList
 import dagger.hilt.android.AndroidEntryPoint
 import de.schildbach.wallet.Constants
 import de.schildbach.wallet.data.InvitationLinkData
-import de.schildbach.wallet.data.PaymentIntent
 import de.schildbach.wallet.livedata.SeriousError
 import de.schildbach.wallet.livedata.Status
 import de.schildbach.wallet.ui.*
-import de.schildbach.wallet.ui.backup.BackupWalletDialogFragment
 import de.schildbach.wallet.ui.coinjoin.CoinJoinLevelViewModel
 import de.schildbach.wallet.ui.dashpay.*
-import de.schildbach.wallet.ui.invite.AcceptInviteActivity
 import de.schildbach.wallet.ui.invite.InviteHandler
 import de.schildbach.wallet.ui.invite.InviteSendContactRequestDialog
+import de.schildbach.wallet.ui.more.connections.ConnectionsFragment
+import de.schildbach.wallet.ui.more.connections.protocol.DashConnectUri
 import de.schildbach.wallet.ui.main.MainActivityExt.checkLowStorageAlert
 import de.schildbach.wallet.ui.main.MainActivityExt.checkTimeSkew
 import de.schildbach.wallet.ui.main.MainActivityExt.handleFirebaseAction
@@ -72,11 +71,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.bitcoinj.crypto.ChildNumber
 import org.bitcoinj.wallet.DerivationPathFactory
-import org.bitcoinj.wallet.Wallet
 import org.bitcoinj.wallet.WalletEx
 import org.dash.wallet.common.Configuration
+import org.dash.wallet.common.data.PaymentIntent
 import org.dash.wallet.common.ui.BaseAlertDialogBuilder
-import org.dash.wallet.common.ui.FancyAlertDialog
 import org.dash.wallet.common.ui.components.ComposeHostFrameLayout
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
 import org.dash.wallet.common.util.observe
@@ -85,12 +83,10 @@ import java.io.IOException
 import java.lang.IllegalStateException
 import javax.inject.Inject
 
-
 @AndroidEntryPoint
 class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPermissionsResultCallback,
     UpgradeWalletDisclaimerDialog.OnUpgradeConfirmedListener,
     EncryptNewKeyChainDialogFragment.OnNewKeyChainEncryptedListener {
-
     companion object {
         private val log = LoggerFactory.getLogger(MainActivity::class.java)
 
@@ -114,6 +110,7 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
 
         fun createIntent(context: Context, invite: InvitationLinkData): Intent {
             return Intent(context, MainActivity::class.java).apply {
+                putExtra(EXTRA_NAVIGATION_DESTINATION, R.id.walletFragment)
                 putExtra(EXTRA_INVITE, invite)
                 addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
@@ -124,19 +121,20 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
     val viewModel: MainViewModel by viewModels()
     private val createIdentityViewModel: CreateIdentityViewModel by viewModels()
     private val coinJoinViewModel: CoinJoinLevelViewModel by viewModels()
+    private val inviteHandlerViewModel: InviteHandlerViewModel by viewModels()
     @Inject
     lateinit var config: Configuration
     private lateinit var binding: ActivityMainBinding
     private var isRestoringBackup = false
     private var showBackupWalletDialog = false
     private var retryCreationIfInProgress = true
-    private var pendingInvite: InvitationLinkData? = null
     var composeHostFrameLayout: ComposeHostFrameLayout? = null
 
     val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
         requestDisableBatteryOptimisation()
     }
 
+    private var timeChangeReceiverRegistered = false
     private val timeChangeReceiver = object: BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == Intent.ACTION_TIME_CHANGED) {
@@ -149,16 +147,20 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
         }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-        window.statusBarColor = ContextCompat.getColor(this, R.color.colorPrimary)
+    override fun onCreateWithWallet(savedInstanceState: Bundle?) {
+        super.onCreateWithWallet(savedInstanceState)
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            // no-op on API 35+, where edge-to-edge is enforced
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            @Suppress("DEPRECATION")
+            window.statusBarColor = ContextCompat.getColor(this, R.color.colorPrimary)
+        }
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         this.setupBottomNavigation(viewModel)
 
         initViewModel()
-        handleCreateFromInvite()
 
         if (savedInstanceState == null) {
             checkAlerts()
@@ -186,6 +188,7 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
             addAction(Intent.ACTION_TIME_CHANGED)
         }
         registerReceiver(timeChangeReceiver, timeChangedFilter)
+        timeChangeReceiverRegistered = true
 
         viewModel.rateStale.observe(this) { state ->
             log.info("updateTrigger => rateStale: {}", state)
@@ -196,30 +199,17 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
     override fun onStart() {
         super.onStart()
 
+        if (finishedWithoutWallet) {
+            return
+        }
+
         if (!lockScreenDisplayed && config.showNotificationsExplainer) {
             explainPushNotifications()
         }
     }
 
-    private fun handleCreateFromInvite() {
-//        if (!config.hasBeenUsed() && config.onboardingInviteProcessing) { // TODO
-        if (config.onboardingInviteProcessing) {
-            if (config.isRestoringBackup) {
-                binding.restoringWalletCover.isVisible = true
-            } else {
-                handleOnboardingInvite(true)
-            }
-        }
-    }
-
-    private fun handleOnboardingInvite(silentMode: Boolean) {
-        val invite = InvitationLinkData(config.onboardingInvite, false)
-        startActivity(InviteHandlerActivity.createIntent(this@MainActivity, invite, silentMode))
-        config.setOnboardingInviteProcessingDone()
-    }
-
     fun initViewModel() {
-        viewModel.isAbleToCreateIdentityLiveData.observe(this) {
+        viewModel.isAbleToCreateIdentity.observe(this) {
             // empty observer just to trigger data loading
             // viewModel is shared with some fragments keeping the observer active
             // inside the parent Activity will avoid recreation of relatively complex
@@ -229,28 +219,17 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
             if (it != null) {
                 if (retryCreationIfInProgress && it.creationInProgress) {
                     retryCreationIfInProgress = false
+                    // should this be executed after syncing is finished?
                     if (it.usingInvite) {
                         startService(CreateIdentityService.createIntentForRetryFromInvite(this, false))
                     } else {
                         startService(CreateIdentityService.createIntentForRetry(this, false))
                     }
                 }
-                if (config.isRestoringBackup && config.onboardingInviteProcessing) {
-                    config.setOnboardingInviteProcessingDone()
-                    InviteHandler(this, viewModel.analytics).showUsernameAlreadyDialog()
-                    binding.restoringWalletCover.isVisible = false
-                }
+                setupBottomNavigation(viewModel)
             }
         }
 
-        viewModel.platformRepo.onIdentityResolved = { identity ->
-            if (identity == null && config.isRestoringBackup && config.onboardingInviteProcessing) {
-                lifecycleScope.launch {
-                    handleOnboardingInvite(false)
-                    binding.restoringWalletCover.isVisible = false
-                }
-            }
-        }
         viewModel.showCreateUsernameEvent.observe(this) {
             lifecycleScope.launch {
                 val shouldShowMixDashDialog = withContext(Dispatchers.IO) { createIdentityViewModel.shouldShowMixDash() }
@@ -263,10 +242,11 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
                 }
             }
         }
-        viewModel.sendContactRequestState.observe(this) {
+
+        viewModel.sendContactRequestState.observe(this) { workInfoMap ->
             config.inviter?.also { initInvitationUserId ->
                 if (!config.inviterContactRequestSentInfoShown) {
-                    it?.get(initInvitationUserId)?.apply {
+                    workInfoMap[initInvitationUserId]?.apply {
                         if (status == Status.SUCCESS) {
                             log.info("showing successfully sent contact request dialog")
                             showInviteSendContactRequestDialog(initInvitationUserId)
@@ -277,12 +257,6 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
             }
         }
 
-        viewModel.isBlockchainSynced.observe(this) { isSynced ->
-            if (isSynced && config.onboardingInviteProcessing) {
-                binding.restoringWalletCover.isVisible = false
-                handleOnboardingInvite(false)
-            }
-        }
         viewModel.seriousErrorLiveData.observe(this) {
             if (it != null) {
                 if (it.data != null && !viewModel.processingSeriousError) {
@@ -294,11 +268,12 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
                             R.string.serious_error_unknown
                         }
                     }
-                    val dialog = FancyAlertDialog.newInstance(
-                        R.string.serious_error_title,
-                        messageId, R.drawable.ic_error,
-                        R.string.button_ok,
-                        R.string.button_cancel
+                    val dialog = AdaptiveDialog.create(
+                        R.drawable.ic_error,
+                        getString(R.string.serious_error_title),
+                        getString(messageId),
+                        getString(R.string.button_ok),
+                        getString(R.string.button_cancel)
                     )
                     dialog.show(supportFragmentManager, "serious_error_dialog")
                     viewModel.processingSeriousError = true
@@ -311,13 +286,22 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
         lifecycleScope.launch {
             viewModel.getProfile(initInvitationUserId)?.let { profile ->
                 val dialog = InviteSendContactRequestDialog.newInstance(this@MainActivity, profile)
-                dialog.show(supportFragmentManager, null)
+                dialog.show(this@MainActivity) {
+                    // nothing
+                }
             }
         }
     }
 
     override fun onResume() {
         super.onResume()
+
+        if (finishedWithoutWallet) {
+            // onCreateWithWallet() never ran and checkWalletEncryptionDialog() below
+            // dereferences the wallet
+            return
+        }
+
         turnOnAutoLogout()
         checkTimeSkew(viewModel)
         checkLowStorageAlert()
@@ -331,7 +315,7 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
         handleIntent(intent!!)
     }
 
-    //BIP44 Wallet Upgrade Dialog Dismissed (Ok button pressed)
+    // BIP44 Wallet Upgrade Dialog Dismissed (Ok button pressed)
     override fun onUpgradeConfirmed() {
         if (isRestoringBackup) {
             checkRestoredWalletEncryptionDialog()
@@ -340,9 +324,9 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
         }
     }
 
-    override fun onBackPressed() {
-        if (!goBack()) {
-            super.onBackPressed()
+    override fun handleBackNavigation() {
+        if (!lockScreenDisplayed && !goBack()) {
+            super.handleBackNavigation()
         }
     }
 
@@ -362,25 +346,31 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
         // TODO: can we remove this?
     }
 
-    private fun showRestoreWalletFromSeedDialog() {
-        RestoreWalletFromSeedDialogFragment.show(supportFragmentManager)
-    }
-
-    fun handleRestoreWalletFromSeed() {
-        showRestoreWalletFromSeedDialog();
-    }
-
-    fun restoreWallet(wallet: Wallet?) {
-        walletApplication.replaceWallet(wallet)
-        getSharedPreferences(Constants.WALLET_LOCK_PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit()
-        config.disarmBackupReminder()
-        upgradeWalletKeyChains(Constants.BIP44_PATH, true)
-        upgradeWalletCoinJoin(true)
-    }
-
     private fun handleInvite(invite: InvitationLinkData) {
-        val acceptInviteIntent = AcceptInviteActivity.createIntent(this, invite, false)
-        startActivity(acceptInviteIntent)
+        lifecycleScope.launch {
+            inviteHandlerViewModel.setInvitationLink(invite, false)
+        }
+    }
+
+    /**
+     * Navigates to the Connections screen with a scanned/opened DashConnect URI. On a cold
+     * start the nav host is not ready while handleIntent runs from onCreate, so retry once
+     * the view hierarchy is laid out.
+     */
+    private fun navigateToConnections(uri: String, isRetry: Boolean = false) {
+        try {
+            findNavController(R.id.nav_host_fragment).navigate(
+                R.id.connectionsFragment,
+                bundleOf(ConnectionsFragment.ARG_SCANNED_URI to uri,
+                    ConnectionsFragment.ARG_OPENED_FROM_URL to true)
+            )
+        } catch (e: IllegalStateException) {
+            if (!isRetry) {
+                window.decorView.post { navigateToConnections(uri, isRetry = true) }
+            } else {
+                log.warn("could not navigate to connections for DashConnect uri", e)
+            }
+        }
     }
 
     private fun handleIntent(intent: Intent) {
@@ -389,12 +379,25 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
             recreate()
             return
         }
+        if (Intent.ACTION_VIEW == intent.action &&
+            (intent.data?.scheme in setOf("dash-key", "dash-st") ||
+                intent.data?.toString()?.let { DashConnectUri.isDashPayVerbUri(it) } == true)
+        ) {
+            // DashConnect login or operation URI (dash-key:, dash-st: or dashpay://connect) opened
+            // from a scanner or browser, handled by the Connections screen. dashpay://invite is
+            // routed to InviteHandlerActivity by the manifest and never gets here.
+            val uri = intent.data.toString()
+            intent.data = null // consume, so recreation doesn't navigate again
+            navigateToConnections(uri)
+            return
+        }
         if (intent.hasExtra(EXTRA_INVITE)) {
             val invite = intent.extras!!.getParcelable<InvitationLinkData>(EXTRA_INVITE)!!
-            if (!isLocked) {
+            if (inviteHandlerViewModel.invitation.value == null) {
                 handleInvite(invite)
             } else {
-                pendingInvite = invite
+                // TODO: this is not the correct message, we are not onboarding
+                InviteHandler(this, viewModel.analytics).showInviteWhileProcessingInviteInProgressDialog()
             }
         }
         if (intent.hasExtra(EXTRA_NAVIGATION_DESTINATION)) {
@@ -411,7 +414,6 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
         if (NfcAdapter.ACTION_NDEF_DISCOVERED == action) {
             val inputType = intent.type
 
-            @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
             val ndefMessage = intent
                 .getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)!![0] as NdefMessage
             val input = Nfc.extractMimePayload(Constants.MIMETYPE_TRANSACTION, ndefMessage)
@@ -489,7 +491,7 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
         }
     }
 
-    fun handleEncryptKeysRestoredWallet() {
+    private fun handleEncryptKeysRestoredWallet() {
         EncryptKeysDialogFragment.show(false, supportFragmentManager) { resetBlockchain() }
     }
 
@@ -514,12 +516,12 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
         }
     }
 
-    open fun upgradeWalletKeyChains(path: ImmutableList<ChildNumber?>?, restoreBackup: Boolean) {
+    private fun upgradeWalletKeyChains(path: ImmutableList<ChildNumber>, restoreBackup: Boolean) {
         val wallet = walletData.wallet!!
         isRestoringBackup = restoreBackup
         if (!wallet.hasKeyChain(path)) {
-            if (wallet.isEncrypted()) {
-                EncryptNewKeyChainDialogFragment.show(getSupportFragmentManager(), path)
+            if (wallet.isEncrypted) {
+                EncryptNewKeyChainDialogFragment.show(supportFragmentManager, path)
             } else {
                 //
                 // Upgrade the wallet now
@@ -530,7 +532,7 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
                 // Tell the user that the wallet is being upgraded (BIP44)
                 // and they will have to enter a PIN.
                 //
-                UpgradeWalletDisclaimerDialog.show(getSupportFragmentManager(), false)
+                UpgradeWalletDisclaimerDialog.show(supportFragmentManager, false)
             }
         } else {
             if (restoreBackup) {
@@ -539,7 +541,7 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
         }
     }
 
-    open fun upgradeWalletCoinJoin(restoreBackup: Boolean) {
+    private fun upgradeWalletCoinJoin(restoreBackup: Boolean) {
         val wallet = walletData.wallet!!
         isRestoringBackup = restoreBackup
         val coinJoinPath = DerivationPathFactory(Constants.NETWORK_PARAMETERS).coinJoinDerivationPath(0)
@@ -551,13 +553,6 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
             if (restoreBackup) {
                 checkRestoredWalletEncryptionDialog()
             } else checkWalletEncryptionDialog()
-        }
-    }
-
-    private fun showBackupWalletDialogIfNeeded() {
-        if (showBackupWalletDialog) {
-            BackupWalletDialogFragment.show(this)
-            showBackupWalletDialog = false
         }
     }
 
@@ -584,15 +579,17 @@ class MainActivity : AbstractBindServiceActivity(), ActivityCompat.OnRequestPerm
 
     override fun onDestroy() {
         super.onDestroy()
-        viewModel.platformRepo.onIdentityResolved = null
-        unregisterReceiver(timeChangeReceiver)
+
+        // onCreateWithWallet() does not run when the activity is finished for having no wallet,
+        // so the receiver may never have been registered
+        if (timeChangeReceiverRegistered) {
+            unregisterReceiver(timeChangeReceiver)
+        }
     }
 
     override fun onLockScreenDeactivated() {
-        if (pendingInvite != null) {
-            handleInvite(pendingInvite!!)
-            pendingInvite = null // clear the invite
-        } else if (config.showNotificationsExplainer) {
+        super.onLockScreenDeactivated()
+        if (config.showNotificationsExplainer) {
             explainPushNotifications()
         }
         showStaleRatesToast()

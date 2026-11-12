@@ -20,10 +20,14 @@ package org.dash.wallet.features.exploredash.network.service.stubs
 import android.net.Uri
 import org.bitcoinj.core.Address
 import org.bitcoinj.core.Coin
+import org.bitcoinj.core.Sha256Hash
 import org.bitcoinj.core.Transaction
 import org.bitcoinj.core.TransactionOutput
 import org.bitcoinj.wallet.CoinSelector
+import org.bitcoinj.wallet.SendRequest
+import org.bitcoinj.wallet.Wallet
 import org.dash.wallet.common.WalletDataProvider
+import org.dash.wallet.common.services.PaymentRecoveryMetadata
 import org.dash.wallet.common.services.SendPaymentService
 import java.util.function.Consumer
 import java.util.function.Predicate
@@ -42,7 +46,6 @@ class FakeDashSpendService @Inject constructor(
         amount: Coin,
         coinSelector: CoinSelector?,
         emptyWallet: Boolean,
-        checkBalanceConditions: Boolean,
         beforeSending: Consumer<Transaction>?,
         canSendLockedOutput: Predicate<TransactionOutput>?
     ): Transaction {
@@ -51,7 +54,6 @@ class FakeDashSpendService @Inject constructor(
             amount,
             coinSelector,
             emptyWallet,
-            checkBalanceConditions,
             beforeSending,
             canSendLockedOutput
         )
@@ -65,16 +67,40 @@ class FakeDashSpendService @Inject constructor(
         return realService.estimateNetworkFee(address, amount, emptyWallet)
     }
 
-    override suspend fun payWithDashUrl(dashUri: String, serviceName: String?): Transaction {
+    override suspend fun payWithDashUrl(
+        dashUri: String,
+        serviceName: String?,
+        recovery: PaymentRecoveryMetadata?,
+        originWallet: Wallet?,
+        onTransactionCreated: (suspend (Sha256Hash) -> Unit)?
+    ): Transaction {
         return if (dashUri.startsWith(DASH_SPEND_SCHEMA)) {
             val uri = Uri.parse(dashUri)
             val amount = Coin.valueOf(uri.getQueryParameter("amount")?.toLong() ?: 0)
-            realService.sendCoins(
+            val transaction = realService.sendCoins(
                 Address.fromBase58(walletDataProvider.networkParameters, "yiCvnqNp53bjCReThnPx8ttuhM7JXUUyfQ"),
                 amount
             )
+            // Callers persist the order from this callback, so skipping it leaves a completed
+            // purchase with nothing for the details screen to load. Later than the real path,
+            // which calls it before submitting, but sendCoins gives no pre-send suspension point.
+            onTransactionCreated?.invoke(transaction.txId)
+            transaction
         } else {
-            realService.payWithDashUrl(dashUri, serviceName)
+            realService.payWithDashUrl(dashUri, serviceName, recovery, originWallet, onTransactionCreated)
         }
+    }
+
+    override fun isFeeTooHigh(tx: Transaction): Boolean = false
+    override suspend fun completeTransaction(sendRequest: SendRequest) {
+        return realService.completeTransaction(sendRequest)
+    }
+
+    override suspend fun signTransaction(sendRequest: SendRequest) {
+        return realService.signTransaction(sendRequest)
+    }
+
+    override suspend fun sendTransaction(sendRequest: SendRequest): Transaction {
+        return realService.sendTransaction(sendRequest)
     }
 }

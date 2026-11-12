@@ -30,11 +30,11 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
@@ -42,12 +42,10 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.AppBarLayout.Behavior.DragCallback
 import com.google.android.material.transition.MaterialFadeThrough
 import dagger.hilt.android.AndroidEntryPoint
-import de.schildbach.wallet.data.PaymentIntent
 import de.schildbach.wallet.data.ServiceType
-import de.schildbach.wallet.service.CoinJoinMode
-import de.schildbach.wallet.service.MixingStatus
 import de.schildbach.wallet.ui.EditProfileActivity
 import de.schildbach.wallet.ui.LockScreenActivity
+import de.schildbach.wallet.ui.coinjoin.CoinJoinActivity
 import de.schildbach.wallet.ui.compose_views.ComposeBottomSheet
 import de.schildbach.wallet.ui.dashpay.ContactsScreenMode
 import de.schildbach.wallet.ui.dashpay.NotificationsFragment
@@ -56,19 +54,19 @@ import de.schildbach.wallet.ui.main.shortcuts.ShortcutOption
 import de.schildbach.wallet.ui.main.shortcuts.ShortcutsList
 import de.schildbach.wallet.ui.main.shortcuts.ShortcutsPane
 import de.schildbach.wallet.ui.main.shortcuts.ShortcutsViewModel
+import org.dash.wallet.common.data.PaymentIntent
+import de.schildbach.wallet.ui.*
 import de.schildbach.wallet.ui.payments.PaymentsFragment
 import de.schildbach.wallet.ui.payments.SweepWalletActivity
-import de.schildbach.wallet.ui.scan.ScanActivity
 import de.schildbach.wallet.ui.send.SendCoinsActivity
-import de.schildbach.wallet.ui.staking.StakingActivity
 import de.schildbach.wallet.ui.transactions.TaxCategoryExplainerDialogFragment
 import de.schildbach.wallet.ui.transactions.TransactionDetailsDialogFragment
+import de.schildbach.wallet.ui.more.connections.protocol.DashConnectUri
 import de.schildbach.wallet.ui.util.InputParser.StringInputParser
 import de.schildbach.wallet.ui.verify.VerifySeedActivity
 import de.schildbach.wallet.util.WalletUtils
 import de.schildbach.wallet_test.R
 import de.schildbach.wallet_test.databinding.HomeContentBinding
-import de.schildbach.wallet_test.databinding.MixingStatusPaneBinding
 import kotlinx.coroutines.launch
 import org.bitcoinj.core.Coin
 import org.bitcoinj.core.PrefixedChecksummedBytes
@@ -78,14 +76,16 @@ import org.dash.wallet.common.Configuration
 import org.dash.wallet.common.services.AuthenticationManager
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.ui.avatar.ProfilePictureDisplay
+import org.dash.wallet.common.ui.components.DashWalletTheme
 import org.dash.wallet.common.ui.components.InfoPanel
 import org.dash.wallet.common.ui.dialogs.AdaptiveDialog
+import org.dash.wallet.common.ui.scan.ScanActivity
 import org.dash.wallet.common.ui.viewBinding
-import org.dash.wallet.common.util.Constants
 import org.dash.wallet.common.util.observe
 import org.dash.wallet.common.util.openCustomTab
 import org.dash.wallet.common.util.safeNavigate
 import org.dash.wallet.features.exploredash.ui.explore.ExploreTopic
+import org.dash.wallet.integrations.maya.utils.SwapBackend
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
 
@@ -99,7 +99,6 @@ class WalletFragment : Fragment(R.layout.home_content) {
     private val viewModel: MainViewModel by activityViewModels()
     private val shortcutViewModel: ShortcutsViewModel by activityViewModels()
     private val binding by viewBinding(HomeContentBinding::bind)
-    private lateinit var mixingBinding: MixingStatusPaneBinding
     @Inject lateinit var configuration: Configuration
     @Inject lateinit var authManager: AuthenticationManager
 
@@ -114,20 +113,11 @@ class WalletFragment : Fragment(R.layout.home_content) {
         }
     }
 
-    private val stakingLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Constants.USER_BUY_SELL_DASH) {
-            safeNavigate(WalletFragmentDirections.homeToBuySell())
-        }
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         reenterTransition = MaterialFadeThrough()
         initShortcutActions()
-        mixingBinding = MixingStatusPaneBinding.bind(binding.mixingStatusPane.root)
 
         val params = binding.appBar.layoutParams as CoordinatorLayout.LayoutParams
 
@@ -165,22 +155,43 @@ class WalletFragment : Fragment(R.layout.home_content) {
 
         binding.infoPanel.setContent {
             if (shortcutViewModel.showShortcutInfo) {
-                InfoPanel(
-                    stringResource(R.string.customize_shortcuts),
-                    stringResource(R.string.customize_shortcuts_description),
-                    modifier = Modifier
-                        .wrapContentHeight()
-                        .fillMaxWidth()
-                        .padding(horizontal = 2.dp),
-                    leftIconRes = R.drawable.ic_shortcuts,
-                    actionIconRes = R.drawable.ic_popup_close
-                ) {
-                    shortcutViewModel.hideShortcutInfo()
+                DashWalletTheme {
+                    InfoPanel(
+                        stringResource(R.string.customize_shortcuts),
+                        stringResource(R.string.customize_shortcuts_description),
+                        modifier = Modifier
+                            .wrapContentHeight()
+                            .fillMaxWidth()
+                            .padding(horizontal = 2.dp),
+                        leftIconRes = R.drawable.ic_shortcuts,
+                        actionIconRes = R.drawable.ic_popup_close
+                    ) {
+                        shortcutViewModel.hideShortcutInfo()
+                    }
                 }
             }
         }
+        binding.composeMixingStatusPane.setViewCompositionStrategy(
+            ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+        )
+        binding.composeMixingStatusPane.setContent {
+            MixingStatusCard(
+                viewModel.coinJoinMode,
+                viewModel.mixingState,
+                viewModel.mixingProgress,
+                viewModel.mixedBalance.asFlow(),
+                viewModel.totalBalance.asFlow(),
+                viewModel.hideBalance
+            ) {
+                startActivity(Intent(requireContext(), CoinJoinActivity::class.java).apply {
+                    putExtra(CoinJoinActivity.FIRST_TIME_EXTRA, false)
+                })
+            }
+        }
 
-        viewModel.transactions.observe(viewLifecycleOwner) { refreshShortcutBar() }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.transactionsLoaded.collect { if (it) refreshShortcutBar() }
+        }
         viewModel.isBlockchainSynced.observe(viewLifecycleOwner) { updateSyncState() }
         viewModel.isBlockchainSyncFailed.observe(viewLifecycleOwner) { updateSyncState() }
 
@@ -203,6 +214,12 @@ class WalletFragment : Fragment(R.layout.home_content) {
             }
         }
 
+        viewModel.remindMetadata.observe(viewLifecycleOwner) { shouldRemind ->
+            if (shouldRemind) {
+                safeNavigate(WalletFragmentDirections.homeToTransactionMetadataSettings())
+            }
+        }
+
         viewModel.dashPayProfile.observe(viewLifecycleOwner) { profile ->
             if (viewModel.hasIdentity) {
                 ProfilePictureDisplay.display(binding.dashpayUserAvatar, profile, true)
@@ -211,7 +228,7 @@ class WalletFragment : Fragment(R.layout.home_content) {
         }
 
         viewModel.blockchainIdentity.observe(viewLifecycleOwner) { identity ->
-            if (identity?.creationComplete == true) {
+            if (identity?.hasUsername == true) {
                 ProfilePictureDisplay.display(binding.dashpayUserAvatar, viewModel.dashPayProfile.value, true)
                 setNotificationIndicator()
             }
@@ -219,69 +236,14 @@ class WalletFragment : Fragment(R.layout.home_content) {
 
         viewModel.notificationCountData.observe(viewLifecycleOwner) { setNotificationIndicator() }
 
-        viewModel.coinJoinMode.observe(viewLifecycleOwner) { mode ->
-            mixingBinding.root.isVisible = mode != CoinJoinMode.NONE
-        }
-
-        viewModel.mixingProgress.observe(viewLifecycleOwner) { progress ->
-            updateMixedAndTotalBalance()
-            mixingBinding.mixingPercent.text = getString(R.string.percent, progress.toInt())
-            mixingBinding.mixingProgress.progress = progress.toInt()
-        }
-
-        viewModel.mixingState.observe(viewLifecycleOwner) { mixingState ->
-            mixingBinding.root.isVisible = when (mixingState) {
-                MixingStatus.NOT_STARTED,
-                MixingStatus.ERROR,
-                MixingStatus.FINISHED -> false
-                else -> true
-            }
-            when (mixingState) {
-                MixingStatus.MIXING -> {
-                    mixingBinding.mixingMode.text = getString(R.string.coinjoin_mixing)
-                    mixingBinding.progressBar.isVisible = true
-                }
-                MixingStatus.FINISHING -> {
-                    mixingBinding.mixingMode.text = getString(R.string.coinjoin_mixing_finishing)
-                    mixingBinding.progressBar.isVisible = true
-                }
-                MixingStatus.PAUSED -> {
-                    mixingBinding.mixingMode.text = getString(R.string.coinjoin_paused)
-                    mixingBinding.progressBar.isVisible = false
-                }
-                else -> {
-                    mixingBinding.mixingMode.text = getString(R.string.error)
-                    mixingBinding.progressBar.isVisible = false
-                }
-            }
-        }
-
-        viewModel.mixingSessions.observe(viewLifecycleOwner) {
-            val activeSessionsText = ".".repeat(it)
-            mixingBinding.mixingSessions.text = activeSessionsText
-        }
-
         viewModel.totalBalance.observe(viewLifecycleOwner) {
-            updateMixedAndTotalBalance()
             val balance: Coin = viewModel.totalBalance.value ?: Coin.ZERO
             shortcutViewModel.userHasBalance = balance.isPositive
-        }
-
-        viewModel.mixedBalance.observe(viewLifecycleOwner) {
-            updateMixedAndTotalBalance()
         }
 
         viewModel.hasContacts.observe(viewLifecycleOwner) {
             refreshShortcutBar()
         }
-    }
-
-    private fun updateMixedAndTotalBalance() {
-        mixingBinding.balance.text = getString(
-            R.string.coinjoin_progress_balance,
-            viewModel.mixedBalanceString,
-            viewModel.walletBalanceString
-        )
     }
 
     fun scrollToTop() {
@@ -306,15 +268,17 @@ class WalletFragment : Fragment(R.layout.home_content) {
         )
 
         binding.shortcutsPane.setContent {
-            ShortcutsPane(
-                shortcuts = shortcutViewModel.shortcuts,
-                onClick = { shortcut ->
-                    onShortcutTap(shortcut)
-                },
-                onLongClick = { shortcut, index ->
-                    onShortcutLongTap(shortcut, index)
-                }
-            )
+            DashWalletTheme {
+                ShortcutsPane(
+                    shortcuts = shortcutViewModel.shortcuts,
+                    onClick = { shortcut ->
+                        onShortcutTap(shortcut)
+                    },
+                    onLongClick = { shortcut, index ->
+                        onShortcutLongTap(shortcut, index)
+                    }
+                )
+            }
         }
 
         refreshShortcutBar()
@@ -374,6 +338,15 @@ class WalletFragment : Fragment(R.layout.home_content) {
     }
 
     private fun handleString(input: String, errorDialogTitleResId: Int, cannotClassifyCustomMessageResId: Int) {
+        // fully qualified: this file already imports org.dash.wallet.common.util.Constants
+        if (de.schildbach.wallet.Constants.SUPPORTS_CONNECT &&
+            DashConnectUri.isConnectUri(input)
+        ) {
+            // DashConnect QR, handled by the Connections screen, which also says when the network is
+            // too old for it. Where the feature is off these URIs fall through to the unrecognised-QR error.
+            safeNavigate(WalletFragmentDirections.homeToConnections(input))
+            return
+        }
         object : StringInputParser(input, true) {
             override fun handlePaymentIntent(paymentIntent: PaymentIntent) {
                 SendCoinsActivity.start(requireActivity(), paymentIntent)
@@ -436,6 +409,11 @@ class WalletFragment : Fragment(R.layout.home_content) {
                 viewModel.logEvent(AnalyticsConstants.Home.SHORTCUT_BUY_AND_SELL)
                 safeNavigate(WalletFragmentDirections.homeToBuySell())
             }
+            ShortcutOption.DASH_DEX -> {
+                viewModel.logEvent(AnalyticsConstants.Home.SHORTCUT_DASH_DEX)
+                viewModel.setSwapBackend(SwapBackend.SWAPKIT)
+                safeNavigate(WalletFragmentDirections.homeToMaya())
+            }
             ShortcutOption.SEND_TO_ADDRESS -> {
                 handlePayToAddress()
             }
@@ -448,7 +426,11 @@ class WalletFragment : Fragment(R.layout.home_content) {
                     R.id.paymentsFragment,
                     bundleOf(
                         PaymentsFragment.ARG_ACTIVE_TAB to PaymentsFragment.ACTIVE_TAB_PAY
-                    )
+                    ),
+                    NavOptions.Builder()
+                        .setLaunchSingleTop(true)
+                        .setPopUpTo(R.id.walletFragment, false)
+                        .build()
                 )
             }
             ShortcutOption.RECEIVE -> {
@@ -457,7 +439,11 @@ class WalletFragment : Fragment(R.layout.home_content) {
                     R.id.paymentsFragment,
                     bundleOf(
                         PaymentsFragment.ARG_ACTIVE_TAB to PaymentsFragment.ACTIVE_TAB_RECEIVE
-                    )
+                    ),
+                    NavOptions.Builder()
+                        .setLaunchSingleTop(true)
+                        .setPopUpTo(R.id.walletFragment, false)
+                        .build()
                 )
             }
             ShortcutOption.EXPLORE -> {
@@ -475,9 +461,6 @@ class WalletFragment : Fragment(R.layout.home_content) {
             }
             ShortcutOption.ATMS -> {
                 safeNavigate(WalletFragmentDirections.homeToSearch(type = ExploreTopic.ATMs))
-            }
-            ShortcutOption.STAKING -> {
-                handleStakingNavigation()
             }
             ShortcutOption.TOPPER -> {
                 lifecycleScope.launch {
@@ -511,26 +494,5 @@ class WalletFragment : Fragment(R.layout.home_content) {
         }.show(requireActivity())
 
         shortcutViewModel.hideShortcutInfo() // Assume user is aware of this feature already
-    }
-
-    private fun handleStakingNavigation() {
-        lifecycleScope.launch {
-            if (viewModel.isBlockchainSynced.value == true) {
-                stakingLauncher.launch(Intent(requireContext(), StakingActivity::class.java))
-            } else {
-                val openWebsite = AdaptiveDialog.create(
-                    null,
-                    getString(R.string.chain_syncing),
-                    getString(R.string.crowdnode_wait_for_sync),
-                    getString(R.string.button_close),
-                    getString(R.string.crowdnode_open_website)
-                ).showAsync(requireActivity())
-
-                if (openWebsite == true) {
-                    val browserIntent = Intent(Intent.ACTION_VIEW, getString(R.string.crowdnode_website).toUri())
-                    startActivity(browserIntent)
-                }
-            }
-        }
     }
 }

@@ -25,6 +25,7 @@ import de.schildbach.wallet.ui.dashpay.PlatformRepo
 import de.schildbach.wallet.WalletApplication
 import de.schildbach.wallet.database.dao.TopUpsDao
 import de.schildbach.wallet.database.entity.TopUp
+import de.schildbach.wallet.service.platform.IdentityRepository
 import de.schildbach.wallet.service.platform.work.TopupIdentityOperation
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -42,17 +43,19 @@ import org.dash.wallet.common.services.TransactionMetadataProvider
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.services.analytics.AnalyticsService
 import org.dash.wallet.features.exploredash.data.explore.GiftCardDao
+import org.dash.wallet.integrations.maya.data.SwapOrderDao
 import javax.inject.Inject
 
 @HiltViewModel
 class TransactionResultViewModel @Inject constructor(
     private val transactionMetadataProvider: TransactionMetadataProvider,
     private val giftCardDao: GiftCardDao,
+    private val swapOrderDao: SwapOrderDao,
     val walletData: WalletDataProvider,
     val configuration: Configuration,
     private val dashPayProfileDao: DashPayProfileDao,
     private val topUpsDao: TopUpsDao,
-    private val platformRepo: PlatformRepo,
+    private val identityRepository: IdentityRepository,
     val analytics: AnalyticsService,
     val walletApplication: WalletApplication
 ) : ViewModel() {
@@ -79,9 +82,16 @@ class TransactionResultViewModel @Inject constructor(
 
     val merchantName = _transactionMetadata
         .filterNotNull()
-        .filter { it.service == ServiceName.CTXSpend }
-        .map { giftCardDao.getCardForTransaction(it.txId)?.merchantName }
+        .filter { ServiceName.isDashSpend(it.service) }
+        .map { giftCardDao.getCardForTransaction(it.txId).firstOrNull()?.merchantName }
         .filterNotNull()
+        .asLiveData()
+
+    /** The DEX swap this tx funded, or null if it isn't a swap. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val swapOrder = _transaction
+        .filterNotNull()
+        .flatMapLatest { swapOrderDao.observeOrder(it.txId) }
         .asLiveData()
 
     private val _contact = MutableLiveData<DashPayProfile?>()
@@ -140,13 +150,13 @@ class TransactionResultViewModel @Inject constructor(
 
     private suspend fun findContact(tx: Transaction) {
         // check hasIdentity since later we need blockchainIdentity
-        if (!platformRepo.hasBlockchainIdentity) {
+        if (!identityRepository.hasBlockchainIdentity) {
             _contact.postValue(null)
             return
         }
 
         val userId = withContext(Dispatchers.IO) {
-            platformRepo.blockchainIdentity.getContactForTransaction(tx)
+            identityRepository.blockchainIdentity!!.getContactForTransaction(tx)
         }
 
         if (userId == null) {

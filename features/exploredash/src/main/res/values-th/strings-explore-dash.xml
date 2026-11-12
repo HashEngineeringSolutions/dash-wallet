@@ -70,7 +70,6 @@
     <string name="explore_filter">กรอง</string>
     <string name="explore_filters">ตัวกรอง</string>
     <string name="explore_apply_filter">นำมาใช้</string>
-    <string name="explore_payment_method">วิธีการชำระเงิน</string>
     <string name="explore_payment_dash">Dash</string>
     <string name="explore_payment_gift_card">บัตรของขวัญ</string>
     <string name="explore_filter_gift_cards">บัตรของขวัญ</string>
@@ -166,9 +165,15 @@
     <string name="insufficient_money_title">เหรียญไม่เพียงพอ</string>
     <string name="insufficient_money_msg">ยอดเงินไม่เพียงพอ</string>
     <string name="send_coins_error_msg">การส่งเหรียญมีปัญหา!</string>
+    <string name="purchase_gift_card_reset">ตั้งค่า</string>
     <string name="password">รหัสผ่าน</string>
     <string name="something_wrong_title">บางอย่างผิดพลาด!</string>
     <string name="retry">ลองอีกครั้ง</string>
     <string name="try_again">ลองอีกครั้ง</string>
     <string name="cancel">ยกเลิก</string>
-    </resources>
+    <string name="gift_card_contact_support">ติดต่อฝ่ายสนับสนุน</string>
+    <string name="address">ที่อยู่</string>
+    <string name="website">เว็บไซต์</string>
+    <string name="call">โทร</string>
+    <string name="save">บันทึก</string>
+</resources>

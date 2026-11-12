@@ -21,7 +21,6 @@ import android.os.Bundle
 import androidx.core.os.bundleOf
 import androidx.navigation.fragment.NavHostFragment
 import dagger.hilt.android.AndroidEntryPoint
-import de.schildbach.wallet.data.PaymentIntent
 import de.schildbach.wallet.ui.LockScreenActivity
 import de.schildbach.wallet.ui.send.SendCoinsActivity
 import de.schildbach.wallet_test.R
@@ -35,8 +34,8 @@ class CoinJoinActivity : LockScreenActivity() {
         const val FIRST_TIME_EXTRA = "show_first_time_info"
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onCreateWithWallet(savedInstanceState: Bundle?) {
+        super.onCreateWithWallet(savedInstanceState)
 
         val binding = ActivityCoinjoinBinding.inflate(layoutInflater)
         setContentView(binding.root)

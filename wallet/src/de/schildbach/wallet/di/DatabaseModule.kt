@@ -27,7 +27,10 @@ import dagger.hilt.components.SingletonComponent
 import de.schildbach.wallet.database.AppDatabase
 import de.schildbach.wallet.database.AppDatabaseMigrations
 import de.schildbach.wallet.database.dao.*
+import de.schildbach.wallet.database.dao.TransactionRecordsDao
+import de.schildbach.wallet.database.dao.TxGroupCacheDao
 import org.dash.wallet.features.exploredash.data.explore.GiftCardDao
+import org.dash.wallet.integrations.maya.data.SwapOrderDao
 import javax.inject.Singleton
 
 @Module
@@ -41,8 +44,15 @@ object DatabaseModule {
                 AppDatabaseMigrations.migration11To12,
                 AppDatabaseMigrations.migration12To13,
                 AppDatabaseMigrations.migration13to14,
-                AppDatabaseMigrations.migration14to15
+                AppDatabaseMigrations.migration14to15,
+                AppDatabaseMigrations.migration15to16,
+                AppDatabaseMigrations.migration16to17,
+                AppDatabaseMigrations.migration17to18,
+                AppDatabaseMigrations.migration18to19,
+                AppDatabaseMigrations.migration19to20,
+                AppDatabaseMigrations.migration20to21
             )
+            .addCallback(AppDatabaseMigrations.removeCrowdNodeCacheRows)
             // destructive migrations are used from versions 1 to 11
             .fallbackToDestructiveMigration()
             .build()
@@ -76,6 +86,11 @@ object DatabaseModule {
     @Provides
     fun provideGiftCardDao(appDatabase: AppDatabase): GiftCardDao {
         return appDatabase.giftCardDao()
+    }
+
+    @Provides
+    fun provideTransactionRecordsDao(appDatabase: AppDatabase): TransactionRecordsDao {
+        return appDatabase.transactionRecordsDao()
     }
 
     // DashPay
@@ -127,5 +142,20 @@ object DatabaseModule {
     @Provides
     fun provideTopUpsDao(appDatabase: AppDatabase): TopUpsDao {
         return appDatabase.topUpsDao()
+    }
+
+    @Provides
+    fun provideTxDisplayCacheDao(appDatabase: AppDatabase): TxDisplayCacheDao {
+        return appDatabase.txDisplayCacheDao()
+    }
+
+    @Provides
+    fun provideTxGroupCacheDao(appDatabase: AppDatabase): TxGroupCacheDao {
+        return appDatabase.txGroupCacheDao()
+    }
+
+    @Provides
+    fun provideSwapOrderDao(appDatabase: AppDatabase): SwapOrderDao {
+        return appDatabase.swapOrderDao()
     }
 }

@@ -18,25 +18,24 @@
 package de.schildbach.wallet.ui.main
 
 import android.os.LocaleList
-import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.asLiveData
 import androidx.lifecycle.viewModelScope
-import com.google.common.base.Stopwatch
+import androidx.paging.PagingData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import de.schildbach.wallet.Constants
 import de.schildbach.wallet.WalletApplication
 import de.schildbach.wallet.data.CoinJoinConfig
-import de.schildbach.wallet.data.UsernameSortOrderBy
 import de.schildbach.wallet.database.dao.DashPayContactRequestDao
 import de.schildbach.wallet.database.dao.DashPayProfileDao
 import de.schildbach.wallet.database.dao.InvitationsDao
 import de.schildbach.wallet.database.dao.UserAlertDao
 import de.schildbach.wallet.database.entity.BlockchainIdentityConfig
-import de.schildbach.wallet.database.entity.BlockchainIdentityData
+import de.schildbach.wallet.database.entity.IdentityCreationState
 import de.schildbach.wallet.database.entity.DashPayProfile
 import de.schildbach.wallet.livedata.SeriousErrorLiveData
 import de.schildbach.wallet.security.BiometricHelper
@@ -46,50 +45,45 @@ import de.schildbach.wallet.service.DeviceInfoProvider
 import de.schildbach.wallet.service.MAX_ALLOWED_AHEAD_TIMESKEW
 import de.schildbach.wallet.service.MAX_ALLOWED_BEHIND_TIMESKEW
 import de.schildbach.wallet.service.MixingStatus
+import de.schildbach.wallet.service.platform.IdentityRepository
+import de.schildbach.wallet.service.TxDisplayCacheService
 import de.schildbach.wallet.service.platform.PlatformService
 import de.schildbach.wallet.service.platform.PlatformSyncService
-import de.schildbach.wallet.transactions.TxDirectionFilter
 import de.schildbach.wallet.transactions.TxFilterType
-import de.schildbach.wallet.transactions.coinjoin.CoinJoinTxWrapperFactory
 import de.schildbach.wallet.ui.dashpay.BaseContactsViewModel
 import de.schildbach.wallet.ui.dashpay.NotificationCountLiveData
 import de.schildbach.wallet.ui.dashpay.PlatformRepo
 import de.schildbach.wallet.ui.dashpay.utils.DashPayConfig
 import de.schildbach.wallet.ui.dashpay.work.SendContactRequestOperation
-import de.schildbach.wallet.ui.transactions.TransactionRowView
-import de.schildbach.wallet.ui.transactions.TxResourceMapper
 import de.schildbach.wallet.util.getTimeSkew
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.bitcoinj.core.Coin
-import org.bitcoinj.core.Context
-import org.bitcoinj.core.NetworkParameters
 import org.bitcoinj.core.PeerGroup
-import org.bitcoinj.core.Sha256Hash
+import org.bitcoinj.core.PeerGroup.SyncStage
 import org.bitcoinj.core.Transaction
 import org.bitcoinj.utils.MonetaryFormat
+import org.bitcoinj.wallet.Wallet
 import org.bitcoinj.wallet.WalletEx
 import org.dash.wallet.common.Configuration
 import org.dash.wallet.common.WalletDataProvider
 import org.dash.wallet.common.data.CurrencyInfo
-import org.dash.wallet.common.data.PresentableTxMetadata
-import org.dash.wallet.common.data.ServiceName
 import org.dash.wallet.common.data.SingleLiveEvent
 import org.dash.wallet.common.data.WalletUIConfig
 import org.dash.wallet.common.data.entity.BlockchainState
@@ -97,26 +91,16 @@ import org.dash.wallet.common.data.entity.ExchangeRate
 import org.dash.wallet.common.services.BlockchainStateProvider
 import org.dash.wallet.common.services.ExchangeRatesProvider
 import org.dash.wallet.common.services.RateRetrievalState
-import org.dash.wallet.common.services.TransactionMetadataProvider
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.services.analytics.AnalyticsService
 import org.dash.wallet.common.services.analytics.AnalyticsTimer
-import org.dash.wallet.common.transactions.TransactionUtils.isEntirelySelf
 import org.dash.wallet.common.transactions.TransactionWrapper
-import org.dash.wallet.common.transactions.batchAndFilterUpdates
-import org.dash.wallet.common.util.toBigDecimal
-import org.dash.wallet.integrations.crowdnode.transactions.FullCrowdNodeSignUpTxSetFactory
+import org.dash.wallet.integrations.maya.api.DispatchingSwapProvider
+import org.dash.wallet.integrations.maya.utils.SwapBackend
 import org.slf4j.LoggerFactory
-import java.math.BigDecimal
-import java.text.DecimalFormat
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
 import java.util.Currency
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import kotlin.collections.set
 import kotlin.math.abs
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -128,49 +112,43 @@ class MainViewModel @Inject constructor(
     exchangeRatesProvider: ExchangeRatesProvider,
     val walletData: WalletDataProvider,
     private val walletApplication: WalletApplication,
+    private val identityRepository: IdentityRepository,
     val platformRepo: PlatformRepo,
-    val platformService: PlatformService,
-    val platformSyncService: PlatformSyncService,
+    private val platformService: PlatformService,
+    private val platformSyncService: PlatformSyncService,
     blockchainIdentityDataDao: BlockchainIdentityConfig,
     private val savedStateHandle: SavedStateHandle,
-    private val metadataProvider: TransactionMetadataProvider,
-    private val blockchainStateProvider: BlockchainStateProvider,
+    blockchainStateProvider: BlockchainStateProvider,
     val biometricHelper: BiometricHelper,
     private val deviceInfo: DeviceInfoProvider,
     private val invitationsDao: InvitationsDao,
     userAlertDao: UserAlertDao,
     dashPayProfileDao: DashPayProfileDao,
-    dashPayConfig: DashPayConfig,
+    private val dashPayConfig: DashPayConfig,
     dashPayContactRequestDao: DashPayContactRequestDao,
     private val coinJoinConfig: CoinJoinConfig,
-    private val coinJoinService: CoinJoinService
+    private val coinJoinService: CoinJoinService,
+    private val txDisplayCacheService: TxDisplayCacheService,
+    private val swapProvider: DispatchingSwapProvider
 ) : BaseContactsViewModel(blockchainIdentityDataDao, dashPayProfileDao, dashPayContactRequestDao) {
-    companion object {
-        private const val BATCHING_PERIOD = 500L
-        private const val DIRECTION_KEY = "tx_direction"
-        private const val TIME_SKEW_TOLERANCE = 3600000L // seconds (1 hour)
-
-        private val log = LoggerFactory.getLogger(MainViewModel::class.java)
-    }
-    private val workerJob = SupervisorJob()
-
-    @VisibleForTesting
-    val viewModelWorkerScope = CoroutineScope(Dispatchers.IO.limitedParallelism(1) + workerJob)
+    var restoringBackup: Boolean = false
 
     val balanceDashFormat: MonetaryFormat = config.format.noCode().minDecimals(0)
     val fiatFormat: MonetaryFormat = Constants.LOCAL_FORMAT.minDecimals(0).optionalDecimals(0, 2)
 
-    var transactionsLoaded = false
-        private set
-    private val _transactions = MutableStateFlow<Map<LocalDate, List<TransactionRowView>>>(mapOf())
-    val transactions: StateFlow<Map<LocalDate, List<TransactionRowView>>>
-        get() = _transactions
+    // Transaction list state delegated to TxDisplayCacheService
+    val transactionsLoaded: StateFlow<Boolean> get() = txDisplayCacheService.transactionsLoaded
+    val isBuildingCache: StateFlow<Boolean> get() = txDisplayCacheService.isBuildingCache
+    val cachedRows: StateFlow<List<HistoryRowView>> get() = txDisplayCacheService.cachedRows
+    val transactions: Flow<PagingData<HistoryRowView>> get() = txDisplayCacheService.transactions
+
     private val _transactionsDirection = MutableStateFlow(TxFilterType.ALL)
     var transactionsDirection: TxFilterType
         get() = _transactionsDirection.value
         set(value) {
             _transactionsDirection.value = value
             savedStateHandle[DIRECTION_KEY] = value
+            txDisplayCacheService.setFilter(value)
         }
 
     private val _isBlockchainSynced = MutableLiveData<Boolean>()
@@ -184,19 +162,25 @@ class MainViewModel @Inject constructor(
     private val _blockchainSyncPercentage = MutableLiveData<Int>()
     val blockchainSyncPercentage: LiveData<Int>
         get() = _blockchainSyncPercentage
-    private var chainLockBlockHeight: Int = 0
+    // Diagnostic bookkeeping for the blockchain-state collector below; both are
+    // overwritten by its first emission and are never read before that, so they seed
+    // at 0. They deliberately do NOT seed from `walletData.wallet.lastBlockSeenHeight`
+    // any more: MainViewModel is constructed from MainActivity.onCreate (on the main
+    // thread, while the lock screen is drawing), and that accessor takes dashj's fair
+    // wallet read lock — which on a large wallet mid-sync can be held by the autosave
+    // serializer for seconds. See the ANR note on the collector.
+    private var chainHeight: Int = 0
+    private var headersHeight: Int = 0
+    private var lastIsBlockchainSynced: Boolean? = null
+    private val _syncStage = MutableStateFlow(SyncStage.OFFLINE)
+    val syncStage: StateFlow<SyncStage>
+        get() = _syncStage
 
     private val _exchangeRate = MutableLiveData<ExchangeRate>()
     val exchangeRate: LiveData<ExchangeRate>
         get() = _exchangeRate
 
-    private val _rateStale = MutableStateFlow(
-        RateRetrievalState(
-            lastAttemptFailed = false,
-            staleRates = false,
-            volatile = false
-        )
-    )
+    private val _rateStale = MutableStateFlow(RateRetrievalState.DEFAULT)
     val rateStale: Flow<RateRetrievalState>
         get() = _rateStale
     val currentStaleRateState
@@ -210,12 +194,6 @@ class MainViewModel @Inject constructor(
     val mixedBalance: LiveData<Coin>
         get() = _mixedBalance
 
-    private var txByHash: Map<String, TransactionRowView> = mapOf()
-    private var metadata: Map<Sha256Hash, PresentableTxMetadata> = mapOf()
-    private var contacts: Map<String, DashPayProfile> = mapOf()
-    private var minContactCreatedDate: LocalDate = LocalDate.now()
-    private lateinit var crowdNodeWrapperFactory: FullCrowdNodeSignUpTxSetFactory
-    private lateinit var coinJoinWrapperFactory: CoinJoinTxWrapperFactory
     private val _temporaryHideBalance = MutableStateFlow<Boolean?>(null)
     val hideBalance = walletUIConfig.observe(WalletUIConfig.AUTO_HIDE_BALANCE)
         .combine(_temporaryHideBalance) { autoHide, temporaryHide ->
@@ -226,8 +204,9 @@ class MainViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = false
         )
-
-    val showTapToHideHint = walletUIConfig.observe(WalletUIConfig.SHOW_TAP_TO_HIDE_HINT)
+    private val _remindMetadata = MutableStateFlow(false)
+    val remindMetadata = _remindMetadata.asStateFlow()
+    val showTapToHideHint = walletUIConfig.observe(WalletUIConfig.SHOW_TAP_TO_HIDE_HINT).asLiveData()
 
     private val _isNetworkUnavailable = MutableLiveData<Boolean>()
     val isNetworkUnavailable: LiveData<Boolean>
@@ -245,41 +224,42 @@ class MainViewModel @Inject constructor(
     val mixingSessions: Flow<Int>
         get() = coinJoinService.observeActiveSessions()
 
-    var decimalFormat: DecimalFormat = DecimalFormat("0.000")
-    val walletBalanceString: String
-        get() = decimalFormat.format(totalBalance.value?.toBigDecimal() ?: BigDecimal.ZERO)
-
-    val mixedBalanceString: String
-        get() = decimalFormat.format(mixedBalance.value?.toBigDecimal() ?: BigDecimal.ZERO)
-
     // DashPay
     private val isPlatformAvailable = MutableStateFlow(false)
-
 
     val isAbleToCreateIdentityLiveData = MediatorLiveData<Boolean>().apply {
         addSource(isPlatformAvailable.asLiveData()) {
             value = combineLatestData()
         }
-        addSource(_isBlockchainSynced) {
-            value = combineLatestData()
-        }
+//        addSource(_isBlockchainSynced) {
+//            value = combineLatestData()
+//        }
         addSource(blockchainIdentity) {
             value = combineLatestData()
         }
-        addSource(_totalBalance) {
-            value = combineLatestData()
-        }
+//        addSource(_totalBalance) {
+//            value = combineLatestData()
+//        }
     }
 
-    val isAbleToCreateIdentity: Boolean
-        get() = isAbleToCreateIdentityLiveData.value ?: false
+    val isAbleToCreateIdentity: StateFlow<Boolean> = combine(
+        isPlatformAvailable,
+        blockchainIdentity.asFlow()
+    ) { isPlatformAvailable, identity ->
+        combineLatestData()
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = false
+    )
 
     val showCreateUsernameEvent = SingleLiveEvent<Unit>()
+
     val sendContactRequestState = SendContactRequestOperation.allOperationsStatus(walletApplication)
     val seriousErrorLiveData = SeriousErrorLiveData(platformRepo)
     var processingSeriousError = false
 
-    val notificationCountData = NotificationCountLiveData(platformRepo, platformSyncService, dashPayConfig, viewModelScope)
+    val notificationCountData = NotificationCountLiveData(identityRepository, platformRepo, platformSyncService, dashPayConfig, viewModelScope)
     val notificationCount: Int
         get() = notificationCountData.value ?: 0
 
@@ -288,73 +268,68 @@ class MainViewModel @Inject constructor(
     // end DashPay
 
     init {
-        transactionsDirection = savedStateHandle[DIRECTION_KEY] ?: TxFilterType.ALL
+        // Restore the saved filter and prime the service with it.
+        val savedDirection: TxFilterType = savedStateHandle[DIRECTION_KEY] ?: TxFilterType.ALL
+        _transactionsDirection.value = savedDirection
+        txDisplayCacheService.setFilter(savedDirection)
+        log.info("STARTUP MainViewModel init at {}", System.currentTimeMillis())
 
-        _transactionsDirection
-            .flatMapLatest { direction ->
-                val filter = TxDirectionFilter(direction, walletData.wallet!!)
-                refreshTransactions(filter)
-                walletData.observeTransactions(true, filter)
-                    .batchAndFilterUpdates(BATCHING_PERIOD)
-                    .onEach { batch ->
-                        refreshTransactionBatch(batch, filter, mapOf())
-                    }
-            }
-            .launchIn(viewModelWorkerScope)
-
-        metadataProvider.observePresentableMetadata()
-            .onEach { metadata ->
-                val oldMetadata = this.metadata
-                this.metadata = metadata
-                updateContactsAndMetadata(oldMetadata, metadata, mapOf())
-            }
-            .launchIn(viewModelWorkerScope)
-
-        platformRepo.observeContacts(
-            "",
-            UsernameSortOrderBy.LAST_ACTIVITY,
-            false
-        ).distinctUntilChanged()
-        .onEach { contacts ->
-            this.minContactCreatedDate = contacts.minOfOrNull { it.dashPayProfile.createdAt }?.let {
-               Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
-            } ?: LocalDate.now()
-            val contactsByIdentity = contacts.associate { it.dashPayProfile.userId to it.dashPayProfile }
-            this.contacts = contactsByIdentity
-            refreshContactsForAllTransactions()
-        }.launchIn(viewModelWorkerScope)
-
-        walletData.observeWalletReset()
-            .onEach {
-                txByHash = mapOf()
-                _transactions.value = mapOf()
-                walletData.wallet?.let { wallet ->
-                    coinJoinWrapperFactory = CoinJoinTxWrapperFactory(walletData.networkParameters, wallet as WalletEx)
-                    crowdNodeWrapperFactory = FullCrowdNodeSignUpTxSetFactory(walletData.networkParameters, wallet)
-                }
-            }
-            .launchIn(viewModelScope)
-
+        // ANR FIX — this collector MUST NOT run on the main thread.
+        //
+        // The blockchain_state row is rewritten roughly once a SECOND for the whole
+        // duration of a sync (SdkBlockchainStateService polls the L1 progress feed at
+        // 1 Hz and BlockchainStateDataProvider.updateSdkBlockchainState saves the row),
+        // so this body executes ~1 Hz while syncing. `launchIn(viewModelScope)` runs it
+        // on Dispatchers.Main.immediate, and the body reads
+        // `walletData.wallet.lastBlockSeenHeight` — a dashj accessor that takes the
+        // wallet's lock. That lock is a FAIR ReentrantReadWriteLock
+        // (org.bitcoinj.utils.Threading.readWriteLock passes fair=true), so a reader is
+        // queued strictly FIFO behind every pending writer. During a sync of a large
+        // wallet the write lock is held for many seconds at a time by
+        // Wallet.saveToFileStream (the 5s autosave serializes the ENTIRE wallet
+        // protobuf — every transaction and every CoinJoin keychain key) and by
+        // receiveFromBlock. The result on a large wallet is a main-thread stall that
+        // exceeds the 5s ANR threshold, once per emission, for the whole sync window.
+        //
+        // flowOn() applies to everything UPSTREAM of it, i.e. to this onEach, so the
+        // body now runs on Dispatchers.IO. Everything it touches is safe there:
+        // updateSyncStatus/updatePercentage only call LiveData.postValue (designed for
+        // background threads) and never read LiveData.value (which is only updated on
+        // the main thread and would be racy to read here), and headersHeight/
+        // chainHeight/lastIsBlockchainSynced are confined to this one sequential
+        // collector.
         blockchainStateProvider.observeState()
             .filterNotNull()
             .onEach { state ->
                 updateSyncStatus(state)
                 updatePercentage(state)
-                chainLockBlockHeight = state.chainlockHeight
+                headersHeight = state.mnlistHeight
+                chainHeight = state.bestChainHeight
+                if (!state.replaying) {
+                    log.info(
+                        "blockchain state update: mnlist={}; chain={}",
+                        headersHeight,
+                        chainHeight
+                    )
+                }
             }
-            .launchIn(viewModelWorkerScope)
+            .flowOn(Dispatchers.IO)
+            .catch { e -> log.error("blockchain state flow error", e) }
+            .launchIn(viewModelScope)
 
         // we need the total wallet balance for mixing progress,
         walletData.observeTotalBalance()
             .onEach {
                 _totalBalance.value = it
             }
+            .catch { e -> log.error("total balance flow error", e) }
             .launchIn(viewModelScope)
 
         walletData.observeMixedBalance()
             .onEach {
                 _mixedBalance.value = it
             }
+            .catch { e -> log.error("mixed balance flow error", e) }
             .launchIn(viewModelScope)
 
         walletUIConfig
@@ -365,6 +340,7 @@ class MainViewModel @Inject constructor(
                     .filterNotNull()
             }
             .onEach(_exchangeRate::postValue)
+            .catch { e -> log.error("exchange rate flow error", e) }
             .launchIn(viewModelScope)
 
         walletUIConfig
@@ -374,6 +350,7 @@ class MainViewModel @Inject constructor(
                 exchangeRatesProvider.observeStaleRates(code)
             }
             .onEach(_rateStale::emit)
+            .catch { e -> log.error("stale rates flow error", e) }
             .launchIn(viewModelScope)
 
         // DashPay
@@ -384,29 +361,35 @@ class MainViewModel @Inject constructor(
             .distinctUntilChanged()
             .onEach { lastSeenNotification ->
                 startContactRequestTimer()
-                forceUpdateNotificationCount()
-
+                if (_isBlockchainSynced.value == true) {
+                    forceUpdateNotificationCount()
+                }
                 if (lastSeenNotification != DashPayConfig.DISABLE_NOTIFICATIONS) {
                     userAlertDao.observe(lastSeenNotification)
                         .filterNotNull()
                         .distinctUntilChanged()
                         .onEach { forceUpdateNotificationCount() }
+                        .launchIn(viewModelScope)
                 }
             }
+            .catch { e -> log.error("dashpay notification flow error", e) }
             .launchIn(viewModelScope)
 
         blockchainStateProvider.observeSyncStage()
             .distinctUntilChanged()
             .onEach { syncStage ->
-                if (syncStage == PeerGroup.SyncStage.PREBLOCKS || syncStage == PeerGroup.SyncStage.BLOCKS && !isPlatformAvailable.value) {
+                if (syncStage == SyncStage.PREBLOCKS || syncStage == SyncStage.BLOCKS && !isPlatformAvailable.value) {
                     isPlatformAvailable.value = if (Constants.SUPPORTS_PLATFORM) {
                         platformService.isPlatformAvailable()
                     } else {
                         false
                     }
                 }
+                _syncStage.value = syncStage ?: SyncStage.OFFLINE
             }
+            .catch { e -> log.error("sync stage flow error", e) }
             .launchIn(viewModelScope)
+        restoringBackup = config.isRestoringBackup
     }
 
     fun logEvent(event: String) {
@@ -465,7 +448,6 @@ class MainViewModel @Inject constructor(
                 if (timeSkew > 0) MAX_ALLOWED_AHEAD_TIMESKEW * 3 else MAX_ALLOWED_BEHIND_TIMESKEW * 2
             }
             coinJoinService.updateTimeSkew(timeSkew)
-            log.info("timeskew: {} ms", timeSkew)
             return Pair(abs(timeSkew) > maxAllowedTimeSkew, timeSkew)
         } catch (_: Exception) {
             // Ignore errors
@@ -495,281 +477,6 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    /** refresh all transactions */
-    private fun refreshTransactions(filter: TxDirectionFilter) {
-        walletData.wallet?.let { wallet ->
-            val watch = Stopwatch.createStarted()
-            val contactsToUpdate = mutableListOf<Transaction>()
-            coinJoinWrapperFactory = CoinJoinTxWrapperFactory(walletData.networkParameters, wallet as WalletEx)
-            crowdNodeWrapperFactory = FullCrowdNodeSignUpTxSetFactory(walletData.networkParameters, wallet)
-            val allTransactionWrapped = walletData.wrapAllTransactions(
-                crowdNodeWrapperFactory,
-                coinJoinWrapperFactory
-            ).filter { it.passesFilter(filter, metadata) }
-                .sortedByDescending { it.groupDate }
-
-            log.info("wrapAllTransactions: {} ms", watch.elapsed(TimeUnit.MILLISECONDS))
-
-            val txByHash = mutableMapOf<String, TransactionRowView>()
-            val allTransactionViews = allTransactionWrapped
-                .map {
-                    val tx = it.transactions.values.first()
-                    val dateKey = tx.updateTime.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-
-                    if (it.transactions.count() == 1 && dateKey >= minContactCreatedDate) {
-                        contactsToUpdate.add(tx)
-                    }
-
-                    val rowView = TransactionRowView.fromTransactionWrapper(
-                        it,
-                        walletData.transactionBag,
-                        Constants.CONTEXT,
-                        null,
-                        metadata[tx.txId],
-                        chainLockBlockHeight
-                    )
-                    txByHash[rowView.id] = rowView
-                    rowView
-                }
-                .groupBy {
-                    Instant.ofEpochMilli(it.time).atZone(ZoneId.systemDefault()).toLocalDate()
-                }
-                .mapValues { (_, transactions) ->
-                    transactions.sortedByDescending { it.time }
-                }
-
-
-            transactionsLoaded = true
-            _transactions.value = allTransactionViews
-            this@MainViewModel.txByHash = txByHash
-
-            getContactsAndMetadataForTransactions(contactsToUpdate)
-        }
-    }
-
-    /**
-     * this will either add a single transaction or update the transaction on the current view
-     */
-    private fun refreshTransactionBatch(
-        transactions: List<Transaction>,
-        filter: TxDirectionFilter,
-        contacts: Map<Sha256Hash, DashPayProfile>
-    ) {
-        Context.propagate(Constants.CONTEXT)
-        val items = _transactions.value.toMutableMap()
-        val txByHash = this.txByHash.toMutableMap()
-        val contactsToUpdate = mutableListOf<Transaction>()
-
-        for (i in transactions.indices) {
-            val tx = transactions[i]
-
-            if (!filter.matches(tx)) {
-                continue
-            }
-
-            var itemId = tx.txId.toString()
-            var included = false
-            var wrapper: TransactionWrapper? = null
-
-            if (!txByHash.containsKey(itemId)) {
-                // If tx isn't in txByHash by itself, we need to try to wrap it
-                this.coinJoinWrapperFactory.tryInclude(tx).also {
-                    included = it.first
-                    wrapper = it.second
-                }
-
-                if (included && wrapper != null) {
-                    itemId = wrapper.id
-                } else {
-                    this.crowdNodeWrapperFactory.tryInclude(tx).also {
-                        included = it.first
-                        wrapper = it.second
-                    }
-
-                    if (included && wrapper != null) {
-                        itemId = wrapper.id
-                    }
-                }
-            }
-
-            // is the item currently in our list
-            val rowView = txByHash[itemId]
-
-            val transactionRow = if (!included || wrapper == null) {
-                TransactionRowView.fromTransaction(
-                    tx,
-                    walletData.transactionBag,
-                    Constants.CONTEXT,
-                    metadata[tx.txId],
-                    contacts[tx.txId] ?: rowView?.contact,
-                    TxResourceMapper(),
-                    chainLockBlockHeight
-                )
-            } else {
-                TransactionRowView.fromTransactionWrapper(
-                    wrapper,
-                    walletData.transactionBag,
-                    Constants.CONTEXT,
-                    null,
-                    metadata[tx.txId],
-                    chainLockBlockHeight
-                )
-            }
-            txByHash[transactionRow.id] = transactionRow
-            val dateKey = tx.updateTime.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-
-            if (rowView != null) {
-                // update the current item by replacing the current item
-                items[dateKey]?.toMutableList()?.let { list ->
-                    val itemIndex = list.indexOfFirst { it.id == rowView.id }
-                    if (itemIndex == -1) {
-                        log.info("cannot find {} in list of {} items", rowView.id, list.size)
-                    } else {
-                        list[itemIndex] = transactionRow
-                    }
-                    items[dateKey] = list
-                }
-            } else {
-                // add the item to the correct group
-                if (items.containsKey(dateKey)) {
-                    items[dateKey]?.toMutableList()?.let { list ->
-                        val insertIndex = list.indexOfFirst { it.time < transactionRow.time }
-
-                        if (insertIndex >= 0) {
-                            list.add(insertIndex, transactionRow)
-                        } else {
-                            list.add(transactionRow)
-                        }
-
-                        items[dateKey] = list
-                    }
-                } else {
-                    items[dateKey] = listOf(transactionRow)
-                }
-            }
-
-            if (dateKey >= minContactCreatedDate) {
-                contactsToUpdate.add(tx)
-            }
-        }
-
-        _transactions.value = items
-        this@MainViewModel.txByHash = txByHash
-        getContactsAndMetadataForTransactions(contactsToUpdate)
-    }
-
-    private fun refreshContactsForAllTransactions() {
-        val transactions = walletData.getTransactions()
-        val contactsToUpdate = mutableListOf<Transaction>()
-
-        for (tx in transactions) {
-            val dateKey = tx.updateTime.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-
-            if (dateKey >= minContactCreatedDate) {
-                contactsToUpdate.add(tx)
-            }
-        }
-
-        getContactsAndMetadataForTransactions(contactsToUpdate)
-    }
-
-    private fun getContactsAndMetadataForTransactions(txs: List<Transaction>) {
-        if (txs.isEmpty()) {
-            return
-        }
-
-        viewModelWorkerScope.launch {
-            val contactsMap = if (this@MainViewModel.contacts.isNotEmpty()) {
-                txs.filterNot { it.isEntirelySelf(walletData.transactionBag) }
-                    .mapNotNull { tx ->
-                        platformRepo.blockchainIdentity.getContactForTransaction(tx)?.let { contactId ->
-                            contacts[contactId]?.let { contact ->
-                                tx.txId to contact
-                            }
-                        }
-                    }.toMap()
-            } else {
-                mapOf()
-            }
-
-            updateContactsAndMetadata(mapOf(), metadata, contactsMap)
-        }
-    }
-
-    private fun updateContactsAndMetadata(
-        oldMetadata: Map<Sha256Hash, PresentableTxMetadata>,
-        metadata: Map<Sha256Hash, PresentableTxMetadata>,
-        contacts: Map<Sha256Hash, DashPayProfile>
-    ) {
-        val items = _transactions.value.toMutableMap()
-        if (items.isEmpty()) return
-
-        val txByHash = this.txByHash.toMutableMap()
-        // Process both old and new metadata in case if some metadata was cleared
-        val allTxIds = (oldMetadata.keys + metadata.keys + contacts.keys).toSet()
-
-        for (txId in allTxIds) {
-            val rowView = txByHash[txId.toString()]
-
-            rowView?.let {
-                walletData.getTransaction(txId)?.let { tx ->
-                    // Use new metadata if exists, otherwise create empty metadata
-                    val txMetadata = metadata[txId] ?: PresentableTxMetadata(txId)
-                    val updatedRowView = TransactionRowView.fromTransaction(
-                        tx,
-                        walletData.transactionBag,
-                        Constants.CONTEXT,
-                        txMetadata,
-                        contacts[txId] ?: rowView.contact,
-                        TxResourceMapper(),
-                        chainLockBlockHeight
-                    )
-                    txByHash[txId.toString()] = updatedRowView
-                    val dateKey = tx.updateTime.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                    items[dateKey]?.toMutableList()?.let { list ->
-                        val itemIndex = list.indexOfFirst { it.id == rowView.id }
-                        list[itemIndex] = updatedRowView
-                        items[dateKey] = list
-                    }
-                }
-            }
-        }
-
-        _transactions.value = items
-        this@MainViewModel.txByHash = txByHash
-    }
-
-    private fun updateSyncStatus(state: BlockchainState) {
-        if (_isBlockchainSynced.value != state.isSynced()) {
-            _isBlockchainSynced.postValue(state.isSynced())
-        }
-
-        _isBlockchainSyncFailed.postValue(state.syncFailed())
-        _isNetworkUnavailable.postValue(state.impediments.contains(BlockchainState.Impediment.NETWORK))
-    }
-
-    private fun updatePercentage(state: BlockchainState) {
-        var percentage = state.percentageSync
-
-        if (state.replaying && state.percentageSync == 100) {
-            // This is to prevent showing 100% when using the Rescan blockchain function.
-            // The first few broadcasted blockchainStates are with percentage sync at 100%
-            percentage = 0
-        }
-        _blockchainSyncPercentage.postValue(percentage)
-    }
-
-    private fun TransactionWrapper.passesFilter(
-        filter: TxDirectionFilter,
-        metadata: Map<Sha256Hash, PresentableTxMetadata>
-    ): Boolean {
-        return (filter.direction == TxFilterType.GIFT_CARD && isGiftCard(metadata)) ||
-            transactions.values.any { tx -> filter.matches(tx) }
-    }
-
-    private fun TransactionWrapper.isGiftCard(metadata: Map<Sha256Hash, PresentableTxMetadata>): Boolean {
-        return metadata[transactions.values.first().txId]?.service == ServiceName.CTXSpend
-    }
 
     /**
      * Check whether app was ever updated or if it is an installation that was never updated.
@@ -869,8 +576,8 @@ class MainViewModel @Inject constructor(
     suspend fun dismissUsernameCreatedCardIfDone(): Boolean {
         val data = blockchainIdentityDataDao.loadBase()
 
-        if (data.creationState == BlockchainIdentityData.CreationState.DONE) {
-            platformRepo.doneAndDismiss()
+        if (data.creationState == IdentityCreationState.DONE) {
+            identityRepository.doneAndDismiss()
             return true
         }
 
@@ -879,7 +586,7 @@ class MainViewModel @Inject constructor(
 
     fun dismissUsernameCreatedCard() {
         viewModelScope.launch {
-            platformRepo.doneAndDismiss()
+            identityRepository.doneAndDismiss()
         }
     }
 
@@ -905,16 +612,15 @@ class MainViewModel @Inject constructor(
             false
         } else {
             val isPlatformAvailable = isPlatformAvailable.value
-            val isSynced = _isBlockchainSynced.value ?: false
+            val identity = blockchainIdentity.value
             val noIdentityCreatedOrInProgress =
-                (blockchainIdentity.value == null) || blockchainIdentity.value!!.creationState == BlockchainIdentityData.CreationState.NONE
+                identity == null || identity.creationState == IdentityCreationState.NONE
             log.info(
-                "platform available: {}; isSynced: {}: no identity creation is progress: {}",
+                "platform available: {}; no identity creation is progress: {}",
                 isPlatformAvailable,
-                isSynced,
                 noIdentityCreatedOrInProgress
             )
-            return isSynced && isPlatformAvailable && noIdentityCreatedOrInProgress
+            return /*isSynced &&*/ isPlatformAvailable && noIdentityCreatedOrInProgress
         }
     }
 
@@ -927,9 +633,87 @@ class MainViewModel @Inject constructor(
     }
 
     fun addCoinJoinToWallet() {
-        val encryptionKey = platformRepo.getWalletEncryptionKey() ?: throw IllegalStateException("cannot obtain wallet encryption key")
-        (walletApplication.wallet as WalletEx).initializeCoinJoin(encryptionKey, 0)
+        try {
+            val encryptionKey = platformRepo.getWalletEncryptionKey()
+                ?: throw IllegalStateException("cannot obtain wallet encryption key")
+            (walletApplication.wallet as WalletEx).initializeCoinJoin(encryptionKey, 0)
+        } catch (e: Exception) {
+            log.error("problem adding CoinJoin support to wallet: ", e)
+        }
     }
 
     fun observeMostRecentTransaction() = walletData.observeMostRecentTransaction().distinctUntilChanged()
+
+    /** Delegates to [TxDisplayCacheService.forceRebuildTransactionCache]. */
+    fun forceRebuildTransactionCache() = txDisplayCacheService.forceRebuildTransactionCache()
+
+    /** Delegates to [TxDisplayCacheService.getTransactionWrapper]. */
+    fun getTransactionWrapper(rowId: String): TransactionWrapper? =
+        txDisplayCacheService.getTransactionWrapper(rowId)
+
+    /** Delegates to [TxDisplayCacheService.loadGroupWrapper]. */
+    suspend fun loadGroupWrapper(rowId: String): TransactionWrapper? =
+        txDisplayCacheService.loadGroupWrapper(rowId)
+
+    fun metadataReminder() {
+        viewModelScope.launch {
+            if (hasIdentity && !dashPayConfig.isTransactionMetadataInfoShown()) {
+                // have there been 10 transactions since the last update?
+                val installedDate = dashPayConfig.getMetadataFeatureInstalled()
+                walletData.wallet?.let { wallet: Wallet ->
+                    // O(transaction count) under dashj's wallet read lock — must never
+                    // run on Dispatchers.Main.immediate, which is what a bare
+                    // viewModelScope.launch gives you. On a large CoinJoin wallet this
+                    // is a multi-second main-thread stall (i.e. a guaranteed ANR).
+                    val count = withContext(Dispatchers.IO) {
+                        wallet.getTransactions(true).count { tx ->
+                            tx.updateTime.time > installedDate
+                        }
+                    }
+                    if (count >= 10) {
+                        _remindMetadata.value = true
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateSyncStatus(state: BlockchainState) {
+        // Dedup against lastIsBlockchainSynced, NOT _isBlockchainSynced.value: this runs on the
+        // Dispatchers.IO collector, but LiveData.value is only updated on the main thread once the
+        // runnable posted by postValue() is processed, so a background-thread read of .value can
+        // observe a stale value and cause missed/redundant posts.
+        val isSynced = state.isSynced()
+        if (lastIsBlockchainSynced != isSynced) {
+            lastIsBlockchainSynced = isSynced
+            _isBlockchainSynced.postValue(isSynced)
+        }
+        _isBlockchainSyncFailed.postValue(state.syncFailed())
+        _isNetworkUnavailable.postValue(state.impediments.contains(BlockchainState.Impediment.NETWORK))
+    }
+
+    private fun updatePercentage(state: BlockchainState) {
+        var percentage = state.percentageSync
+        if (state.replaying && state.percentageSync == 100) {
+            percentage = 0
+        }
+        _blockchainSyncPercentage.postValue(percentage)
+    }
+
+    /**
+     * Selects the cross-chain swap backend before entering the Dash DEX portal so
+     * the portal doesn't inherit a stale provider left over from a previous Buy/Sell
+     * selection. Mirrors BuyAndSellViewModel.setSwapBackend. SwapKit exposes both Buy
+     * and Sell and falls back to Maya automatically when no SwapKit API key is set.
+     */
+    fun setSwapBackend(backend: SwapBackend) {
+        swapProvider.setBackend(backend)
+    }
+
+    companion object {
+        private const val DIRECTION_KEY = "tx_direction"
+        private const val TIME_SKEW_TOLERANCE = 3600000L // 1 hour
+
+        private val log = LoggerFactory.getLogger(MainViewModel::class.java)
+    }
 }

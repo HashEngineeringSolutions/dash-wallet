@@ -40,6 +40,7 @@ import org.dash.wallet.integrations.coinbase.viewmodels.toDoubleOrZero
 import java.math.BigDecimal
 import java.math.MathContext
 import java.math.RoundingMode
+import java.util.UUID
 import javax.inject.Inject
 
 interface CoinBaseRepositoryInt {
@@ -47,12 +48,14 @@ interface CoinBaseRepositoryInt {
     val isAuthenticated: Boolean
 
     suspend fun getUserAccount(): CoinbaseAccount
+    suspend fun getUserAccount(cryptoCurrency: String): CoinbaseAccount?
     suspend fun getUserAccounts(exchangeCurrencyCode: String): List<CoinBaseUserAccountDataUIModel>
     suspend fun getFiatAccount(): CoinbaseAccount
     suspend fun getBaseIdForUSDModel(baseCurrency: String): ResponseResource<BaseIdForUSDModel?>
     suspend fun getExchangeRates(currencyCode: String): Map<String, String>
     suspend fun disconnectCoinbaseAccount()
     suspend fun createAddress(): ResponseResource<String>
+    suspend fun createAddress(account: UUID): ResponseResource<String>
     suspend fun getUserAccountAddress(): ResponseResource<String>
     suspend fun getActivePaymentMethods(): List<PaymentMethodsData>
     suspend fun depositToFiatAccount(paymentMethodId: String, amountUSD: String)
@@ -78,6 +81,13 @@ class CoinBaseRepository @Inject constructor(
     private val coinbaseAddressMapper: CoinbaseAddressMapper,
     private val exchangeRates: ExchangeRatesProvider
 ) : CoinBaseRepositoryInt {
+    companion object {
+        // Runaway guard for the accounts pagination loop: 40 pages x 250 = 10,000 accounts,
+        // far beyond any real Coinbase profile. Exceeding it throws rather than returning
+        // partial data (see fetchAllAccounts).
+        private const val MAX_ACCOUNT_PAGES = 40
+    }
+
     private val configScope = CoroutineScope(Dispatchers.IO)
     private var userAccountInfo: List<CoinbaseAccount> = listOf()
 
@@ -94,15 +104,76 @@ class CoinBaseRepository @Inject constructor(
             .launchIn(configScope)
     }
 
+    private suspend fun saveUserAccountInfo() {
+        val accountMap = hashMapOf<String, String>()
+        userAccountInfo.forEach {
+            if (it.name.contains("Wallet")) {
+                accountMap[it.currency] = it.uuid.toString()
+            }
+        }
+        config.setAccounts(accountMap)
+    }
+
+    /**
+     * Fetches every brokerage account, following the pagination cursor. Coinbase creates one
+     * account per asset the user has ever held, so a long-time user can exceed the 250-per-page
+     * maximum -- a single-page fetch would then miss any currency that sorts onto a later page
+     * and misreport it as "no account".
+     *
+     * Never returns partial data: a truncated list would be indistinguishable from "the account
+     * doesn't exist" to the callers, which is exactly the misreport this method exists to
+     * prevent. If the API claims another page without providing a cursor, or still claims one
+     * after [MAX_ACCOUNT_PAGES] pages, this throws instead of returning what it has.
+     */
+    private suspend fun fetchAllAccounts(): List<CoinbaseAccount> {
+        val accounts = mutableListOf<CoinbaseAccount>()
+        var cursor: String? = null
+
+        repeat(MAX_ACCOUNT_PAGES) {
+            val response = servicesApi.getAccounts(cursor = cursor)
+            accounts += response.accounts
+
+            if (!response.hasNext) {
+                return accounts
+            }
+
+            cursor = response.cursor?.takeIf { it.isNotEmpty() }
+                ?: throw IllegalStateException(
+                    "Coinbase accounts pagination incomplete: has_next with no cursor"
+                )
+        }
+
+        throw IllegalStateException(
+            "Coinbase accounts pagination incomplete: still has_next after $MAX_ACCOUNT_PAGES pages"
+        )
+    }
+
     override suspend fun getUserAccount(): CoinbaseAccount {
-        val accountsResponse = servicesApi.getAccounts()
-        userAccountInfo = accountsResponse.accounts
+        userAccountInfo = fetchAllAccounts()
         val userAccountData = userAccountInfo.firstOrNull {
             it.currency == Constants.DASH_CURRENCY
         } ?: throw IllegalStateException("No DASH account found")
 
+        saveUserAccountInfo()
+
         config.set(CoinbaseConfig.USER_ACCOUNT_ID, userAccountData.uuid.toString())
         config.set(CoinbaseConfig.LAST_BALANCE, userAccountData.coinBalance().value)
+
+        return userAccountData
+    }
+
+    override suspend fun getUserAccount(cryptoCurrency: String): CoinbaseAccount {
+        val account = config.getAccounts()[cryptoCurrency]
+
+        if (account == null || userAccountInfo.isEmpty()) {
+            userAccountInfo = fetchAllAccounts()
+            saveUserAccountInfo()
+        }
+
+        // for BTC, exclude "My Vault"
+        val userAccountData = userAccountInfo.firstOrNull {
+            it.currency == cryptoCurrency && it.name.contains("Wallet")
+        } ?: throw IllegalStateException("No $cryptoCurrency account found")
 
         return userAccountData
     }
@@ -266,6 +337,17 @@ class CoinBaseRepository @Inject constructor(
         servicesApi.createAddress(accountId = userAccountId)?.addresses?.address ?: ""
     }
 
+    override suspend fun createAddress(accountId: UUID) = safeApiCall {
+        var lastAddress = config.getAddressMap()[accountId.toString()]
+
+        if (lastAddress == null) {
+            lastAddress = servicesApi.createAddress(accountId = accountId.toString())?.addresses?.address
+            lastAddress?.run { config.setAccountAddress(accountId.toString(), this) }
+        }
+
+        lastAddress ?: ""
+    }
+
     override suspend fun isInputGreaterThanLimit(amountInDash: Coin): Boolean {
         // TODO: disabled until Coinbase changes are clear
         return false
@@ -296,4 +378,3 @@ class CoinBaseRepository @Inject constructor(
         }
     }
 }
-

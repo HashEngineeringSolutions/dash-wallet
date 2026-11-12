@@ -2,7 +2,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <string name="onboarding_create_wallet">Создать новый кошелёк</string>
-    <string name="onboarding_recover_wallet">Восстановить кошелёк из фразы восстановления</string>
+    <string name="onboarding_recover_wallet">Восстановить кошелёк</string>
     <string name="onboarding_restore_wallet">Восстановить кошелёк из файла</string>
     <string name="onboarding_load_wallet_error">Не удалось загрузить кошелёк!</string>
 
@@ -23,6 +23,7 @@
     <string name="dialog_confirm_confirm">Подтвердить</string>
     <string name="dialog_confirm_pay_to">Отправить</string>
     <string name="dialog_confirm_secured_by">Защищено</string>
+    <string name="dialog_confirm_connected_to_unsecured">Подключено к (незащищённое соединение) </string>
     <string name="dialog_confirm_fee">Комиссия сети</string>
     <string name="dialog_confirm_total">Итого</string>
     <string name="dialog_confirm_accept_contact_request">Принять запрос на добавление в контакты</string>
@@ -38,6 +39,8 @@
     <string name="shortcut_pay_to_contact">Отправить человеку в списке контактов</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_buy_sell">Купить и Продать</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_dash_dex">Dash DEX</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_receive">Получить</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
@@ -68,6 +71,11 @@
 
     <string name="pay_title">Отправить</string>
     <string name="history_title">История</string>
+    <string name="wallet_transactions_building_cache">Определение истории транзакций…</string>
+    <string name="history_refresh_dialog_title">Обновить список транзакций</string>
+    <string name="history_refresh_dialog_message">Это действие очистит кэш-память экрана транзакций, а затем восстановит список с нуля. Пока идёт восстановление, список транзакций будет временно недоступен. </string>
+    <string name="history_refresh_dialog_confirm">Обновить</string>
+    <string name="history_refresh_complete">Список транзакций обновлён</string>
     <string name="more_title">Больше</string>
     <string name="settings_title">Настройки</string>
     <string name="security_title">Безопасность</string>
@@ -86,6 +94,7 @@
     <string name="payments_pay_to_clipboard_sub_title">Нет адреса</string>
 
     <string name="forgot_pin_title">Забыли PIN-код?</string>
+    <string name="forgot_pin_setup_new_pin_title">Задайте новый PIN-код</string>
     <string name="forgot_pin_message">Вы можете задать новый PIN-код с помощью фразы восстановления.</string>
     <string name="forgot_pin_instruction_1">Введите фразу восстановления для восстановления вашего кошелька</string>
     <string name="forgot_pin_instruction_2">Задайте новый PIN-код</string>
@@ -267,7 +276,7 @@
     <string name="authenticate_switch_to_fingerprint">Использовать отпечаток пальца</string>
     <string name="authenticate_switch_to_pin">Используйте PIN-код</string>
 
-    <string name="menu_invite_title">Пригласить</string>
+    <string name="menu_invite_title">Приглашения</string>
     <string name="menu_invite_subtitle">Помогите друзьям и семье присоединиться к Dash</string>
     <string name="menu_buy_and_sell_title">Купить &amp; Продать Dash</string>
     <string name="menu_buy_and_sell_subtitle">Подключиться к сторонним биржам</string>
@@ -280,7 +289,7 @@
     <string name="menu_tools_title">Инструменты</string>
     <string name="menu_tools_subtitle">Импортировать приватный ключ…</string>
     <string name="menu_local_currency">Местная валюта</string>
-    <string name="menu_rescan_blockchain">Пересканировать блокчейн</string>
+    <string name="menu_rescan_blockchain">Пересканировать цепочку блоков</string>
     <string name="menu_contact_support_title">Связаться с поддержкой</string>
     <string name="menu_contact_support_subtitle">Сообщить о проблеме</string>
     <string name="menu_explore_title">Исследовать</string>
@@ -288,18 +297,26 @@
 
     <string name="tools_address_book">Адресная книга</string>
     <string name="tools_import_private_key">Импортировать приватный ключ</string>
+    <string name="import_private_key_description">Все средства перейдут из бумажного кошелька Dash на Ваш кошелёк DashPay на этом устройстве.</string>
     <string name="tools_network_monitor">Сетевой монитор</string>
-    <string name="tools_show_xpub">Расширенный  публичный ключ</string>
+    <string name="tools_show_xpub">Расширенный публичный ключ (BIP44)</string>
 
     <string name="about_help_us_improve">Помогите нам стать лучше</string>
     <string name="about_review_and_rate">Напишите отзыв и оцените приложение</string>
     <string name="about_contact_support">Связаться с поддержкой</string>
     <string name="about_fork_disclaimer">Это приложение с открытым кодом, основанное на Bitcoin Wallet</string>
-    <string name="about_copyright">Авторские права © 2025 Dash Core Group</string>
+    <string name="about_copyright">Все права защищены © %1$d Dash Core Group</string>
     <string name="about_license">GNU General Public License v3.0</string>
     <string name="about_version_name">Кошелёк DashPay %s</string>
     <string name="about_last_explore_device_sync">Последняя синхронизация с Explore</string>
     <string name="about_last_explore_server_update">Последнее обновление сервера Explore</string>
+    <string name="about_app_version_label">Версия приложения</string>
+    <string name="about_platform_label">Platform</string>
+    <string name="about_explore_section">Исследовать Dash</string>
+    <string name="about_explore_update">Обновить</string>
+    <string name="about_last_device_sync">Синхронизация с последним устройством</string>
+    <string name="about_last_server_update">Последнее обновление сервера</string>
+    <string name="about_value_not_available">Недоступно</string>
     <string name="about_firebase_installation_id">Идентификатор установки Firebase</string>
     <string name="about_fcm_token">Токен Firebase Cloud Messaging</string>
     <string name="about_last_explore_dash_update_error">Невозможно получить</string>
@@ -340,13 +357,9 @@
 
     <string name="skip">пропустить</string>
     <string name="get_started">Начать</string>
-    <string name="welcome_screen_title_1_new_install">Добро пожаловать</string>
-    <string name="welcome_screen_title_1_upgrade">Мы обновились</string>
-    <string name="welcome_screen_subtitle_1">Интуитивный и привычный интерфейс на всех Ваших устройствах</string>
-    <string name="welcome_screen_title_2">Платите с легкостью</string>
-    <string name="welcome_screen_subtitle_2">Платите и получайте переводы мгновенно с помощью простых в использовании механизмов платежей</string>
-    <string name="welcome_screen_title_3">Больше контроля</string>
-    <string name="welcome_screen_subtitle_3">Полный контроль и настройки кошелька для Ваших нужд</string>
+    <string name="welcome_screen_title_1">Отправить и получить Dash по имени пользователя</string>
+    <string name="welcome_screen_title_2">Потратить Dash в тысячах торговых точек</string>
+    <string name="welcome_screen_title_3">Самый безопасный способ хранить Dash</string>
 
     <string-array name="history_filter">
         <item>Все</item>
@@ -428,7 +441,7 @@
     <string name="launch_reset_wallet_extra_message">Сохранить фразу восстановления</string>
     <string name="start_reset_wallet_title">Вы можете потерять %s</string>
     <string name="reset_wallet_text">Сбросить кошелек</string>
-
+    <string name="reset_wallet_button">Сброс кошелька</string>
 
 
     <!-- Tax category -->
@@ -443,11 +456,11 @@
     <string name="reclassify_transactions_linked_accounts_message">по умолчанию все транзакции с привязанных аккаунтов или на них (биржи, стейкинг и т.д.) будут отмечены как переводы.</string>
     <string name="reclassify_transactions_change_explanation">Выберите любую транзакцию на домашней странице и измените категорию на странице сведений о транзакции.</string>
 
-    <string name="masternode_keys_title">Masternode ключи</string>
+    <string name="masternode_keys_title">Ключи мастерноды</string>
     <string name="masternode_key_type_owner">Ключи владельца</string>
     <string name="masternode_key_type_voting">Ключи голосования</string>
     <string name="masternode_key_type_operator">Ключи оператора</string>
-    <string name="masternode_key_type_platform">Ключи идентификаторов Evolution нод</string>
+    <string name="masternode_key_type_platform">HPMN Ключи оператора</string>
     <string name="masternode_key_type_total">ключи</string>
     <string name="masternode_key_type_used">%d использовано</string>
     <string name="masternode_key_pair_index">Ключи %d</string>

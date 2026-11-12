@@ -31,11 +31,6 @@ enum class ShortcutOption(
         R.drawable.ic_shortcut_secure_now,
         R.string.shortcut_secure_now
     ),
-    EXPLORE(
-        1,
-        R.drawable.ic_explore,
-        R.string.menu_explore_title
-    ),
     RECEIVE(
         2,
         R.drawable.ic_transaction_received,
@@ -69,18 +64,19 @@ enum class ShortcutOption(
     WHERE_TO_SPEND(
         8,
         R.drawable.ic_where_to_spend,
-        R.string.explore_where_to_spend
+        R.string.spend_title
+    ),
+    EXPLORE(
+        1,
+        R.drawable.ic_explore,
+        R.string.menu_explore_title
     ),
     ATMS(
         9,
         R.drawable.ic_shortcut_atm,
         R.string.explore_atms
     ),
-    STAKING(
-        10,
-        R.drawable.ic_shortcut_staking,
-        R.string.staking_title
-    ),
+    // 10 was STAKING (CrowdNode); do not reuse
     TOPPER(
         11,
         R.drawable.logo_topper,
@@ -95,11 +91,17 @@ enum class ShortcutOption(
         13,
         R.drawable.ic_coinbase,
         R.string.coinbase
+    ),
+    DASH_DEX(
+        14,
+        R.drawable.ic_shortcut_dash_dex,
+        R.string.shortcut_dash_dex
     );
 
     companion object  {
-        fun fromId(id: Int): ShortcutOption {
-            return entries.first { it.id == id }
+        // Returns null for ids of removed options that may still be saved in user settings
+        fun fromId(id: Int): ShortcutOption? {
+            return entries.firstOrNull { it.id == id }
         }
     }
 }

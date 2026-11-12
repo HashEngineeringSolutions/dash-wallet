@@ -69,7 +69,15 @@
         android:largeHeap="true"
         android:theme="@style/My.Theme"
         android:taskAffinity=""
-        tools:ignore="LockedOrientationActivity">
+        tools:ignore="LockedOrientationActivity"
+        tools:replace="android:allowBackup,android:fullBackupContent,android:dataExtractionRules">
+
+        <!-- Android 16 (API 36) ignores screenOrientation/resizability restrictions on large
+             screens (sw >= 600dp) by default. This property keeps the portrait locks working
+             until layouts are made responsive. It stops working when targeting API 37+. -->
+        <property
+            android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+            android:value="true" />
 
         <activity
             android:name="de.schildbach.wallet.ui.OnboardingActivity"
@@ -93,12 +101,12 @@
         <activity
             android:name="de.schildbach.wallet.ui.onboarding.SelectSecurityLevelActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity" />
+            android:theme="@style/LockScreenActivity.Child.Theme" />
 
         <activity
             android:name="de.schildbach.wallet.ui.verify.VerifySeedActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity"  />
+            android:theme="@style/LockScreenActivity.Child.Theme"  />
 
         <activity
             android:name="de.schildbach.wallet.ui.main.MainActivity"
@@ -108,7 +116,33 @@
             android:screenOrientation="portrait"
             android:theme="@style/LockScreenActivity.Child.Theme"
             android:launchMode="singleTop"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize">
+
+            <!-- DashConnect: login and wallet-operation URIs from scanners and browsers
+                 route to the Connections screen for validation and explicit approval. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <data android:scheme="dash-key" />
+                <data android:scheme="dash-st" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+            </intent-filter>
+
+            <!-- App Connect on the DashPay scheme: dashpay://connect?v=2&n=..&r=..
+                 A separate filter: a host in the dash-key/dash-st filter above would stop those
+                 opaque URIs (which have no host) from matching. dashpay://invite stays with
+                 InviteHandlerActivity. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <data android:scheme="dashpay" android:host="connect" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+            </intent-filter>
+        </activity>
 
         <activity-alias
             android:name="de.schildbach.wallet.MainActivity"
@@ -156,6 +190,13 @@
             </intent-filter>
         </activity>
         <activity
+            android:name="de.schildbach.wallet.ui.send.InAppSendCoinsActivity"
+            android:label="@string/pay_title"
+            android:screenOrientation="portrait"
+            android:theme="@style/My.Theme.ChildActivity"
+            tools:ignore="LockedOrientationActivity"
+            android:exported="false" />
+        <activity
             android:name="de.schildbach.wallet.ui.send.SendCoinsQrActivity"
             android:configChanges="keyboard|keyboardHidden"
             android:screenOrientation="portrait"
@@ -177,7 +218,7 @@
             android:label="@string/block_info"
             android:theme="@style/LockScreenActivity.Child.Theme" />
         <activity
-            android:name="de.schildbach.wallet.ui.scan.ScanActivity"
+            android:name="org.dash.wallet.common.ui.scan.ScanActivity"
             android:configChanges="keyboard|keyboardHidden"
             android:stateNotNeeded="true"
             android:theme="@style/My.Theme.Fullscreen"
@@ -214,24 +255,18 @@
             android:theme="@style/My.Theme.Transparent"
             android:exported="true">
 
-            <intent-filter android:autoVerify="true"
-                tools:targetApi="m">
-
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
-
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="dashpay" android:host="invite" />
+            </intent-filter>
 
-                <data
-                    android:host="invitations.dashpay.io"
-                    android:path="/applink"
-                    android:scheme="http" />
-
-                <data
-                    android:host="invitations.dashpay.io"
-                    android:path="/applink"
-                    android:scheme="https" />
-
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="dashwallet" android:host="invite" />
             </intent-filter>
 
         </activity>
@@ -258,33 +293,16 @@
         <activity
             android:name="de.schildbach.wallet.ui.SetPinActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity" />
+            android:theme="@style/LockScreenActivity.Child.Theme" />
 
         <activity
             android:name="de.schildbach.wallet.ui.RestoreWalletFromSeedActivity"
             android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity"
+            android:theme="@style/LockScreenActivity.Child.Theme"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name="de.schildbach.wallet.ui.more.AdvancedSecurityActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/LockScreenActivity.Child.Theme" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.SettingsActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/LockScreenActivity.Child.Theme" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.staking.StakingActivity"
-            android:parentActivityName="de.schildbach.wallet.ui.main.MainActivity"
-            android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize"
-            android:theme="@style/LockScreenActivity.Child.Theme" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.more.AboutActivity"
             android:screenOrientation="portrait"
             android:theme="@style/LockScreenActivity.Child.Theme" />
 
@@ -304,11 +322,6 @@
             android:theme="@style/My.Theme.ChildActivity" />
 
         <activity
-            android:name="de.schildbach.wallet.ui.WelcomeActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/LockScreenActivity.Theme" />
-
-        <activity
             android:name="org.dash.wallet.integrations.uphold.ui.UpholdTransferActivity"
             android:screenOrientation="portrait"
             android:theme="@style/My.Theme.ChildActivity" />
@@ -320,30 +333,6 @@
 
         <activity
             android:name="de.schildbach.wallet.ui.CreateUsernameActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity"
-            android:windowSoftInputMode="stateHidden|adjustResize" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.invite.InviteFriendActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity"
-            android:windowSoftInputMode="stateHidden|adjustResize" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.invite.InvitesHistoryActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity"
-            android:windowSoftInputMode="stateHidden|adjustResize" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.invite.AcceptInviteActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity"
-            android:windowSoftInputMode="stateHidden|adjustResize" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.SearchUserActivity"
             android:screenOrientation="portrait"
             android:theme="@style/My.Theme.ChildActivity"
             android:windowSoftInputMode="stateHidden|adjustResize" />
@@ -362,11 +351,6 @@
             android:name="de.schildbach.wallet.ui.dashpay.CropImageActivity"
             android:screenOrientation="portrait"
             android:theme="@style/My.Theme.ChildActivity" />
-
-        <activity
-            android:name="de.schildbach.wallet.ui.invite.OnboardFromInviteActivity"
-            android:theme="@style/My.Theme.ChildActivity"
-            android:screenOrientation="portrait" />
 
         <activity
             android:name="de.schildbach.wallet.ui.coinjoin.CoinJoinActivity"
@@ -423,15 +407,6 @@
             android:exported="false"
             android:foregroundServiceType="connectedDevice" /-->
 
-        <!-- Prompt Google Play services to install the backported photo picker module -->
-        <!-- required to support Android 7 to 12 -->
-        <service android:name="com.google.android.gms.metadata.ModuleDependencies" android:enabled="false" android:exported="false">
-            <intent-filter>
-                <action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES" />
-            </intent-filter>
-
-            <meta-data android:name="photopicker_activity:0:required" android:value="" />
-        </service>
 
         <receiver
             android:name="de.schildbach.wallet.service.BootstrapReceiver"
@@ -445,6 +420,10 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name="de.schildbach.wallet.service.DelayedServiceStartReceiver"
+            android:exported="false" />
+
         <service
             android:name="de.schildbach.wallet.service.BlockchainSyncJobService"
             android:permission="android.permission.BIND_JOB_SERVICE" />
@@ -457,10 +436,5 @@
             android:name="android.nfc.disable_beam_default"
             android:value="true" />
 
-        <activity
-            android:name="org.dash.wallet.integrations.coinbase.ui.CoinBaseWebClientActivity"
-            android:screenOrientation="portrait"
-            android:theme="@style/My.Theme.ChildActivity"
-            android:exported="true" />
     </application>
 </manifest>

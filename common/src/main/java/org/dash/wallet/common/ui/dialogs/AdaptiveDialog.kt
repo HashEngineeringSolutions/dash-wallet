@@ -22,7 +22,6 @@ import android.graphics.drawable.InsetDrawable
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.annotation.LayoutRes
@@ -34,8 +33,10 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.yield
 import org.dash.wallet.common.R
 import org.dash.wallet.common.UserInteractionAwareCallback
+import org.dash.wallet.common.ui.setRoundedRippleBackgroundButtonStyle
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -50,6 +51,7 @@ open class AdaptiveDialog(@LayoutRes private val layout: Int): DialogFragment() 
         const val POS_BUTTON_ARG = "positive_text"
         const val NEG_BUTTON_ARG = "negative_text"
         const val CUSTOM_DIALOG_ARG = "custom_dialog"
+        const val POS_BUTTON_COLOR_ARG = "positive_style"
 
         @JvmStatic
         fun simple(
@@ -191,7 +193,11 @@ open class AdaptiveDialog(@LayoutRes private val layout: Int): DialogFragment() 
                 messageView.setTextIsSelectable(isMessageSelectable)
             }
         }
-
+        arguments?.getInt(POS_BUTTON_COLOR_ARG)?.let {
+            if (it != 0) {
+                positiveButton?.setRoundedRippleBackgroundButtonStyle(it, 8)
+            }
+        }
         positiveButton?.setOnClickListener {
             onPositiveAction()
         }
@@ -227,6 +233,26 @@ open class AdaptiveDialog(@LayoutRes private val layout: Int): DialogFragment() 
                     coroutine.resumeWithException(ex)
                 }
             }
+        }
+    }
+
+    /** Shows immediately so sensitive dialogs cannot be queued past an authorization check. */
+    suspend fun showGuardedAsync(activity: FragmentActivity, canShow: () -> Boolean): Boolean? {
+        // Leave lifecycle/FragmentManager callbacks before making a synchronous transaction.
+        yield()
+        if (!activity.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) ||
+            activity.supportFragmentManager.isStateSaved || !canShow()) return null
+        try {
+            return suspendCancellableCoroutine { continuation ->
+                onResultListener = { result ->
+                    if (continuation.isActive) continuation.resume(result)
+                }
+                showNow(activity.supportFragmentManager, "adaptive_dialog")
+            }
+        } finally {
+            onResultListener = null
+            dialog?.hide()
+            dismissAllowingStateLoss()
         }
     }
 

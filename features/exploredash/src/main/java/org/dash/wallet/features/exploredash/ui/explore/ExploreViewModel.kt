@@ -30,6 +30,7 @@ import org.dash.wallet.common.services.NetworkStateInt
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.services.analytics.AnalyticsService
 import org.dash.wallet.common.services.analytics.FireplaceNetworkException
+import org.dash.wallet.features.exploredash.data.dashspend.GiftCardProviderType
 import org.dash.wallet.features.exploredash.data.explore.ExploreDataSource
 import org.dash.wallet.features.exploredash.data.explore.model.*
 import org.dash.wallet.features.exploredash.repository.DataSyncStatusService
@@ -39,6 +40,7 @@ import org.dash.wallet.features.exploredash.ui.explore.ExploreViewModel.Companio
 import org.dash.wallet.features.exploredash.ui.extensions.Const
 import org.dash.wallet.features.exploredash.ui.extensions.isMetric
 import org.dash.wallet.features.exploredash.utils.ExploreConfig
+import org.slf4j.LoggerFactory
 import java.util.*
 import javax.inject.Inject
 import kotlin.String
@@ -77,10 +79,21 @@ data class FilterOptions(
     val payment: String,
     val denominationType: DenomOption,
     val sortOption: SortOption,
-    val radius: Int // Can be miles or kilometers, see isMetric
+    val radius: Int, // Can be miles or kilometers, see isMetric
+    val provider: String = "",
+    val isUserSetSort: Boolean = false // Track if sort was explicitly set by user
 ) {
     companion object {
-        val DEFAULT = FilterOptions("", "", "", DenomOption.Both, SortOption.Name, DEFAULT_RADIUS_OPTION)
+        val DEFAULT = FilterOptions(
+            "",
+            "",
+            "",
+            DenomOption.Both,
+            SortOption.Name,
+            DEFAULT_RADIUS_OPTION,
+            "",
+            false
+        )
     }
 }
 
@@ -102,6 +115,12 @@ class ExploreViewModel @Inject constructor(
         const val DEFAULT_RADIUS_OPTION = 20
         const val MAX_MARKERS = 100
         val DEFAULT_SORT_OPTION = SortOption.Name
+
+        private val log = LoggerFactory.getLogger(ExploreViewModel::class.java)
+
+        // Session-only memory for filter modes (not persisted)
+        private var lastSelectedMerchantFilterMode: FilterMode? = null
+        private var lastSelectedAtmFilterMode: FilterMode? = null
     }
 
     private val workerJob = SupervisorJob()
@@ -172,13 +191,16 @@ class ExploreViewModel @Inject constructor(
     val searchLocationName: LiveData<String>
         get() = _searchLocationName
 
-    private val _selectedItem = MutableLiveData<SearchResult?>()
-    val selectedItem: LiveData<SearchResult?>
-        get() = _selectedItem
+    private val _selectedItem = MutableStateFlow<SearchResult?>(null)
+    val selectedItem: StateFlow<SearchResult?>
+        get() = _selectedItem.asStateFlow()
 
     private val _isLocationEnabled = MutableLiveData(false)
     val isLocationEnabled: LiveData<Boolean>
         get() = _isLocationEnabled
+
+    // Store separate FilterOptions for each FilterMode to preserve settings when switching
+    private val filterOptionsMap = mutableMapOf<FilterMode, FilterOptions>()
 
     private val _appliedFilters = MutableStateFlow(FilterOptions.DEFAULT)
     val appliedFilters: StateFlow<FilterOptions>
@@ -231,34 +253,91 @@ class ExploreViewModel @Inject constructor(
             }
         }
 
-    // Used for the list of search results
-    private val pagingSearchFlow: Flow<PagingData<SearchResult>> =
-        _appliedFilters.debounce(QUERY_DEBOUNCE_VALUE).flatMapLatest { filters ->
-            _filterMode
-                .filter { screenState.value == ScreenState.SearchResults }
-                .flatMapLatest { mode ->
-                    clearSearchResults()
-                    _searchBounds
-                        .filter { mode != FilterMode.Nearby || _isLocationEnabled.value == true }
-                        .map { transformBounds(it, mode) }
-                        .flatMapLatest { bounds ->
-                            getPagingFlow(filters, mode, bounds)
-                                .cachedIn(viewModelScope)
+    private val excludedCountriesForPiggyCards = listOf("RU", "CU")
+
+    // GPS-based country detection (higher priority)
+    private val gpsCountryFlow: Flow<String?> = _isLocationEnabled.asFlow()
+        .flatMapLatest { locationEnabled ->
+            if (locationEnabled) {
+                flow {
+                    try {
+                        val countryFromGPS = locationProvider.getCountryCodeFromLocation()
+                        if (countryFromGPS.isNotBlank()) {
+                            emit(countryFromGPS)
+                        } else {
+                            emit(null)
                         }
-                }
+                    } catch (e: SecurityException) {
+                        emit(null) // Location permissions not granted
+                    } catch (e: Exception) {
+                        emit(null) // GPS location failed
+                    }
+                }.flowOn(Dispatchers.IO) // Run GPS location fetching on IO dispatcher
+            } else {
+                flowOf(null) // Location not enabled
+            }
         }
 
-    // Used for the map
+    // IP-based country detection (lower priority, fallback)
+    private val ipCountryFlow: Flow<String?> = networkState.observeCountryFromIP()
+        .map { it.takeIf { country -> country.isNotBlank() } }
+        .flowOn(Dispatchers.IO) // Run IP detection on IO dispatcher
+
+    // Combined location with GPS priority over IP
+    val location: StateFlow<String> = combine(
+        gpsCountryFlow,
+        ipCountryFlow
+    ) { gpsCountry, ipCountry ->
+        // GPS takes priority, fall back to IP, then default locale
+        log.info("country: $gpsCountry, $ipCountry")
+        gpsCountry ?: ipCountry ?: Locale.getDefault().country
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = Locale.getDefault().country
+    )
+
+    private fun getExcludeProvider(): String {
+        return if (location.value in excludedCountriesForPiggyCards) {
+            GiftCardProviderType.PiggyCards.name
+        } else {
+            ""
+        }
+    }
+
+    // Used for the list of search results
+    private val pagingSearchFlow: Flow<PagingData<SearchResult>> =
+        combine(
+            _appliedFilters.debounce(QUERY_DEBOUNCE_VALUE),
+            location // React to location changes for filtering
+        ) { filters, _ -> filters }
+            .flatMapLatest { filters ->
+                _filterMode
+                    .filter { screenState.value == ScreenState.SearchResults }
+                    .flatMapLatest { mode ->
+                        clearSearchResults()
+                        _searchBounds
+                            .filter { mode != FilterMode.Nearby || _isLocationEnabled.value == true }
+                            .map { transformBounds(it, mode) }
+                            .flatMapLatest { bounds ->
+                                getPagingFlow(filters, mode, bounds)
+                                    .cachedIn(viewModelScope)
+                            }
+                    }
+            }
+
+    // Used for the map - combine both _filterMode and _appliedFilters so either can restart the flow
     val boundedSearchFlow: Flow<List<SearchResult>> =
-        _appliedFilters.debounce(QUERY_DEBOUNCE_VALUE).flatMapLatest { filters ->
-            _searchBounds
-                .filterNotNull()
-                .filter { screenState.value == ScreenState.SearchResults }
-                .flatMapLatest { bounds ->
-                    _filterMode
-                        .filterNot { it == FilterMode.Online }
-                        .flatMapLatest { mode -> getBoundedFlow(filters, mode, bounds) }
-                }
+        combine(
+            _filterMode.filterNot { it == FilterMode.Online },
+            _appliedFilters.debounce(QUERY_DEBOUNCE_VALUE),
+            _searchBounds.filterNotNull()
+        ) { mode, filters, bounds ->
+            Triple(mode, filters, bounds)
+        }.filter { (_, _, _) ->
+            screenState.value == ScreenState.SearchResults
+        }.flatMapLatest { (mode, filters, bounds) ->
+            getBoundedFlow(filters, mode, bounds)
         }
 
     fun init(exploreTopic: ExploreTopic) {
@@ -280,7 +359,7 @@ class ExploreViewModel @Inject constructor(
 
             if (locationEnabled) {
                 this.boundedFilterJob = boundedSearchFlow
-                    .distinctUntilChanged()
+                    // .distinctUntilChanged()
                     .onEach { list ->
                         list.forEach {
                             if (it is Merchant) {
@@ -329,19 +408,66 @@ class ExploreViewModel @Inject constructor(
         this.pagingFilterJob?.cancel(CancellationException())
         clearFilters()
         resetFilterMode()
+        clearFilterModeMemory()
         _searchLocationName.value = ""
+    }
+
+    fun clearFilterModeMemory() {
+        lastSelectedMerchantFilterMode = null
+        lastSelectedAtmFilterMode = null
+        filterOptionsMap.clear()
     }
 
     fun setFilterMode(mode: FilterMode) {
         logFilterChange(mode)
 
         if (_filterMode.value != mode) {
+            val previousMode = _filterMode.value
+            val currentQuery = _appliedFilters.value.query // Preserve current query globally
+
+            // Save current FilterOptions for the previous mode
+            filterOptionsMap[previousMode] = _appliedFilters.value
+
             _filterMode.value = mode
+
+            // Save the selected filter mode in session memory
+            saveLastSelectedFilterMode(mode)
+
+            // Restore FilterOptions for the new mode, or create defaults if none exist
+            val savedFilters = filterOptionsMap[mode]
+            if (savedFilters != null) {
+                // Restore saved FilterOptions for this mode but keep the current query global
+                _appliedFilters.value = savedFilters.copy(query = currentQuery)
+            } else {
+                // No saved filters for this mode, set up clean defaults with appropriate sort option
+                val defaultSortOption = when (mode) {
+                    FilterMode.Nearby -> SortOption.Distance
+                    FilterMode.Online -> SortOption.Name
+                    FilterMode.All -> SortOption.Name
+                    else -> SortOption.Name
+                }
+
+                // Start with completely clean FilterOptions.DEFAULT and only preserve query and update sort
+                val cleanDefaults = FilterOptions.DEFAULT.copy(
+                    query = currentQuery, // Preserve global query
+                    sortOption = defaultSortOption,
+                    isUserSetSort = false
+                )
+
+                _appliedFilters.value = cleanDefaults
+            }
         }
     }
 
     fun submitSearchQuery(query: String) {
-        _appliedFilters.update { current -> current.copy(query = query) }
+        _appliedFilters.update { current ->
+            val newFilters = current.copy(query = query)
+
+            // Save the updated FilterOptions to the map for the current filter mode
+            filterOptionsMap[_filterMode.value] = newFilters
+
+            newFilters
+        }
     }
 
     fun setFilters(
@@ -349,16 +475,24 @@ class ExploreViewModel @Inject constructor(
         selectedTerritory: String,
         selectedRadiusOption: Int,
         sortOption: SortOption,
-        denomOption: DenomOption
+        denomOption: DenomOption,
+        providerFilter: String = ""
     ) {
         _appliedFilters.update { current ->
-            current.copy(
+            val newFilters = current.copy(
                 territory = selectedTerritory,
                 payment = paymentFilter,
                 denominationType = denomOption,
                 sortOption = sortOption,
-                radius = selectedRadiusOption
+                radius = selectedRadiusOption,
+                provider = providerFilter,
+                isUserSetSort = true // Mark as user-set since this comes from the filters screen
             )
+
+            // Save the updated FilterOptions to the map for the current filter mode
+            filterOptionsMap[_filterMode.value] = newFilters
+
+            newFilters
         }
     }
 
@@ -370,11 +504,27 @@ class ExploreViewModel @Inject constructor(
         }
     }
 
-    fun openMerchantDetails(merchant: Merchant, isGrouped: Boolean = false) {
-        _selectedItem.postValue(merchant)
+    suspend fun openMerchantDetails(merchant: Merchant, isGrouped: Boolean = false) {
+        merchant.merchantId?.let { id ->
+            val providers = exploreData.getGiftCardProvidersFor(id)
+            // Filter out excluded providers based on location
+            val excludeProvider = getExcludeProvider()
+            merchant.giftCardProviders = if (excludeProvider.isNotBlank()) {
+                providers.filter { !it.provider.equals(excludeProvider, ignoreCase = true) }
+            } else {
+                providers
+            }
+        }
+
+        _selectedItem.value = merchant
 
         if (isGrouped) {
-            if (canShowNearestLocation(merchant)) {
+            // The Online tab lists a merchant's online listing, so there is no nearest physical
+            // location to resolve and the details screen never offers the all-locations list for
+            // it. Open details directly, even for chains whose grouped row counts many physical
+            // locations; otherwise, with location disabled or a territory selected, the tap would
+            // land on the all-locations screen instead.
+            if (_filterMode.value == FilterMode.Online || canShowNearestLocation(merchant)) {
                 // Opening details screen
                 nearestLocation = merchant
                 _screenState.postValue(ScreenState.DetailsGrouped)
@@ -389,19 +539,19 @@ class ExploreViewModel @Inject constructor(
 
     fun openAtmDetails(atm: Atm) {
         analyticsService.logEvent(AnalyticsConstants.Explore.SELECT_ATM_LOCATION, mapOf())
-        _selectedItem.postValue(atm)
+        _selectedItem.value = atm
         _screenState.postValue(ScreenState.Details)
     }
 
     fun openSearchResults() {
         nearestLocation = null
-        _selectedItem.postValue(null)
+        _selectedItem.value = null
         _screenState.postValue(ScreenState.SearchResults)
         _allMerchantLocations.postValue(listOf())
         this.allMerchantLocationsJob?.cancel()
     }
 
-    fun onMapMarkerSelected(id: Int) {
+    suspend fun onMapMarkerSelected(id: Int) {
         val item = _allMerchantLocations.value?.firstOrNull { it.id == id }
             ?: _physicalSearchResults.value?.firstOrNull { it.id == id }
         item?.let {
@@ -413,17 +563,63 @@ class ExploreViewModel @Inject constructor(
         }
     }
 
+    /**
+     * The radius to query the merchant's locations with, as a flow because it can arrive late.
+     *
+     * Outside Nearby mode every location is shown, so the query is unbounded. In Nearby mode the
+     * radius normally follows the map. Without map bounds it follows the user's own location,
+     * which [monitorUserLocation] marks as enabled before the first fix has landed: the query
+     * starts unbounded so the screen is never stuck empty, then narrows once a location is known.
+     */
+    private fun observeRadiusBounds(bounds: GeoBounds): Flow<GeoBounds> =
+        // Location can be granted while this screen is already open: onResume calls
+        // monitorUserLocation(), which writes _isLocationEnabled but not _searchBounds, so
+        // keying on the bounds alone would leave a Nearby query unbounded for good.
+        _isLocationEnabled.asFlow()
+            .distinctUntilChanged()
+            .flatMapLatest { locationEnabled -> radiusBoundsFor(bounds, locationEnabled) }
+
+    private fun radiusBoundsFor(bounds: GeoBounds, locationEnabled: Boolean): Flow<GeoBounds> {
+        if (!locationEnabled || _filterMode.value != FilterMode.Nearby) {
+            return flowOf(GeoBounds.noBounds)
+        }
+
+        if (bounds != GeoBounds.noBounds) {
+            return flowOf(locationProvider.getRadiusBounds(bounds.centerLat, bounds.centerLng, radius))
+        }
+
+        // The seeded noBounds is a placeholder, not a map center: centering a radius on it would
+        // query a radius around latitude/longitude (0, 0).
+        val knownLocation = _currentUserLocation.value
+
+        return if (knownLocation != null) {
+            flowOf(locationProvider.getRadiusBounds(knownLocation.latitude, knownLocation.longitude, radius))
+        } else {
+            flow {
+                emit(GeoBounds.noBounds)
+                val firstFix = _currentUserLocation.filterNotNull().first()
+                emit(locationProvider.getRadiusBounds(firstFix.latitude, firstFix.longitude, radius))
+            }
+        }
+    }
+
     fun openAllMerchantLocations(merchantId: String?, source: String) {
-        _screenState.postValue(ScreenState.MerchantLocations)
+        // The screen state is resolved on the first emission instead of here: a merchant whose
+        // locations carry no address at all has nothing to pick from, and is sent to its details
+        // screen rather than to a picker full of blank rows.
+        var screenStateResolved = false
         this.allMerchantLocationsJob?.cancel()
         this.allMerchantLocationsJob = _searchBounds
+            // The Google Map camera callback is the only writer of searchBounds. On devices
+            // without Google Play Services the map never initializes, so the value stays null
+            // and this flow would never emit, leaving the locations screen permanently blank.
+            // Seed with noBounds in that case; the Nearby branch below must not treat the
+            // seeded noBounds as a map center.
+            .onStart { if (_searchBounds.value == null) emit(GeoBounds.noBounds) }
             .filterNotNull()
-            .flatMapLatest { bounds ->
-                val radiusBounds = if (_isLocationEnabled.value == true) {
-                    locationProvider.getRadiusBounds(bounds.centerLat, bounds.centerLng, radius)
-                } else {
-                    GeoBounds.noBounds
-                }
+            .flatMapLatest { bounds -> observeRadiusBounds(bounds) }
+            .distinctUntilChanged()
+            .flatMapLatest { radiusBounds ->
                 val limitResults = _isLocationEnabled.value != true ||
                     _appliedFilters.value.territory.isNotEmpty() == true
                 val limit = if (limitResults) 100 else -1
@@ -433,6 +629,7 @@ class ExploreViewModel @Inject constructor(
                     _appliedFilters.value.territory,
                     "",
                     DenomOption.Both,
+                    "",
                     radiusBounds,
                     limit
                 )
@@ -448,6 +645,20 @@ class ExploreViewModel @Inject constructor(
                     locations.sortedBy { it.getDisplayAddress(", ") }
                 }
                 _allMerchantLocations.postValue(sorted)
+
+                if (!screenStateResolved) {
+                    screenStateResolved = true
+                    // A location is only worth picking if it can be told apart from the others.
+                    // Some explore records carry coordinates but no street, city or territory.
+                    val hasSelectableLocation = sorted.any { it.getDisplayAddress(", ").isNotBlank() }
+
+                    if (hasSelectableLocation) {
+                        _screenState.postValue(ScreenState.MerchantLocations)
+                    } else {
+                        (_selectedItem.value as? Merchant)?.let { nearestLocation = it }
+                        _screenState.postValue(ScreenState.DetailsGrouped)
+                    }
+                }
             }
             .launchIn(viewModelWorkerScope)
     }
@@ -469,7 +680,9 @@ class ExploreViewModel @Inject constructor(
         val openedLocation = nearestLocation
 
         if (screenState.value == ScreenState.MerchantLocations && openedLocation is Merchant) {
-            openMerchantDetails(openedLocation, true)
+            viewModelScope.launch {
+                openMerchantDetails(openedLocation, true)
+            }
         }
     }
 
@@ -483,11 +696,40 @@ class ExploreViewModel @Inject constructor(
         _appliedFilters.value = FilterOptions.DEFAULT
     }
 
+    fun updateSelectedItem(item: SearchResult) {
+        // Filter providers if it's a merchant
+        if (item is Merchant && item.giftCardProviders.isNotEmpty()) {
+            val excludeProvider = getExcludeProvider()
+            if (excludeProvider.isNotBlank()) {
+                item.giftCardProviders = item.giftCardProviders.filter {
+                    !it.provider.equals(excludeProvider, ignoreCase = true)
+                }
+            }
+        }
+        _selectedItem.value = item
+    }
+
     suspend fun isInfoShown(): Boolean =
         exploreConfig.get(ExploreConfig.HAS_INFO_SCREEN_BEEN_SHOWN) ?: false
 
     suspend fun setIsInfoShown(isShown: Boolean) {
         exploreConfig.set(ExploreConfig.HAS_INFO_SCREEN_BEEN_SHOWN, isShown)
+    }
+
+    fun getLastSelectedFilterMode(): FilterMode? {
+        return when (exploreTopic) {
+            ExploreTopic.Merchants -> lastSelectedMerchantFilterMode
+            ExploreTopic.ATMs -> lastSelectedAtmFilterMode
+            else -> lastSelectedMerchantFilterMode // Default fallback
+        }
+    }
+
+    fun saveLastSelectedFilterMode(mode: FilterMode) {
+        when (exploreTopic) {
+            ExploreTopic.Merchants -> lastSelectedMerchantFilterMode = mode
+            ExploreTopic.ATMs -> lastSelectedAtmFilterMode = mode
+            else -> lastSelectedMerchantFilterMode = mode // Default fallback
+        }
     }
 
     private fun clearSearchResults() {
@@ -506,7 +748,9 @@ class ExploreViewModel @Inject constructor(
                 filters.territory,
                 filters.payment,
                 filters.denominationType,
-                bounds
+                filters.provider,
+                bounds,
+                getExcludeProvider()
             )
         } else {
             val types = getAtmTypes(filterMode)
@@ -525,8 +769,9 @@ class ExploreViewModel @Inject constructor(
             _isLocationEnabled.value == true &&
             userLat != null &&
             userLng != null
-        val sortOption = if (filters.sortOption != SortOption.Distance) {
-            filters.sortOption
+        val currentSortOption = filters.sortOption
+        val sortOption = if (currentSortOption != SortOption.Distance) {
+            currentSortOption
         } else if (canSortByDistance) {
             SortOption.Distance
         } else {
@@ -546,6 +791,7 @@ class ExploreViewModel @Inject constructor(
                     type,
                     filters.payment,
                     filters.denominationType,
+                    filters.provider,
                     bounds,
                     sortOption,
                     userLat ?: 0.0,
@@ -553,7 +799,21 @@ class ExploreViewModel @Inject constructor(
                     onlineFirst
                 )
             }.flow.map { data ->
+                val excludeProvider = getExcludeProvider()
                 data.filter { it.merchant != null }
+                    .filter { merchantInfo ->
+                        // Filter out merchants that only have excluded providers
+                        if (excludeProvider.isBlank()) {
+                            true
+                        } else {
+                            val merchant = merchantInfo.merchant!!
+                            merchant.merchantId?.let { id ->
+                                val providers = exploreData.getGiftCardProvidersFor(id)
+                                // Keep merchant if it has at least one provider that's not the excluded one
+                                providers.any { !it.provider.equals(excludeProvider, ignoreCase = true) }
+                            } ?: true
+                        }
+                    }
                     .map {
                         it.merchant!!.apply {
                             this.physicalAmount = it.physicalAmount ?: 0
@@ -596,6 +856,7 @@ class ExploreViewModel @Inject constructor(
                     type,
                     _appliedFilters.value.payment,
                     _appliedFilters.value.denominationType,
+                    _appliedFilters.value.provider,
                     radiusBounds ?: GeoBounds.noBounds
                 )
             } else {
@@ -720,15 +981,16 @@ class ExploreViewModel @Inject constructor(
             }
         }
 
+        val currentSortOption = _appliedFilters.value.sortOption
         logEvent(
             if (exploreTopic == ExploreTopic.Merchants) {
-                when (_appliedFilters.value.sortOption) {
+                when (currentSortOption) {
                     SortOption.Name -> AnalyticsConstants.Explore.FILTER_MERCHANT_SORT_BY_NAME
                     SortOption.Distance -> AnalyticsConstants.Explore.FILTER_MERCHANT_SORT_BY_DISTANCE
                     SortOption.Discount -> AnalyticsConstants.Explore.FILTER_MERCHANT_SORT_BY_DISTANCE
                 }
             } else {
-                when (_appliedFilters.value.sortOption) {
+                when (currentSortOption) {
                     SortOption.Name -> AnalyticsConstants.Explore.FILTER_ATM_SORT_BY_NAME
                     SortOption.Distance -> AnalyticsConstants.Explore.FILTER_ATM_SORT_BY_DISTANCE
                     SortOption.Discount -> ""

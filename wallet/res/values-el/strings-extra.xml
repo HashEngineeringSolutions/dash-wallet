@@ -2,7 +2,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <string name="onboarding_create_wallet">Δημιουργία Νέου Πορτοφολιού</string>
-    <string name="onboarding_recover_wallet">Επαναφορά Πορτοφολιού με την φράση ανάκτησης</string>
+    <string name="onboarding_recover_wallet">Επαναφορά πορτοφολιού</string>
     <string name="onboarding_restore_wallet">Επαναφορά Πορτοφολιού από Αρχείο</string>
     <string name="onboarding_load_wallet_error">Δεν είναι δυνατή η φόρτωση του πορτοφολιού!</string>
 
@@ -23,6 +23,7 @@
     <string name="dialog_confirm_confirm">Επιβεβαίωση</string>
     <string name="dialog_confirm_pay_to">Αποστολή στο</string>
     <string name="dialog_confirm_secured_by">Ασφαλισμένo από</string>
+    <string name="dialog_confirm_connected_to_unsecured">Συνδεδεμένος με (χωρίς κρυπτογράφηση)</string>
     <string name="dialog_confirm_fee">Τέλος δικτύου</string>
     <string name="dialog_confirm_total">Σύνολο</string>
     <string name="dialog_confirm_accept_contact_request">Αποδοχή αιτήματος επαφής</string>
@@ -38,6 +39,8 @@
     <string name="shortcut_pay_to_contact">Στείλτε στην επαφή</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_buy_sell">Αγορά &amp; Πώληση</string>
+    <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
+    <string name="shortcut_dash_dex">Dash DEX</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
     <string name="shortcut_receive">Λήψη</string>
     <!-- Home Screen: Shortcut Button: 2 lines, 9 characters across -->
@@ -68,6 +71,11 @@
 
     <string name="pay_title">Αποστολή</string>
     <string name="history_title">Ιστορικό</string>
+    <string name="wallet_transactions_building_cache">Προσδιορισμός ιστορικού συναλλαγών…</string>
+    <string name="history_refresh_dialog_title">Ανανέωση λίστας συναλλαγών</string>
+    <string name="history_refresh_dialog_message">Αυτό θα εκκαθαρίσει την προσωρινή μνήμη της λίστας συναλλαγών και θα την αναδημιουργήσει από την αρχή. Η λίστα θα είναι προσωρινά μη διαθέσιμη κατά τη διάρκεια της αναδημιουργίας.</string>
+    <string name="history_refresh_dialog_confirm">Ανανέωση</string>
+    <string name="history_refresh_complete">Η λίστα συναλλαγών ανανεώθηκε</string>
     <string name="more_title">Περισσότερα</string>
     <string name="settings_title">Ρυθμίσεις</string>
     <string name="security_title">Ασφάλεια</string>
@@ -86,6 +94,7 @@
     <string name="payments_pay_to_clipboard_sub_title">Δεν αντιγράφηκε καμία διεύθυνση</string>
 
     <string name="forgot_pin_title">Ξεχάσατε το PIN;</string>
+    <string name="forgot_pin_setup_new_pin_title">Ορίστε ένα νέο PIN</string>
     <string name="forgot_pin_message">Μπορείτε να ορίσετε ένα νέο PIN με τη βοήθεια της φράσης ανάκτησης σας.</string>
     <string name="forgot_pin_instruction_1">Εισάγετε την φράση ανάκτησης σας για να επαναφέρετε το πορτοφόλι σας.</string>
     <string name="forgot_pin_instruction_2">Ορίστε ένα νέο PIN</string>
@@ -261,7 +270,7 @@
     <string name="authenticate_switch_to_fingerprint">Χρησιμοποιήστε το δακτυλικό σας αποτύπωμα</string>
     <string name="authenticate_switch_to_pin">Χρησιμοποιήστε το PIN</string>
 
-    <string name="menu_invite_title">Πρόσκληση</string>
+    <string name="menu_invite_title">Προσκλήσεις</string>
     <string name="menu_invite_subtitle">Βοηθήστε τους φίλους και την οικογένειά σας να συμμετάσχουν στο Dash</string>
     <string name="menu_buy_and_sell_title">Αγορά και Πώληση Dash</string>
     <string name="menu_buy_and_sell_subtitle">Συνδεθείτε με ανταλλακτήρια τρίτων</string>
@@ -280,20 +289,28 @@
     <string name="menu_explore_title">Εξερευνήστε</string>
     <string name="menu_explore_subtitle">Βρείτε εμπόρους που δέχονται DASH</string>
 
-    <string name="tools_address_book">Βιβλίο Διευθύνσεων</string>
+    <string name="tools_address_book">Βιβλίο διευθύνσεων</string>
     <string name="tools_import_private_key">Εισάγετε το ιδιωτικό κλειδί</string>
-    <string name="tools_network_monitor">Παρακολούθηση Δικτύου</string>
-    <string name="tools_show_xpub">Εκτεταμένο Δημόσιο Κλειδί</string>
+    <string name="import_private_key_description">Με αυτή την ενέργεια, όλα τα νομίσματα θα μεταφερθούν από το paper wallet του Dash στην εφαρμογή DashPay που έχετε εγκαταστήσει σε αυτή τη συσκευή.</string>
+    <string name="tools_network_monitor">Παρακολούθηση δικτύου</string>
+    <string name="tools_show_xpub">Extended public key (BIP44)</string>
 
     <string name="about_help_us_improve">Βοηθήστε μας να βελτιώσουμε την εμπειρία σας</string>
     <string name="about_review_and_rate">Κρίνετε και βαθμολογήστε την εφαρμογή</string>
     <string name="about_contact_support">Επικοινωνήστε με την υποστήριξη</string>
     <string name="about_fork_disclaimer">Πρόκειται για μια εφαρμογή ανοιχτού κώδικα που διαχωρίστηκε από το Bitcoin πορτοφόλι</string>
-    <string name="about_copyright">Copyright © 2025 Dash Core Group</string>
+    <string name="about_copyright">Copyright © %1$d Dash Core Group</string>
     <string name="about_license">Γενική Άδεια Δημόσιας Χρήσης GNU v3.0</string>
     <string name="about_version_name">Dash Πορτοφόλι %s</string>
     <string name="about_last_explore_device_sync">Τελευταίος συγχρονισμός συσκευής εξερεύνησης</string>
     <string name="about_last_explore_server_update">Τελευταία ενημέρωση διακομιστή εξερεύνησης</string>
+    <string name="about_app_version_label">Έκδοση εφαρμογής</string>
+    <string name="about_platform_label">Πλατφόρμα</string>
+    <string name="about_explore_section">Εξερευνήστε το Dash</string>
+    <string name="about_explore_update">Ενημέρωση</string>
+    <string name="about_last_device_sync">Τελευταίος συγχρονισμός συσκευής</string>
+    <string name="about_last_server_update">Τελευταία ενημέρωση διακομιστή</string>
+    <string name="about_value_not_available">Μη διαθέσιμο</string>
     <string name="about_firebase_installation_id">ID εγκατάστασης Firebase</string>
     <string name="about_fcm_token">Firebase cloud messaging token</string>
     <string name="about_last_explore_dash_update_error">δεν μπορεί να λάβει</string>
@@ -334,13 +351,9 @@
 
     <string name="skip">παράλειψη</string>
     <string name="get_started">Ξεκινήστε</string>
-    <string name="welcome_screen_title_1_new_install">Καλώς ορίσατε</string>
-    <string name="welcome_screen_title_1_upgrade">Αναβαθμίσαμε</string>
-    <string name="welcome_screen_subtitle_1">Μια διαισθητική και οικεία εμπειρία σε όλες τις συσκευές σας</string>
-    <string name="welcome_screen_title_2">Πληρώστε με ευκολία</string>
-    <string name="welcome_screen_subtitle_2">Πληρώστε και πληρωθείτε άμεσα με εύκολες στην χρήση πληρωμές</string>
-    <string name="welcome_screen_title_3">Περισσότερος Έλεγχος</string>
-    <string name="welcome_screen_subtitle_3">Έχετε τον πλήρη έλεγχο να προσαρμόσετε το πορτοφόλι σας ανάλογα με τις ανάγκες σας</string>
+    <string name="welcome_screen_title_1">Στείλτε και λάβετε Dash χωρίς μέσω ονομάτων χρήσης</string>
+    <string name="welcome_screen_title_2">Ξοδέψτε Dash σε χιλιάδες καταστήματα</string>
+    <string name="welcome_screen_title_3">Ο ασφαλέστερος τρόπος για να αποθηκεύσετε τα Dash σας</string>
 
     <string-array name="history_filter">
         <item>Όλα</item>
@@ -422,7 +435,7 @@
     <string name="launch_reset_wallet_extra_message">Δημιουργήστε αντίγραφα ασφαλείας της φράσης ανάκτησης</string>
     <string name="start_reset_wallet_title">Μπορεί να χάσετε %s</string>
     <string name="reset_wallet_text">Επαναφορά Πορτοφολιού</string>
-
+    <string name="reset_wallet_button">Επαναφορά πορτοφολιού</string>
 
 
     <!-- Tax category -->
@@ -437,11 +450,11 @@
     <string name="reclassify_transactions_linked_accounts_message">από προεπιλογή, όλες οι συναλλαγές προς ή από τους συνδεδεμένους λογαριασμούς σας (ανταλλαγές, staking, κ.λπ.) θα επισημαίνονται ως μεταφορές.</string>
     <string name="reclassify_transactions_change_explanation">Επιλέξτε οποιαδήποτε συναλλαγή από την αρχική σελίδα και αλλάξτε την κατηγορία στη σελίδα λεπτομερειών της συναλλαγής.</string>
 
-    <string name="masternode_keys_title"> Κλειδιά Masternode</string>
-    <string name="masternode_key_type_owner">Κλειδιά Κατόχου</string>
-    <string name="masternode_key_type_voting">Κλειδιά ψήφου</string>
-    <string name="masternode_key_type_operator">Κλειδιά Χειριστή</string>
-    <string name="masternode_key_type_platform">Κλειδιά Evolution Node ID </string>
+    <string name="masternode_keys_title">Κλειδιά Masternode</string>
+    <string name="masternode_key_type_owner">Κλειδιά ιδιοκτήτη</string>
+    <string name="masternode_key_type_voting">Κλειδιά ψηφοφορίας</string>
+    <string name="masternode_key_type_operator">Κλειδιά χειριστή</string>
+    <string name="masternode_key_type_platform">Κλειδιά χειριστή HPMN</string>
     <string name="masternode_key_type_total">%d κλειδιά</string>
     <string name="masternode_key_type_used">%d χρησιμοποιείται</string>
     <string name="masternode_key_pair_index">Ζεύγος κλειδιών %d</string>

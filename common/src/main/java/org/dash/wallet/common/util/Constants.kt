@@ -17,16 +17,20 @@
 
 package org.dash.wallet.common.util
 
+import com.google.common.io.BaseEncoding
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.bitcoinj.core.Coin
+import org.bitcoinj.core.NetworkParameters
 import org.bitcoinj.params.MainNetParams
 import org.bitcoinj.utils.MonetaryFormat
+import org.dash.wallet.common.BuildConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
 
 object Constants {
+    const val EARLIEST_HD_SEED_CREATION_TIME = 1427610960L
     private val log: Logger = LoggerFactory.getLogger(Constants::class.java)
 
     const val CHAR_HAIR_SPACE = '\u200a'
@@ -65,7 +69,15 @@ object Constants {
         .writeTimeout(20, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
         .addInterceptor(
-            HttpLoggingInterceptor { log.debug(it) }.setLevel(HttpLoggingInterceptor.Level.BASIC)
+            HttpLoggingInterceptor { log.info(it) }.setLevel(HttpLoggingInterceptor.Level.BASIC)
         )
         .build()
+    @JvmField
+    val HEX: BaseEncoding = BaseEncoding.base16().lowerCase()
+    @JvmField
+    val NETWORK_PARAMETERS: NetworkParameters = MainNetParams.get()
+    @JvmField
+    val ANYPAY_SCHEME = "pay"
+    @JvmField
+    val DASH_SCHEME = "dash"
 }

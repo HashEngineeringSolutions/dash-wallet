@@ -45,10 +45,15 @@
 
     <!-- Generic buttons -->
     <string name="button_dismiss">ยกเลิก</string>
+    <string name="button_settings">ตั้งค่า</string>
     <string name="network_unavailable_return">รีเซ็ตกระเป๋าสตางค์</string>
     <string name="button_continue">ดำเนินการต่อ</string>
     <string name="get_quote">รับใบเสนอราคา</string>
     <string name="button_close">ปิด</string>
+    <string name="button_cancel">ยกเลิก</string>
+    <string name="button_clear">ลบออก</string>
+    <string name="button_paste">วาง</string>
+    <string name="button_confirm">ยืนยัน</string>
     <string name="button_retry">ลองอีกครั้ง</string>
     <string name="button_send_report">ส่งรายงาน</string>
     <string name="button_info">ข้อมูล</string>
@@ -92,6 +97,7 @@
     <string name="payment_protocol_default_error_title">การชำระเงินผิดพลาด</string>
     <string name="payment_request_problem_message">เซิร์ฟเวอร์การชำระเงินของคุณไม่สามารถดำเนินการโดยเซิร์ฟเวอร์นี้ได้ โปรดสอบถามกับทางร้านค้า</string>
     <string name="exchange_rate_not_found">ไม่พบอัตราแลกเปลี่ยน</string>
+    <string name="send_coins_fragment_hint_replaying">ขณะนี้ยังไม่สามารถทำการชำระเงินได้เนื่องกระเป๋าสตางค์ยังไม่เชื่อมต่อกับเครือข่าย</string>
 
     <!-- Integrations -->
     <string name="buy_dash_subtitle">รับโดยตรงไปยังกระเป๋าเงิน Dash</string>
@@ -105,4 +111,32 @@
     <string name="chain_syncing">โซ่กำลังซิงค์...</string>
     <string name="report_issue_dialog_mail_intent_chooser">ส่งรายงานโดยใช้...</string>
 
-    </resources>
+    <!-- scan -->
+    <string name="scan_camera_problem_dialog_title">เสียใจ</string>
+    <string name="scan_camera_problem_dialog_message">กล้องถ่ายรูปมีปัญหา คุณอาจจะต้องรีสตาร์ทอุปกรณ์อีกครั้ง</string>
+    <string name="scan_camera_permission_dialog_title">อนุญาตเข้าถึงกล้องถ่ายรูป</string>
+    <string name="scan_camera_permission_dialog_message">ในการสแกนโค้ด  QR  คุณต้องให้สิทธิ์ในการใช้กล้องถ่ายรูป</string>
+    <!-- address input -->
+    <string name="address_input_title">ส่ง Dash </string>
+    <string name="show_clipboard">แสดงเนื้อหาในคลิปบอร์ด</string>
+    <string name="tap_to_paste">แตะที่อยู่จากคลิปบอร์ดเพื่อวาง</string>
+    <string name="recipient_address">ที่อยู่ผู้รับ</string>
+
+    <!-- input parser -->
+    <string name="input_parser_io_error">ไม่สามารถอ่านข้อมูลได้ :\n %s</string>
+    <string name="input_parser_cannot_classify">ไม่สามารถจำข้อมูล :\n %s</string>
+    <string name="input_parser_invalid_bitcoin_uri">URl Dash ไม่ถูกต้อง:\n %s</string>
+    <string name="input_parser_invalid_address">ที่อยู่ Dash ไม่ถูกต้อง !\n (สับสนระหว่าง mainnet/testnet?)</string>
+    <string name="input_parser_unverifyable_paymentrequest">ไม่สามารถยืนยันคำขอชำระเงินได้ :\n %s</string>
+    <string name="input_parser_invalid_paymentrequest">คำขอการชำระเงินไม่ถูกต้อง :\n%s</string>
+    <string name="input_parser_invalid_transaction">ธุรกรรมไม่ถูกต้อง :\n %s</string>
+    <!-- others -->
+    <string name="confirm_sec">ยืนยัน (%ss)</string>
+    <string name="cancel_transaction">ยกเลิกธุรกรรม?</string>
+    <string name="yes_cancel">ใช่, ยกเลิก</string>
+    <string name="no_keep_it">ไม่, เก็บไว้</string>
+    <string name="insufficient_money_title">เหรียญไม่เพียงพอ</string>
+    <string name="send_coins_error_msg">การส่งเหรียญมีปัญหา!</string>
+    <string name="from_dash_wallet_on_this_device">จากกระเป๋าเงิน Dash ในอุปกรณ์นี้</string>
+    <string name="scan_qr">สแกน QR</string>
+</resources>

@@ -11,6 +11,7 @@
     <string name="buy_dash">خرید دش</string>
     <string name="copied">کپی شد</string>
     <string name="staking_title">سپرده‌گذاری</string>
+    <string name="spend_title">خرج کردن</string>
     <string name="email">ایمیل</string>
     <string name="email_placeholder">e.g. johndoe@mail.com</string>
     <string name="error">خطا</string>
@@ -47,10 +48,14 @@
 
     <!-- Generic buttons -->
     <string name="button_dismiss">متوجه شدم!</string>
+    <string name="button_settings">تنظیمات</string>
     <string name="network_unavailable_return">بازگشت به کیف‌ پول</string>
     <string name="button_continue">ادامه</string>
     <string name="get_quote">دریافت قیمت تخمینی</string>
     <string name="button_close">بستن</string>
+    <string name="button_cancel">لغو</string>
+    <string name="button_paste">چسباندن</string>
+    <string name="button_confirm">تائید</string>
     <string name="button_retry">تلاش دوباره</string>
     <string name="button_send_report">ارسال گزارش</string>
     <string name="button_info">اطلاعات</string>
@@ -79,6 +84,8 @@
     <string name="dash_wallet_name">دش والت</string>
     <string name="from">از</string>
     <string name="to">به</string>
+    <string name="from_title">از</string>
+    <string name="to_title">به</string>
     <string name="select_currency">واحد پول‌تان را انتخاب کنید</string>
     <string name="send_coins_error_dusty_send">مبلغ مورد نظر، بیش از حد کم است</string>
     <string name="send_coins_error_insufficient_money">موجودی ناکافی</string>
@@ -96,6 +103,7 @@
     <string name="payment_protocol_default_error_title">خطا در پرداخت</string>
     <string name="payment_request_problem_message">امکان پردازش پرداخت‌تان توسط سرور وجود ندارد. لطفا با فروشنده تماس بگیرید. </string>
     <string name="exchange_rate_not_found"> نرخ‌های تبدیل پیدا نشد.</string>
+    <string name="send_coins_fragment_hint_replaying">پرداخت‌های کنونی امکان‌پذیر نیست، زیرا کیف پول به خوبی با شبکه همزمان نشده است</string>
 
     <!-- Integrations -->
     <string name="buy_dash_subtitle">مستقیما روی دش والت دریافت کنید</string>
@@ -109,4 +117,39 @@
     <string name="chain_syncing">بلاکچین در حال به‌روزرسانی...</string>
     <string name="report_issue_dialog_mail_intent_chooser">در حال ارسال گزارش...</string>
 
-    </resources>
+    <!-- scan -->
+    <string name="scan_camera_problem_dialog_title">متاسفیم!</string>
+    <string name="scan_camera_problem_dialog_message">دوربین مشکل دارد. احتمالا باید دستگاه‌تان را خاموش و دوباره روشن کنید.</string>
+    <string name="scan_camera_permission_dialog_title">مجوز استفاده از دوربین</string>
+    <string name="scan_camera_permission_dialog_message">برای اسکن کیوآر کد، باید مجوز استفاده از دوربین را داشته باشید.</string>
+    <!-- address input -->
+    <string name="address_input_title">ارسال دش</string>
+    <string name="show_clipboard">نشان دادن اطلاعات در کلیپ‌برد</string>
+    <string name="tap_to_paste">روی نشانی موجود در کلیپ‌برد لمس کنید تا چسبانده شود</string>
+    <string name="not_valid_address">نشانی دش یا نشانی وب %sمعتیر نیست</string>
+    <string name="recipient_address">نشانی دریافت‌کننده</string>
+
+    <!-- input parser -->
+    <string name="input_parser_io_error">داده قابل خواندن نیست :n\%s</string>
+    <string name="input_parser_cannot_classify">نمی‌تواند ورودی را تشخیص دهد :n\%s</string>
+    <string name="input_parser_invalid_bitcoin_uri">نشانی نامعتبر دش :n\%s</string>
+    <string name="input_parser_invalid_address">نشانی دش دریافتی نامعتبر است!n\ (مشکل در شبکه اصلی/شبکه تست؟)</string>
+    <string name="input_parser_unverifyable_paymentrequest">درخواست پرداخت قابل تایید نیست:\n%s</string>
+    <string name="input_parser_invalid_paymentrequest">درخواست نامعتبر پرداخت:n\%s</string>
+    <string name="input_parser_invalid_transaction">تراکنش نامعتبر:n\%s</string>
+    <string name="address_input_paste_from">چسباندن از %s</string>
+    <!-- Trailing action on an address-source row for an exchange the user is not signed in to -->
+    <string name="input_log_in">ورود به حساب</string>
+
+    <!-- others -->
+    <string name="confirm_sec">تائید (%sثانیه) </string>
+    <string name="cancel_transaction">تراکنش لغو شود؟ </string>
+    <string name="yes_cancel">بله! لغو شود</string>
+    <string name="no_keep_it">نه!لغو نشود</string>
+    <string name="insufficient_money_title">موجودی کافی نیست</string>
+    <string name="insufficient_money_msg">مقدار سکه‌ا در کیف پول‌تان بسیار کم است و برای تراکنش کافی نیست.</string>
+    <string name="send_coins_error_msg">مشکل در ارسال مبلغ مورد نظر!</string>
+    <string name="from_dash_wallet_on_this_device">از دش والت روی این دستگاه</string>
+    <string name="preposition_at">در</string>
+    <string name="scan_qr">اسکن کیوآر کد</string>
+</resources>

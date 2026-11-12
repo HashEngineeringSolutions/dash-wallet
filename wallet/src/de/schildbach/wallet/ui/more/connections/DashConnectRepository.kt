@@ -1,0 +1,258 @@
+/*
+ * Copyright 2026 Dash Core Group.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package de.schildbach.wallet.ui.more.connections
+
+import de.schildbach.wallet.ui.more.connections.protocol.DashKeyRequest
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * Lifecycle of a DashConnect connection (Figma: DashConnect section 5775:50970).
+ *
+ *  - [APPROVED] — connection approved, awaiting login ("Scan the QR code to complete your login")
+ *  - [ACTIVE] — session is active ("Touch to disconnect at any time")
+ *  - [DISCONNECTED] — session ended ("Scan the QR code to log back in")
+ *  - [EXPIRED] — every authentication key passed its expiry but none was revoked, so they stay
+ *    enabled on Platform until the user disconnects
+ */
+enum class ConnectionStatus {
+    APPROVED,
+    ACTIVE,
+    DISCONNECTED,
+    EXPIRED
+}
+
+/**
+ * An app on the Dash network connected (or previously connected) to this wallet. Identified by
+ * the app's data-contract id (Base58), which is stable across logins.
+ */
+data class DAppConnection(
+    /** The app's data-contract id, Base58-encoded. Stable identity of the connection. */
+    val id: String,
+    val name: String,
+    val url: String,
+    val status: ConnectionStatus,
+    /** Millis since epoch of the last status change. */
+    val updatedAt: Long,
+    val scope: String? = null,
+    val legacyOnly: Boolean = false,
+    /** When the latest login became active, millis since epoch; null when unknown (e.g. never approved). */
+    val connectedAt: Long? = null
+)
+
+/**
+ * A pending connection request derived from a scanned `dash-key:` login QR (QR #1).
+ *
+ * Note: [appLabel] is UNAUTHENTICATED — it is a claim carried in the QR by the app and is
+ * spoofable. The [walletUsername] / [walletIdentityId] shown to the user are the wallet's OWN
+ * verified identity, resolved locally, and are what the app will actually learn on login.
+ */
+data class ConnectionRequest(
+    /** Unauthenticated label claimed by the app (may be blank). */
+    val appLabel: String,
+    /** The app's website (resolved DPNS handle or known branding); may be blank. */
+    val appUrl: String,
+    /** The app's data-contract id, Base58-encoded. */
+    val appContractId: String,
+    /** The wallet user's own DashPay username (verified, resolved locally). */
+    val walletUsername: String,
+    /** The wallet user's own identity id, Base58-encoded (verified). */
+    val walletIdentityId: String,
+    val permissionText: String = "",
+    val grantChoices: List<GrantChoice> = emptyList(),
+    val recovering: Boolean = false,
+    /** The funding-limit preset matching [fundingLimit], or -1 for a custom limit. */
+    val budgetPreset: Int = -1,
+    /** The expiration preset matching [expiresAt], or -1 for a custom date. */
+    val lifetimePreset: Int = -1,
+    /** Platform time the limits are measured from; the latest custom expiry is a year after it. */
+    val blockTime: Long = 0,
+    val requiresGroupReapproval: Boolean = false,
+    val groupScopeChangeApproved: Boolean = false,
+    /** Plain-language lines for the approved grants; empty for a legacy login. */
+    val capabilities: List<AppCapability> = emptyList(),
+    /** Credits the app's keys may spend together; null when unlimited or nothing is budgeted. */
+    val fundingLimit: java.math.BigInteger? = null,
+    val expiresAt: Long? = null,
+    /** When the app created the request, millis since epoch; 0 when unknown. */
+    val requestedAt: Long = 0,
+    /** True when no connection to this app is on record. */
+    val firstConnection: Boolean = false
+)
+
+/**
+ * Display branding for known DApps. DashConnect is currently yappr-specific: the QR carries only an
+ * unauthenticated free-text label ("Login to Yappr") and yappr's contract owner has no on-chain
+ * DashPay profile / DPNS name to resolve, so we substitute yappr's real name and website when we
+ * recognise its login label. Remove (or generalize) once apps expose resolvable metadata — see
+ * MO-945.
+ */
+object DashConnectBranding {
+    private const val YAPPR_QR_LABEL = "Login to Yappr"
+    private const val YAPPR_NAME = "Yappr"
+    private const val YAPPR_URL = "yap.pr"
+
+    /** The friendly app name for a raw QR [label], or the label itself if unrecognised. */
+    fun appName(label: String): String = if (label == YAPPR_QR_LABEL) YAPPR_NAME else label
+
+    /** The website for a raw QR [label], or null if unknown. */
+    fun appUrl(label: String): String? = if (label == YAPPR_QR_LABEL) YAPPR_URL else null
+}
+
+/** The decoded payload of a scanned DashConnect QR code. */
+data class DashConnectQr(val request: DashKeyRequest)
+
+/**
+ * Boundary for DashConnect data, backed by Dash Platform. [MockDashConnectRepository] provides
+ * placeholder data for tests and Compose previews.
+ */
+interface DashConnectRepository {
+    /**
+     * Whether this build supports DashConnect and the network runs Platform protocol version 14 or later;
+     * null when the network's version could not be read.
+     */
+    suspend fun isAvailable(): Boolean?
+
+    fun observeConnections(): Flow<List<DAppConnection>>
+
+    /** Decodes and validates a scanned QR into a login request. */
+    suspend fun parseQr(qrContent: String): DashConnectQr
+
+    suspend fun prepareTokenPurchase(request: de.schildbach.wallet.ui.more.connections.protocol.DashStRequest): TokenPurchaseApproval =
+        error("Token purchase requests are unavailable")
+
+    suspend fun approveTokenPurchase(approval: TokenPurchaseApproval) {
+        error("Token purchase requests are unavailable")
+    }
+
+    suspend fun setupPurchaseSigningKey(approval: TokenPurchaseApproval) {
+        error("Purchase signing-key setup is unavailable")
+    }
+
+    /** Legacy/mock entry point. The real repository requires explicit prepared consent. */
+    suspend fun approveLogin(request: DashKeyRequest): DAppConnection
+
+    suspend fun prepareLogin(request: DashKeyRequest): AppConnectPlan? = null
+
+    suspend fun approvePreparedLogin(request: DashKeyRequest, plan: AppConnectPlan?): DAppConnection =
+        approveLogin(request)
+
+    /** Reconcile and revoke this request before reporting a previously attempted approval as declined. */
+    suspend fun revokePreparedLogin(request: DashKeyRequest, plan: AppConnectPlan?) {
+        error("Pending approval revocation is unavailable")
+    }
+
+    suspend fun disconnect(connectionId: String, scope: String? = null)
+
+    suspend fun connectionDetails(connectionId: String, scope: String? = null): String = ""
+
+    /** What the recorded keys of a connection allow, with their current Platform limits; null if none are recorded. */
+    suspend fun connectionTerms(connectionId: String, scope: String? = null): ConnectionTerms? = null
+
+    /** Unlinked DashPay profile keys the user has not dismissed; null when there are none. */
+    suspend fun sharedProfileKeys(): SharedProfileKeys? = null
+
+    suspend fun dismissSharedProfileKeys(keys: SharedProfileKeys) {}
+
+    suspend fun revokeSharedProfileKeys(keys: SharedProfileKeys) {
+        error("Key revocation is unavailable")
+    }
+
+    /** Revoke before removal; the real repository retains the public grant audit record. */
+    suspend fun removeConnection(connectionId: String, scope: String? = null)
+
+    /**
+     * The wallet's own DPNS username in display form (the `label`, e.g. "John.Doe"), resolved from
+     * Platform — as opposed to the lower-cased `normalizedLabel` that the identity stores. Returns
+     * null if it can't be resolved.
+     */
+    suspend fun resolveWalletUsername(): String?
+
+    /**
+     * The best display name and website for an app, resolved from its [contractId]: the contract
+     * owner's DashPay profile displayName / DPNS username if present, else the friendly branding
+     * for the (unauthenticated) QR [qrLabel], else the raw label (url may be blank). Used to show
+     * a trustworthy name on the approve sheet instead of the spoofable QR label. Best-effort;
+     * never throws.
+     */
+    suspend fun resolveAppDisplay(contractId: ByteArray, qrLabel: String): AppDisplay
+}
+
+/** Enabled identity keys that can edit the DashPay profile but belong to no connection on record. */
+data class SharedProfileKeys(val scope: String, val keyIds: List<Int>)
+
+/** Display name and website for an app, as resolved by [DashConnectRepository.resolveAppDisplay]. */
+data class AppDisplay(
+    val name: String,
+    /** Website or DPNS handle; blank if unknown. */
+    val url: String
+)
+
+/**
+ * In-memory mock used by tests and previews. Treats the app contract id as the connection id.
+ */
+@Singleton
+class MockDashConnectRepository @Inject constructor() : DashConnectRepository {
+    private val connections = MutableStateFlow<List<DAppConnection>>(emptyList())
+
+    override suspend fun isAvailable(): Boolean? = ConnectAvailability.isSupported
+
+    override fun observeConnections(): Flow<List<DAppConnection>> = connections.asStateFlow()
+
+    override suspend fun parseQr(qrContent: String): DashConnectQr {
+        throw UnsupportedOperationException("MockDashConnectRepository does not parse real QR codes")
+    }
+
+    override suspend fun approveLogin(request: DashKeyRequest): DAppConnection {
+        val id = org.bitcoinj.core.Base58.encode(request.contractId)
+        val connection = DAppConnection(
+            id = id,
+            name = request.label.ifBlank { "Unknown app" },
+            url = "",
+            status = ConnectionStatus.ACTIVE,
+            updatedAt = System.currentTimeMillis()
+        )
+        connections.value = connections.value.filter { it.id != id } + connection
+        return connection
+    }
+
+    override suspend fun disconnect(connectionId: String, scope: String?) {
+        connections.value = connections.value.map {
+            if (it.id == connectionId) {
+                it.copy(status = ConnectionStatus.DISCONNECTED, updatedAt = System.currentTimeMillis())
+            } else {
+                it
+            }
+        }
+    }
+
+    override suspend fun removeConnection(connectionId: String, scope: String?) {
+        connections.value = connections.value.filter { it.id != connectionId }
+    }
+
+    override suspend fun resolveWalletUsername(): String? = null
+
+    override suspend fun resolveAppDisplay(contractId: ByteArray, qrLabel: String): AppDisplay =
+        AppDisplay(
+            name = DashConnectBranding.appName(qrLabel),
+            url = DashConnectBranding.appUrl(qrLabel).orEmpty()
+        )
+}

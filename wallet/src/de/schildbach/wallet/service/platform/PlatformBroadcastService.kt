@@ -61,6 +61,7 @@ interface PlatformBroadcastService {
 class PlatformDocumentBroadcastService @Inject constructor(
     val dashSystemService: DashSystemService,
     val platform: PlatformService,
+    val identityRepository: IdentityRepository,
     val platformRepo: PlatformRepo,
     val analytics: AnalyticsService,
     val walletDataProvider: WalletDataProvider,
@@ -85,9 +86,23 @@ class PlatformDocumentBroadcastService @Inject constructor(
 
     @Throws(Exception::class)
     override suspend fun sendContactRequest(toUserId: String, encryptionKey: KeyParameter): DashPayContactRequest {
-        val potentialContactIdentity = platform.identities.get(toUserId)
-        log.info("potential contact identity: $potentialContactIdentity")
-        val blockchainIdentity = platformRepo.blockchainIdentity
+        // getContactIdentity (not identities.get) tolerates the legacy dashj
+        // identity cache being unable to CBOR-serialize a v4.1 identity — e.g.
+        // an iOS username being ACCEPTED here (accept is this reciprocal
+        // sendContactRequest). identities.get fetches the identity fine but its
+        // storeIdentity cache write throws "No converter for ...", losing the
+        // fetched identity and aborting the accept before any broadcast (SDK or
+        // dashj) is even attempted. Both branches below need this identity, so
+        // recovering it uncached fixes the SDK Broadcast path and the dashj
+        // fallback alike.
+        val potentialContactIdentity = platform.getContactIdentity(Identifier.from(toUserId))
+        // NEVER string-interpolate a legacy dashj Identity/BaseObject: its
+        // toString() routes through hashCode() -> CBOR toBuffer(), which throws
+        // "No converter for ..." on v4.x contract-bound identities (the exact
+        // crash getContactIdentity above just recovered from). Log the id only.
+        log.info("potential contact identity: ${potentialContactIdentity?.id}")
+        val blockchainIdentity = identityRepository.blockchainIdentity
+            ?: throw IllegalStateException("blockchain identity not available; ensure identity is loaded before calling PlatformBroadcastService.sendContactRequest")
 
         // Create Contact Request
         val timer = AnalyticsTimer(analytics, log, AnalyticsConstants.Process.PROCESS_CONTACT_REQUEST_SEND)
@@ -108,14 +123,15 @@ class PlatformDocumentBroadcastService @Inject constructor(
 
         log.info("contact request: $cr")
         val dashPayContactRequest = DashPayContactRequest.fromDocument(cr)
-        platformRepo.updateDashPayContactRequest(dashPayContactRequest) // update the database since the cr was accepted
+        identityRepository.updateDashPayContactRequest(dashPayContactRequest) // update the database since the cr was accepted
         platformRepo.updateDashPayProfile(toUserId) // update the profile
         platformSyncService.fireContactsUpdatedListeners() // trigger listeners
         return dashPayContactRequest
     }
 
     override suspend fun broadcastIdentityVerify(username: String, url: String, encryptionKey: KeyParameter?): IdentityVerifyDocument {
-        val blockchainIdentity = platformRepo.blockchainIdentity
+        val blockchainIdentity = identityRepository.blockchainIdentity
+            ?: throw IllegalStateException("blockchain identity not available; ensure identity is loaded before calling PlatformBroadcastService.broadcastIdentityVerify")
 
         // Create Identity Verify
         val timer = AnalyticsTimer(analytics, log, AnalyticsConstants.Process.PROCESS_CONTACT_REQUEST_SEND)
@@ -184,7 +200,8 @@ class PlatformDocumentBroadcastService @Inject constructor(
     @Throws(Exception::class)
     override suspend fun broadcastUpdatedProfile(dashPayProfile: DashPayProfile, encryptionKey: KeyParameter): DashPayProfile {
         log.info("broadcast profile")
-        val blockchainIdentity = platformRepo.blockchainIdentity
+        val blockchainIdentity = identityRepository.blockchainIdentity
+            ?: throw IllegalStateException("blockchain identity not available; ensure identity is loaded before calling PlatformBroadcastService.broadcastUpdatedProfile")
 
         val displayName = if (dashPayProfile.displayName.isNotEmpty()) dashPayProfile.displayName else null
         val publicMessage = if (dashPayProfile.publicMessage.isNotEmpty()) dashPayProfile.publicMessage else null

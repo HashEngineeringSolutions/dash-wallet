@@ -73,7 +73,6 @@
     <string name="explore_filter">Filtr</string>
     <string name="explore_filters">Filtry</string>
     <string name="explore_apply_filter">Aplikovat</string>
-    <string name="explore_payment_method">Platební metoda</string>
     <string name="explore_payment_dash">Dash</string>
     <string name="explore_payment_gift_card">Dárkový poukaz</string>
     <string name="explore_radius">Okruh</string>
@@ -115,6 +114,7 @@
     <string-array name="sort_by_options_names">
         <item>Jméno</item>
         <item>Vzdálenost</item>
+        <item>Sleva</item>
     </string-array>
 
     <plurals name="radius_miles">
@@ -161,8 +161,13 @@
     <string name="insufficient_money_title">Nemáte dostatečný zůstatek</string>
     <string name="insufficient_money_msg">Nedostatečný zůstatek</string>
     <string name="send_coins_error_msg">Problém při zasílání!</string>
+    <string name="purchase_gift_card_reset">Resetovat</string>
     <string name="password">Heslo</string>
     <string name="retry">Opakovat</string>
     <string name="try_again">Zkusit znovu</string>
     <string name="cancel">Zrušit</string>
-    </resources>
+    <string name="gift_card_contact_support">Podpora</string>
+    <string name="address">Adresa</string>
+    <string name="call">Volání</string>
+    <string name="save">Uložit</string>
+</resources>

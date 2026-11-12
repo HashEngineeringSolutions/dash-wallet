@@ -34,6 +34,7 @@ import de.schildbach.wallet.database.dao.InvitationsDao
 import de.schildbach.wallet.database.entity.BlockchainIdentityConfig
 import de.schildbach.wallet.database.entity.DashPayContactRequest
 import de.schildbach.wallet.livedata.Resource
+import de.schildbach.wallet.service.platform.IdentityRepository
 import de.schildbach.wallet.service.platform.PlatformBroadcastService
 import de.schildbach.wallet.service.platform.PlatformSyncService
 import de.schildbach.wallet.ui.dashpay.utils.DashPayConfig
@@ -49,6 +50,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.bouncycastle.crypto.params.KeyParameter
 import org.dash.wallet.common.services.analytics.AnalyticsConstants
 import org.dash.wallet.common.services.analytics.AnalyticsService
@@ -62,6 +64,7 @@ open class DashPayViewModel @Inject constructor(
     private val walletApplication: WalletApplication,
     private val analytics: AnalyticsService,
     private val platformRepo: PlatformRepo,
+    private val identityRepository: IdentityRepository,
     blockchainState: BlockchainStateDao,
     dashPayProfileDao: DashPayProfileDao,
     blockchainIdentityDataDao: BlockchainIdentityConfig,
@@ -170,7 +173,7 @@ open class DashPayViewModel @Inject constructor(
                     log,
                     AnalyticsConstants.Process.PROCESS_USERNAME_SEARCH_QUERY
                 )
-                var result = platformRepo.searchUsernames(search.text, false, search.limit)
+                var result = identityRepository.searchUsernames(search.text, false, search.limit)
                 result = result.filter { !search.excludeIds.contains(it.dashPayProfile.userId) }
                 if (result.isNotEmpty()) {
                     val limit = result.size.coerceAtMost(search.limit)
@@ -208,7 +211,7 @@ open class DashPayViewModel @Inject constructor(
         searchContactsJob = Job()
         liveData(context = searchContactsJob + Dispatchers.IO) {
             emit(Resource.loading(null))
-            emit(platformRepo.searchContacts(usernameSearch.text, usernameSearch.orderBy))
+            emit(identityRepository.searchContacts(usernameSearch.text, usernameSearch.orderBy))
         }
     }
 
@@ -218,7 +221,7 @@ open class DashPayViewModel @Inject constructor(
 
     fun usernameDoneAndDismiss() {
         viewModelScope.launch(Dispatchers.IO) {
-            platformRepo.doneAndDismiss()
+            identityRepository.doneAndDismiss()
         }
     }
 
@@ -310,7 +313,8 @@ open class DashPayViewModel @Inject constructor(
         return msg
     }
 
-    suspend fun getInviteHistory() = invitations.loadAll()
+    suspend fun getInviteHistory() = withContext(Dispatchers.IO) { invitations.loadAll() }
+    suspend fun getInviteCount() = withContext(Dispatchers.IO) { invitations.count() }
 
     fun contactRequestsTo(userId: String): LiveData<List<DashPayContactRequest>> =
         contactRequestDao.observeToOthers(userId).distinctUntilChanged().asLiveData()
@@ -321,7 +325,7 @@ open class DashPayViewModel @Inject constructor(
         val excludeIds: ArrayList<String> = arrayListOf()
     )
 
-    suspend fun hasEnoughCredits(): CreditBalanceInfo {
-        return platformRepo.getIdentityBalance()
+    suspend fun hasEnoughCredits(): CreditBalanceInfo? {
+        return identityRepository.getIdentityBalance()
     }
 }
