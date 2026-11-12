@@ -62,7 +62,10 @@ class PiggyCardsRepository @Inject constructor(
         val disabledGiftCards = mapOf(
             174 to listOf("Xbox Live", "Xbox Game Pass")
         )
-        private const val INSTANT_DELIVERY = "(instant delivery)"
+
+        // internal so the merchant catalogue source can select the same cards this class
+        // sells from; see PiggyCardsMerchantCatalogSource.selectPurchasableGroup.
+        internal const val INSTANT_DELIVERY = "(instant delivery)"
         private const val SERVICE_FEE = 150
         private const val SERVICE_FEE_PERCENT = 1.5
         private const val DASH_DASH_KEY = "DASH.DASH"
@@ -549,7 +552,13 @@ class PiggyCardsRepository @Inject constructor(
         val response = api.getGiftCards(DEFAULT_COUNTRY, brandId)
         val disabled = brandId.toIntOrNull()?.let { disabledGiftCards[it] }.orEmpty()
 
-        return response?.data.orEmpty().filter { giftCard ->
+        // A missing payload is a failed request, not a brand with nothing in stock. Reading it
+        // as empty stock would mark a purchasable merchant inactive and report the catalogue
+        // complete, so the row would stay wrong until the brand next came back populated.
+        val data = response?.data
+            ?: throw IllegalStateException("PiggyCards returned no gift card data for brand $brandId")
+
+        return data.filter { giftCard ->
             disabled.none { name -> giftCard.name.contains(name) }
         }
     }

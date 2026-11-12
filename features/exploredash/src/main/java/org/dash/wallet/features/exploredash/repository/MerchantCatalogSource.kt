@@ -24,6 +24,7 @@ import org.dash.wallet.features.exploredash.data.dashspend.GiftCardProviderType
 import org.dash.wallet.features.exploredash.data.dashspend.MerchantCatalogEntry
 import org.dash.wallet.features.exploredash.data.dashspend.ctx.model.DenominationType
 import org.dash.wallet.features.exploredash.data.dashspend.piggycards.model.Brand
+import org.dash.wallet.features.exploredash.data.dashspend.piggycards.model.Giftcard
 import org.dash.wallet.features.exploredash.network.service.ctxspend.MerchantResponse
 import org.slf4j.LoggerFactory
 
@@ -106,8 +107,18 @@ class CTXMerchantCatalogSource(
         val merchants = repository.getAllMerchants()
         log.info("CTX returned {} merchants", merchants.size)
 
-        // One request returns the whole catalogue, so either it threw or this is all of it.
-        return CatalogAnswer.Complete(mapEntries(merchants))
+        val entries = mapEntries(merchants)
+
+        // An empty answer is not an authoritative empty catalogue. getAllMerchants() skips a
+        // page whose `result` is null and defaults missing pagination to one page, so a
+        // well-formed-looking 200 carrying nothing usable is indistinguishable here from a
+        // service that has genuinely stopped selling everything. The second never happens; the
+        // first would delete every CTX merchant.
+        return if (entries.isEmpty()) {
+            CatalogAnswer.Partial(entries, missing = 1)
+        } else {
+            CatalogAnswer.Complete(entries)
+        }
     }
 
     private fun mapEntries(merchants: List<MerchantResponse>) =
@@ -217,12 +228,19 @@ class PiggyCardsMerchantCatalogSource(
         // as inactive rather than dropped: it keeps its merchant row, and the row comes back
         // to life on the next sync without the id changing.
         val inStock = giftCards.filter { it.quantity > 0 }
-        val best = inStock.maxByOrNull { it.discountPercentage }
+
+        // Price the cards the purchase flow would actually offer, not the whole stock.
+        // PiggyCardsRepository.getMerchant() picks one group and sells only from it, in this
+        // order, so quoting the best discount across every card advertises a saving checkout
+        // will not honour: an instant-delivery brand with a 10% range card in stock would be
+        // listed at the range card's discount and then sold a fixed card at the fixed rate.
+        val purchasable = selectPurchasableGroup(inStock)
+        val best = purchasable.maxByOrNull { it.discountPercentage }
 
         val entry = MerchantCatalogEntry(
             sourceId = brand.id,
             name = name,
-            active = inStock.isNotEmpty(),
+            active = purchasable.isNotEmpty(),
             // PiggyCards quotes a percentage ("2.5" is 2.5%); the explore database stores
             // basis points, where 250 is the same discount. The service fee comes off here so
             // the list quotes what the purchase screen will actually give, and the floor keeps
@@ -235,9 +253,35 @@ class PiggyCardsMerchantCatalogSource(
                 else -> DenominationType.Fixed.value
             },
             redeemType = "",
-            logoUrl = best?.image ?: inStock.firstOrNull()?.image ?: giftCards.firstOrNull()?.image
+            logoUrl = best?.image ?: purchasable.firstOrNull()?.image ?: giftCards.firstOrNull()?.image
         )
 
         return BrandFetch(entry, failed = false)
+    }
+
+    /**
+     * The in-stock cards the purchase flow would sell for this brand.
+     *
+     * Mirrors the priority in [PiggyCardsRepository.getMerchant]: instant delivery first,
+     * taking the other fixed cards with it, then a flexible card, then whatever fixed cards
+     * are left. Kept here rather than shared with the repository because that function also
+     * populates the repository's own card cache as a side effect, which a catalogue sync has
+     * no business doing. If the priority there changes, it has to change here too.
+     */
+    private fun selectPurchasableGroup(inStock: List<Giftcard>): List<Giftcard> {
+        // Plain lowercase(), matching PiggyCardsRepository exactly. A locale-aware variant
+        // would be the better call on its own, but the two have to agree: a card the list
+        // priced and checkout then excluded is the defect this function exists to prevent.
+        val instant = inStock.filter { it.name.lowercase().contains(PiggyCardsRepository.INSTANT_DELIVERY) }
+
+        if (instant.isNotEmpty()) {
+            return instant + inStock.filter {
+                !it.name.lowercase().contains(PiggyCardsRepository.INSTANT_DELIVERY) && it.isFixed
+            }
+        }
+
+        inStock.firstOrNull { !it.isFixed }?.let { return listOf(it) }
+
+        return inStock.filter { it.isFixed }
     }
 }
