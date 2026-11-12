@@ -70,6 +70,11 @@ class MerchantCatalogSyncTest {
             store.providers.add(invocation.arguments[0] as GiftCardProvider)
             Unit
         }
+        onBlocking { insertAll(any()) } doAnswer { invocation ->
+            @Suppress("UNCHECKED_CAST")
+            store.providers.addAll(invocation.arguments[0] as List<GiftCardProvider>)
+            Unit
+        }
         onBlocking { deleteByProvider(any()) } doAnswer { invocation ->
             val provider = invocation.arguments[0] as String
             store.removeProviders { it.provider == provider }

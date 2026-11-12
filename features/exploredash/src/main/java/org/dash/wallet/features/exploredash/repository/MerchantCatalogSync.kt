@@ -190,7 +190,7 @@ class MerchantCatalogSync(
         }
 
         merchantDao.save(merchants)
-        providerRows.forEach { giftCardProviderDao.insert(it) }
+        giftCardProviderDao.insertAll(providerRows)
 
         // A merchant is only removed once nothing offers it any more. Checking after the
         // rewrite rather than before means a merchant sold by both services survives one of

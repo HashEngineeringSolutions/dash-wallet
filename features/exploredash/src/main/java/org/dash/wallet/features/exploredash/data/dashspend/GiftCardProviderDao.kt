@@ -22,6 +22,14 @@ interface GiftCardProviderDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(provider: GiftCardProvider)
 
+    /**
+     * Insert a whole catalogue in one transaction. Inserting row by row costs a transaction
+     * and an fsync each, which measured ~0.2s per row on an emulator: 45 seconds to write the
+     * 223 rows a two-service sync produces.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(providers: List<GiftCardProvider>)
+
     @Query("DELETE FROM gift_card_providers WHERE merchantId IN (:merchantIds)")
     suspend fun deleteByMerchantIds(merchantIds: List<String>): Int
 
